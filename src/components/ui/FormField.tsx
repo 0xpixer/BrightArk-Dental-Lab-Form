@@ -41,4 +41,4 @@ export const inputClassName = (hasError?: boolean) =>
   }`
 
 export const orderInputClassName = (hasError?: boolean) =>
-  `${inputClassName(hasError)} !bg-[#e8f5e9]`
+  `${inputClassName(hasError)} !bg-[#E3E3E3]`

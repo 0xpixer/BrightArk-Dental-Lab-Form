@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @config '../tailwind.config.js';
 
+@layer utilities {
+  .text-secondary {
+    color: #1d1d1f;
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

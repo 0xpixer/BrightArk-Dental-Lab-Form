@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         primary: '#F47B20',
-        secondary: '#1E6DBF',
+        secondary: '#ea6624',
         accent: '#6B4EFF',
         bg: '#F5F6FA',
         surface: '#FFFFFF',
@@ -13,7 +13,7 @@ export default {
         text: '#1A1D2E',
         'text-muted': '#6B7280',
         'grey-input': '#e3e3e3',
-        'order-green': '#e8f5e9',
+        'order-green': '#E3E3E3',
       },
       fontFamily: {
         sans: ['"Noto Sans"', 'system-ui', 'sans-serif'],

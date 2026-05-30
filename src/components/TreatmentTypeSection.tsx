@@ -152,25 +152,22 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
 
   return (
     <SectionCard title="Treatment Type" id="treatment-type">
-      <fieldset>
-        <legend className="mb-2 text-xs font-medium text-text">Treatment Type</legend>
-        <div className="flex flex-wrap gap-1 rounded-card border border-border bg-bg p-1">
-          {TREATMENT_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => handleCategoryChange(cat)}
-              className={`rounded-[6px] px-3 py-2 text-xs font-medium transition-colors duration-brand ease-in-out ${
-                category === cat
-                  ? 'bg-secondary text-white shadow-sm'
-                  : 'text-text-muted hover:bg-white hover:text-text'
-              }`}
-            >
-              {CATEGORY_LABELS[cat]}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <div className="flex flex-wrap gap-1 rounded-card border border-border bg-bg p-1">
+        {TREATMENT_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => handleCategoryChange(cat)}
+            className={`rounded-[6px] px-3 py-2 text-xs font-medium transition-colors duration-brand ease-in-out ${
+              category === cat
+                ? 'bg-secondary text-white shadow-sm'
+                : 'text-text-muted hover:bg-white hover:text-text'
+            }`}
+          >
+            {CATEGORY_LABELS[cat]}
+          </button>
+        ))}
+      </div>
 
       <div className="mt-4 min-h-[60px]">
         {!category && (
