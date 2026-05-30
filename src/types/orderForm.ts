@@ -7,9 +7,20 @@ export const VITA_SHADES = [
   'D2', 'D3', 'D4',
 ] as const
 
+export const TREATMENT_CATEGORIES = [
+  'orthodontics',
+  'implant',
+  'fixed',
+  'removable',
+] as const
+
+export type TreatmentCategory = (typeof TREATMENT_CATEGORIES)[number]
+
 export const FILE_SLOT_IDS = [
   'upper-model',
   'lower-model',
+  'left-buccal',
+  'right-buccal',
   'frontal-view',
   'frontal-smile',
   'profile-view',
@@ -35,17 +46,15 @@ export interface UploadedFileMeta {
 }
 
 export const orderFormSchema = z.object({
-  orderNo: z.string().min(1, 'Order number is required'),
-  dateSent: z.string().optional(),
+  treatmentCategory: z.enum(['orthodontics', 'implant', 'fixed', 'removable', '']).optional(),
   repair: z.boolean(),
   redo: z.boolean(),
   urgent: z.boolean(),
   dentist: z.string().min(1, 'Dentist name is required'),
   patient: z.string().min(1, 'Patient name is required'),
   clinic: z.string().min(1, 'Clinic name is required'),
-  age: z.string().optional(),
+  patientDob: z.string().optional(),
   sex: z.enum(['male', 'female', '']).optional(),
-  dateRequired: z.string().min(1, 'Date required is required'),
   oldOrderNo: z.string().optional(),
 
   orthodontics: z.string().optional(),
@@ -96,17 +105,15 @@ export const orderFormSchema = z.object({
 export type OrderFormValues = z.infer<typeof orderFormSchema>
 
 export const defaultFormValues: OrderFormValues = {
-  orderNo: '',
-  dateSent: '',
+  treatmentCategory: '',
   repair: false,
   redo: false,
   urgent: false,
   dentist: '',
   patient: '',
   clinic: '',
-  age: '',
+  patientDob: '',
   sex: '',
-  dateRequired: '',
   oldOrderNo: '',
 
   orthodontics: '',
@@ -155,3 +162,7 @@ export const defaultFormValues: OrderFormValues = {
 }
 
 export const DRAFT_STORAGE_KEY = 'brightark-dental-lab-order-draft'
+
+export function generateOrderNo(): string {
+  return `BA-${Date.now()}`
+}

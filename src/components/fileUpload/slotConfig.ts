@@ -5,7 +5,8 @@ export interface FileSlotConfig {
   label: string
   required?: boolean
   accept: string
-  icon: 'scan' | 'photo' | 'xray' | 'intraoral'
+  icon: 'scan' | 'photo' | 'xray' | 'intraoral' | 'buccal'
+  formatBadge?: string
 }
 
 export interface FileSlotGroup {
@@ -22,6 +23,8 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
     slots: [
       { id: 'upper-model', label: 'Upper Model', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
       { id: 'lower-model', label: 'Lower Model', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
+      { id: 'left-buccal', label: 'Left Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
+      { id: 'right-buccal', label: 'Right Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
     ],
   },
   {

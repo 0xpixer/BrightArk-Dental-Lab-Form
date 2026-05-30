@@ -5,7 +5,6 @@ import { FormHeader } from './components/FormHeader'
 import { ProgressBar } from './components/ProgressBar'
 import { OrderInfoSection } from './components/OrderInfoSection'
 import { TreatmentTypeSection } from './components/TreatmentTypeSection'
-import { PonticOcclusalSection } from './components/PonticOcclusalSection'
 import { ToothSelectorSection } from './components/ToothSelectorSection'
 import { InstructionsSection } from './components/InstructionsSection'
 import { FileUploadSection, type FilesState } from './components/FileUploadSection'
@@ -13,9 +12,11 @@ import { SubmitSection } from './components/SubmitSection'
 import { SuccessCard } from './components/SuccessCard'
 import { FormFooter } from './components/FormFooter'
 import { useFormDraft } from './hooks/useFormDraft'
-import { orderFormSchema, defaultFormValues, type OrderFormValues } from './types/orderForm'
+import { orderFormSchema, defaultFormValues, generateOrderNo, type OrderFormValues } from './types/orderForm'
 
 function buildPayload(values: OrderFormValues, files: FilesState) {
+  const orderNo = generateOrderNo()
+  const dateSent = new Date().toISOString()
   const fileEntries = Object.entries(files).map(([slotId, data]) => ({
     slotId,
     name: data?.file.name,
@@ -23,7 +24,7 @@ function buildPayload(values: OrderFormValues, files: FilesState) {
     type: data?.file.type,
   }))
 
-  return { ...values, files: fileEntries }
+  return { ...values, orderNo, dateSent, files: fileEntries }
 }
 
 export default function App() {
@@ -60,7 +61,6 @@ export default function App() {
     const sections = [
       { id: 'order-info', step: 1 as const },
       { id: 'treatment-type', step: 2 as const },
-      { id: 'pontic-occlusal', step: 2 as const },
       { id: 'tooth-selector', step: 2 as const },
       { id: 'instructions', step: 2 as const },
       { id: 'file-upload', step: 3 as const },
@@ -106,12 +106,12 @@ export default function App() {
     const payload = buildPayload(values, files)
 
     // Backend integration point: POST payload to BrightArk API
-  // await fetch('/api/orders', { method: 'POST', body: JSON.stringify(payload) })
+    // await fetch('/api/orders', { method: 'POST', body: JSON.stringify(payload) })
     console.log('BrightArk order submission payload:', payload)
 
     await new Promise((r) => setTimeout(r, 1200))
 
-    setSubmittedOrderNo(values.orderNo)
+    setSubmittedOrderNo(payload.orderNo)
     setSubmitted(true)
     setIsSubmitting(false)
     clearDraft()
@@ -176,7 +176,6 @@ export default function App() {
         <form onSubmit={onSubmit} noValidate className="space-y-4 md:space-y-6">
           <OrderInfoSection {...formProps} />
           <TreatmentTypeSection register={register} watch={watch} setValue={setValue} />
-          <PonticOcclusalSection register={register} watch={watch} />
           <ToothSelectorSection register={register} watch={watch} setValue={setValue} />
           <InstructionsSection register={register} watch={watch} />
           <FileUploadSection files={files} onFilesChange={setFiles} fileErrors={fileErrors} />

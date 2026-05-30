@@ -13,6 +13,19 @@ export function SlotIcon({ type }: { type: FileSlotConfig['icon'] }) {
           <rect x="26" y="8" width="12" height="6" rx="2" fill={fill} stroke={stroke} />
         </svg>
       )
+    case 'buccal':
+      return (
+        <svg viewBox="0 0 64 64" className="h-14 w-14" aria-hidden>
+          <path
+            d="M20 48 Q32 12 44 48"
+            fill={fill}
+            stroke={stroke}
+            strokeWidth="1.5"
+          />
+          <ellipse cx="32" cy="36" rx="8" ry="12" fill="#E5E7EB" stroke={stroke} strokeWidth="1" />
+          <path d="M32 24 V16 M28 20 H36" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      )
     case 'photo':
       return (
         <svg viewBox="0 0 64 64" className="h-14 w-14" aria-hidden>

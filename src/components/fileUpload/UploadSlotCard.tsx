@@ -40,10 +40,16 @@ export function UploadSlotCard({ slot, slotFile, hasError, onSelect, onRemove }:
       onClick={openPicker}
       onKeyDown={handleKeyDown}
       aria-label={`Upload ${slot.label}${slot.required ? ', required' : ''}`}
-      className={`group flex flex-col items-center rounded-card border-2 border-dashed bg-bg p-3 transition-all duration-brand ease-in-out hover:scale-[1.02] hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+      className={`group relative flex flex-col items-center rounded-card border-2 border-dashed bg-bg p-3 transition-all duration-brand ease-in-out hover:scale-[1.02] hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 ${
         hasError ? 'border-red-400' : slotFile ? 'border-accent/50' : 'border-border hover:border-primary'
       }`}
     >
+      {slot.formatBadge && !slotFile && (
+        <span className="absolute right-2 top-2 rounded bg-border px-1.5 py-0.5 text-[10px] font-medium text-text-muted">
+          {slot.formatBadge}
+        </span>
+      )}
+
       <input
         ref={inputRef}
         type="file"

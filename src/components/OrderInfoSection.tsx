@@ -36,41 +36,61 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
   return (
     <SectionCard title="Order Information" id="order-info">
       <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Dentist" htmlFor="dentist" required error={errors.dentist?.message}>
+            <input id="dentist" {...register('dentist')} className={orderInputClassName(!!errors.dentist)} />
+          </FormField>
+          <FormField label="Clinic" htmlFor="clinic" required error={errors.clinic?.message}>
+            <input id="clinic" {...register('clinic')} className={orderInputClassName(!!errors.clinic)} />
+          </FormField>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
           <FormField
-            label="Order No"
-            htmlFor="orderNo"
+            label="Patient Name"
+            htmlFor="patient"
             required
-            error={errors.orderNo?.message}
-            className="lg:col-span-3"
+            error={errors.patient?.message}
+            className="lg:col-span-5"
           >
-            <input
-              id="orderNo"
-              {...register('orderNo')}
-              className={orderInputClassName(!!errors.orderNo)}
-              autoComplete="off"
-            />
+            <input id="patient" {...register('patient')} className={orderInputClassName(!!errors.patient)} />
           </FormField>
 
-          <FormField label="Date Sent" htmlFor="dateSent" className="lg:col-span-3">
+          <FormField label="Patient DOB" htmlFor="patientDob" className="lg:col-span-4">
             <Controller
-              name="dateSent"
+              name="patientDob"
               control={control}
               render={({ field }) => (
                 <DatePicker
-                  id="dateSent"
+                  id="patientDob"
                   selected={parseDate(field.value ?? '')}
                   onChange={(date: Date | null) => field.onChange(formatDate(date))}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="DD/MM/YYYY"
                   className={orderInputClassName()}
                   showPopperArrow={false}
+                  maxDate={new Date()}
                 />
               )}
             />
           </FormField>
 
-          <div className="flex flex-wrap gap-2 lg:col-span-6 lg:justify-end lg:pb-1">
+          <fieldset className="lg:col-span-3">
+            <legend className="mb-1 text-xs font-medium text-text">Sex</legend>
+            <div className="flex gap-4">
+              {(['male', 'female'] as const).map((s) => (
+                <label key={s} className="flex cursor-pointer items-center gap-1.5 text-sm capitalize">
+                  <input type="radio" value={s} {...register('sex')} className="accent-secondary" />
+                  {s}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-medium text-text">Order Flags</p>
+          <div className="flex flex-wrap gap-2">
             <ToggleChip
               id="repair"
               label="Repair"
@@ -90,79 +110,6 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
               onChange={(v) => setValue('urgent', v)}
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Dentist" htmlFor="dentist" required error={errors.dentist?.message}>
-            <input id="dentist" {...register('dentist')} className={orderInputClassName(!!errors.dentist)} />
-          </FormField>
-          <FormField label="Patient" htmlFor="patient" required error={errors.patient?.message}>
-            <input id="patient" {...register('patient')} className={orderInputClassName(!!errors.patient)} />
-          </FormField>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
-          <FormField
-            label="Clinic"
-            htmlFor="clinic"
-            required
-            error={errors.clinic?.message}
-            className="lg:col-span-4"
-          >
-            <input id="clinic" {...register('clinic')} className={orderInputClassName(!!errors.clinic)} />
-          </FormField>
-
-          <FormField label="Age" htmlFor="age" className="lg:col-span-2">
-            <input
-              id="age"
-              type="number"
-              min={0}
-              max={150}
-              {...register('age')}
-              className={orderInputClassName()}
-            />
-          </FormField>
-
-          <fieldset className="lg:col-span-2">
-            <legend className="mb-1 text-xs font-medium text-text">Sex</legend>
-            <div className="flex gap-4">
-              {(['male', 'female'] as const).map((s) => (
-                <label key={s} className="flex cursor-pointer items-center gap-1.5 text-sm capitalize">
-                  <input
-                    type="radio"
-                    value={s}
-                    {...register('sex')}
-                    className="accent-secondary"
-                  />
-                  {s}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <FormField
-            label="Date Required"
-            htmlFor="dateRequired"
-            required
-            error={errors.dateRequired?.message}
-            className="lg:col-span-4"
-          >
-            <Controller
-              name="dateRequired"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  id="dateRequired"
-                  selected={parseDate(field.value ?? '')}
-                  onChange={(date: Date | null) => field.onChange(formatDate(date))}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="DD/MM/YYYY"
-                  className={orderInputClassName(!!errors.dateRequired)}
-                  showPopperArrow={false}
-                />
-              )}
-            />
-          </FormField>
         </div>
 
         {redo && (
