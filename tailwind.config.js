@@ -16,7 +16,7 @@ export default {
         'order-green': '#E3E3E3',
       },
       fontFamily: {
-        sans: ['"Noto Sans"', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-noto-sans)', '"Noto Sans"', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         card: '8px',

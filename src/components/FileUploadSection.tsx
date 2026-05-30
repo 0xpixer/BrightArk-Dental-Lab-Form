@@ -1,6 +1,9 @@
+'use client'
+
 import { useCallback, useEffect } from 'react'
+import { upload } from '@vercel/blob/client'
 import { Info } from 'lucide-react'
-import type { FileSlotId } from '../types/orderForm'
+import type { FileSlotId } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
 import { FILE_SLOT_GROUPS } from './fileUpload/slotConfig'
 import { UploadSlotCard, type SlotFile } from './fileUpload/UploadSlotCard'
@@ -9,41 +12,10 @@ import type { Dispatch, SetStateAction } from 'react'
 export type FilesState = Partial<Record<FileSlotId, SlotFile>>
 
 interface FileUploadSectionProps {
+  orderNo: string
   files: FilesState
   onFilesChange: Dispatch<SetStateAction<FilesState>>
   fileErrors?: { upperModel?: string; lowerModel?: string }
-}
-
-function simulateProgress(setProgress: (n: number) => void) {
-  let p = 0
-  const interval = setInterval(() => {
-    p += 15 + Math.random() * 20
-    if (p >= 100) {
-      setProgress(100)
-      clearInterval(interval)
-    } else {
-      setProgress(Math.min(p, 95))
-    }
-  }, 120)
-  return () => clearInterval(interval)
-}
-
-function createSlotFile(
-  file: File,
-  onFilesChange: Dispatch<SetStateAction<FilesState>>,
-  slotId: FileSlotId,
-) {
-  const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
-  const slotFile: SlotFile = { file, previewUrl, progress: 0 }
-  onFilesChange((prev) => ({ ...prev, [slotId]: slotFile }))
-
-  simulateProgress((progress) => {
-    onFilesChange((prev) => {
-      const current = prev[slotId]
-      if (!current) return prev
-      return { ...prev, [slotId]: { ...current, progress } }
-    })
-  })
 }
 
 function Tooltip({ text }: { text: string }) {
@@ -63,14 +35,70 @@ function slotGridClass(heading: string, slotCount: number): string {
   return 'grid-cols-2'
 }
 
-export function FileUploadSection({ files, onFilesChange, fileErrors }: FileUploadSectionProps) {
-  const assignFile = useCallback(
-    (slotId: FileSlotId, file: File) => {
+export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }: FileUploadSectionProps) {
+  const uploadFile = useCallback(
+    async (slotId: FileSlotId, file: File) => {
       const existing = files[slotId]
       if (existing?.previewUrl) URL.revokeObjectURL(existing.previewUrl)
-      createSlotFile(file, onFilesChange, slotId)
+
+      const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+      const pathname = `orders/${orderNo}/${slotId}/${file.name}`
+
+      onFilesChange((prev) => ({
+        ...prev,
+        [slotId]: {
+          file,
+          previewUrl,
+          progress: 0,
+          status: 'uploading',
+        },
+      }))
+
+      try {
+        const blob = await upload(pathname, file, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
+          onUploadProgress: ({ loaded, total }) => {
+            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
+            onFilesChange((prev) => {
+              const current = prev[slotId]
+              if (!current) return prev
+              return { ...prev, [slotId]: { ...current, progress } }
+            })
+          },
+        })
+
+        onFilesChange((prev) => {
+          const current = prev[slotId]
+          if (!current) return prev
+          return {
+            ...prev,
+            [slotId]: {
+              ...current,
+              progress: 100,
+              blobUrl: blob.url,
+              status: 'success',
+              error: undefined,
+            },
+          }
+        })
+      } catch (error) {
+        onFilesChange((prev) => {
+          const current = prev[slotId]
+          if (!current) return prev
+          return {
+            ...prev,
+            [slotId]: {
+              ...current,
+              progress: 0,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Upload failed',
+            },
+          }
+        })
+      }
     },
-    [files, onFilesChange],
+    [files, onFilesChange, orderNo],
   )
 
   const removeFile = useCallback(
@@ -115,8 +143,12 @@ export function FileUploadSection({ files, onFilesChange, fileErrors }: FileUplo
                     (slot.id === 'upper-model' && !!fileErrors?.upperModel) ||
                     (slot.id === 'lower-model' && !!fileErrors?.lowerModel)
                   }
-                  onSelect={(file) => assignFile(slot.id, file)}
+                  onSelect={(file) => uploadFile(slot.id, file)}
                   onRemove={() => removeFile(slot.id)}
+                  onRetry={() => {
+                    const current = files[slot.id]
+                    if (current?.file) uploadFile(slot.id, current.file)
+                  }}
                 />
               ))}
             </div>

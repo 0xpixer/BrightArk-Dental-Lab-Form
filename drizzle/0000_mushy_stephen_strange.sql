@@ -1,0 +1,23 @@
+CREATE TABLE "orders" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"order_no" text NOT NULL,
+	"date_sent" timestamp with time zone NOT NULL,
+	"dentist" text NOT NULL,
+	"clinic" text NOT NULL,
+	"patient_name" text NOT NULL,
+	"patient_dob" date NOT NULL,
+	"sex" text,
+	"date_required" date NOT NULL,
+	"is_repair" boolean DEFAULT false NOT NULL,
+	"is_redo" boolean DEFAULT false NOT NULL,
+	"is_urgent" boolean DEFAULT false NOT NULL,
+	"old_order_no" text,
+	"treatment_type" text,
+	"treatment_data" jsonb,
+	"tooth_selection" jsonb,
+	"instructions" text,
+	"file_urls" jsonb,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "orders_order_no_unique" UNIQUE("order_no")
+);
