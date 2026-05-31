@@ -34,9 +34,5 @@ export async function POST(request: Request) {
   }
 }
 
-// Increase body size limit for file uploads (default 4MB is too small)
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+// App Router: set max file size and timeout at the route segment level
+export const maxDuration = 60  // 60 second timeout for large STL files
