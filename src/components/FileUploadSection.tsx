@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect } from 'react'
-import { upload } from '@vercel/blob/client'
 import { Info } from 'lucide-react'
 import type { FileSlotId } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
@@ -59,22 +58,24 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
       }))
 
       try {
-        // How this works (no CORS, no 413):
-        //   1. upload() calls /api/upload to get a secure short-lived token
-        //   2. upload() sends the file DIRECTLY to Vercel Blob using that token
-        //   3. File bytes never pass through our serverless function
-        const blob = await upload(pathname, file, {
-          access: 'public',
-          handleUploadUrl: '/api/upload',
-          onUploadProgress: ({ loaded, total }) => {
-            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
-            onFilesChange((prev) => {
-              const current = prev[slotId]
-              if (!current) return prev
-              return { ...prev, [slotId]: { ...current, progress } }
-            })
-          },
-        })
+        // Send raw file bytes to OUR API route as the request body.
+        // The filename is passed as a URL param (tiny, no size issues).
+        // Edge runtime on the server streams it straight to Vercel Blob —
+        // no CORS, no 413, works for files up to 500 MB.
+        const response = await fetch(
+          `/api/upload?filename=${encodeURIComponent(pathname)}`,
+          {
+            method: 'POST',
+            body: file, // Raw File — not FormData, just the bytes
+          }
+        )
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Upload failed' }))
+          throw new Error(err.error ?? 'Upload failed')
+        }
+
+        const { url } = await response.json()
 
         onFilesChange((prev) => {
           const current = prev[slotId]
@@ -84,7 +85,7 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
             [slotId]: {
               ...current,
               progress: 100,
-              blobUrl: blob.url,
+              blobUrl: url,
               status: 'success',
               error: undefined,
             },

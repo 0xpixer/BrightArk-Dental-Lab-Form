@@ -1,48 +1,36 @@
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
+import { put } from '@vercel/blob'
 import { NextResponse } from 'next/server'
 
-// POST is called TWICE by the client SDK:
-//   1st call: client asks for a secure upload token  → we return it
-//   2nd call: Vercel Blob notifies us upload finished → we confirm
-// The actual file bytes travel directly from the browser to Vercel Blob,
-// so they NEVER pass through this function — no 413 errors possible.
-export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody
+// Edge runtime is the key:
+//   - No 4.5MB body size limit (unlike serverless functions)
+//   - Streams the file directly to Vercel Blob without buffering
+//   - No CORS issues — browser talks to YOUR domain, not blob.vercel-storage.com
+export const runtime = 'edge'
+
+export async function POST(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const filename = searchParams.get('filename')
+
+  if (!filename) {
+    return NextResponse.json({ error: 'Missing filename param' }, { status: 400 })
+  }
+
+  if (!request.body) {
+    return NextResponse.json({ error: 'Missing file body' }, { status: 400 })
+  }
 
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-
-      // Step 1 — before issuing the upload token, set permissions
-      onBeforeGenerateToken: async (pathname) => {
-        return {
-          // Accept images and STL/OBJ/PLY files
-          allowedContentTypes: [
-            'image/jpeg',
-            'image/jpg',
-            'image/png',
-            'application/octet-stream', // .stl / .obj / .ply
-            'model/stl',
-            'application/sla',
-          ],
-          maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — plenty for STL files
-          tokenPayload: JSON.stringify({ pathname }),
-        }
-      },
-
-      // Step 2 — Vercel Blob calls back once upload is complete
-      onUploadCompleted: async ({ blob }) => {
-        console.log('Upload complete:', blob.url)
-        // You can update the DB here if needed in the future
-      },
+    const blob = await put(filename, request.body, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     })
 
-    return NextResponse.json(jsonResponse)
+    return NextResponse.json({ url: blob.url })
   } catch (error) {
+    console.error('Upload error:', error)
     return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 400 }
+      { error: (error as Error).message ?? 'Upload failed' },
+      { status: 500 }
     )
   }
 }
