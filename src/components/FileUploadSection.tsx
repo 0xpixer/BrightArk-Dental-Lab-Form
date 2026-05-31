@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect } from 'react'
-import { upload } from '@vercel/blob/client'
 import { Info } from 'lucide-react'
 import type { FileSlotId } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
@@ -42,8 +41,8 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
       if (existing?.previewUrl) URL.revokeObjectURL(existing.previewUrl)
 
       const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
-      const pathname = `orders/${orderNo}/${slotId}/${file.name}`
 
+      // Set uploading state immediately so the UI shows progress
       onFilesChange((prev) => ({
         ...prev,
         [slotId]: {
@@ -55,18 +54,26 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
       }))
 
       try {
-        const blob = await upload(pathname, file, {
-          access: 'public',
-          handleUploadUrl: '/api/upload',
-          onUploadProgress: ({ loaded, total }) => {
-            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
-            onFilesChange((prev) => {
-              const current = prev[slotId]
-              if (!current) return prev
-              return { ...prev, [slotId]: { ...current, progress } }
-            })
-          },
+        // Send file to our own API route — never directly to Vercel Blob
+        // This avoids the CORS error caused by browser → blob.vercel-storage.com
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('slotName', slotId)
+        formData.append('orderNo', orderNo)
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+          // Do NOT set Content-Type header manually — the browser sets it
+          // automatically with the correct multipart/form-data boundary
         })
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Upload failed' }))
+          throw new Error(err.error || 'Upload failed')
+        }
+
+        const blob = await response.json()
 
         onFilesChange((prev) => {
           const current = prev[slotId]

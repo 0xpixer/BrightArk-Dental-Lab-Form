@@ -1,43 +1,42 @@
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
+import { put } from '@vercel/blob'
 import { NextResponse } from 'next/server'
 
-const ALLOWED_CONTENT_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/jpg',
-  'application/octet-stream',
-  'model/stl',
-]
-
-export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody
-
+export async function POST(request: Request) {
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async (pathname) => {
-        if (!pathname.startsWith('orders/')) {
-          throw new Error('Invalid upload path')
-        }
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const slotName = formData.get('slotName') as string
+    const orderNo = formData.get('orderNo') as string
 
-        return {
-          allowedContentTypes: ALLOWED_CONTENT_TYPES,
-          maximumSizeInBytes: 100 * 1024 * 1024,
-          addRandomSuffix: true,
-          tokenPayload: JSON.stringify({ pathname }),
-        }
-      },
-      onUploadCompleted: async ({ blob }) => {
-        console.log('Blob upload completed:', blob.url)
-      },
+    if (!file || !slotName || !orderNo) {
+      return NextResponse.json(
+        { error: 'Missing file, slotName, or orderNo' },
+        { status: 400 }
+      )
+    }
+
+    // Sanitise filename: remove spaces and special chars
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+    const pathname = `orders/${orderNo}/${slotName}/${safeName}`
+
+    const blob = await put(pathname, file, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     })
 
-    return NextResponse.json(jsonResponse)
+    return NextResponse.json({ url: blob.url, pathname: blob.pathname })
   } catch (error) {
+    console.error('Upload error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Upload failed' },
-      { status: 400 },
+      { error: 'Upload failed' },
+      { status: 500 }
     )
   }
+}
+
+// Increase body size limit for file uploads (default 4MB is too small)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
 }

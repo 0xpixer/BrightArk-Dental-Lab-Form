@@ -1,6 +1,4 @@
-import * as dotenv from 'dotenv'
-dotenv.config({ path: '.env.local' })
-
+import 'dotenv/config'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { neon } from '@neondatabase/serverless'
