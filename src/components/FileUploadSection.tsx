@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect } from 'react'
+import { upload } from '@vercel/blob/client'
 import { Info } from 'lucide-react'
 import type { FileSlotId } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
@@ -46,36 +47,32 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
       const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
       const pathname = `orders/${orderNo}/${slotId}/${safeName}`
 
-      // Show uploading state immediately
       onFilesChange((prev) => ({
         ...prev,
-        [slotId]: {
-          file,
-          previewUrl,
-          progress: 0,
-          status: 'uploading',
-        },
+        [slotId]: { file, previewUrl, progress: 0, status: 'uploading' },
       }))
 
       try {
-        // Send raw file bytes to OUR API route as the request body.
-        // The filename is passed as a URL param (tiny, no size issues).
-        // Edge runtime on the server streams it straight to Vercel Blob —
-        // no CORS, no 413, works for files up to 500 MB.
-        const response = await fetch(
-          `/api/upload?filename=${encodeURIComponent(pathname)}`,
-          {
-            method: 'POST',
-            body: file, // Raw File — not FormData, just the bytes
-          }
-        )
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ error: 'Upload failed' }))
-          throw new Error(err.error ?? 'Upload failed')
-        }
-
-        const { url } = await response.json()
+        // How this works — the file NEVER goes through our function:
+        //   Step 1: upload() POSTs a tiny JSON request to /api/upload
+        //           asking for a short-lived client token
+        //   Step 2: our route uses handleUpload() to generate & return the token
+        //   Step 3: upload() PUTs the file DIRECTLY to Vercel Blob using the token
+        //   Step 4: Vercel Blob calls /api/upload back to confirm completion
+        //
+        // Only Steps 1 & 4 touch our function (tiny JSON, no 413 possible).
+        // Steps 3 is direct browser → Vercel Blob with a valid token (no CORS).
+        const blob = await upload(pathname, file, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
+          onUploadProgress: ({ percentage }) => {
+            onFilesChange((prev) => {
+              const current = prev[slotId]
+              if (!current) return prev
+              return { ...prev, [slotId]: { ...current, progress: percentage } }
+            })
+          },
+        })
 
         onFilesChange((prev) => {
           const current = prev[slotId]
@@ -85,13 +82,14 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
             [slotId]: {
               ...current,
               progress: 100,
-              blobUrl: url,
+              blobUrl: blob.url,
               status: 'success',
               error: undefined,
             },
           }
         })
       } catch (error) {
+        console.error('Upload error for slot', slotId, error)
         onFilesChange((prev) => {
           const current = prev[slotId]
           if (!current) return prev
