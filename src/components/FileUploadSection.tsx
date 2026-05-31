@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect } from 'react'
+import { upload } from '@vercel/blob/client'
 import { Info } from 'lucide-react'
 import type { FileSlotId } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
@@ -42,7 +43,11 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
 
       const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
 
-      // Set uploading state immediately so the UI shows progress
+      // Sanitise filename — remove spaces and special characters
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+      const pathname = `orders/${orderNo}/${slotId}/${safeName}`
+
+      // Show uploading state immediately
       onFilesChange((prev) => ({
         ...prev,
         [slotId]: {
@@ -54,26 +59,22 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
       }))
 
       try {
-        // Send file to our own API route — never directly to Vercel Blob
-        // This avoids the CORS error caused by browser → blob.vercel-storage.com
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('slotName', slotId)
-        formData.append('orderNo', orderNo)
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-          // Do NOT set Content-Type header manually — the browser sets it
-          // automatically with the correct multipart/form-data boundary
+        // How this works (no CORS, no 413):
+        //   1. upload() calls /api/upload to get a secure short-lived token
+        //   2. upload() sends the file DIRECTLY to Vercel Blob using that token
+        //   3. File bytes never pass through our serverless function
+        const blob = await upload(pathname, file, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
+          onUploadProgress: ({ loaded, total }) => {
+            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
+            onFilesChange((prev) => {
+              const current = prev[slotId]
+              if (!current) return prev
+              return { ...prev, [slotId]: { ...current, progress } }
+            })
+          },
         })
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ error: 'Upload failed' }))
-          throw new Error(err.error || 'Upload failed')
-        }
-
-        const blob = await response.json()
 
         onFilesChange((prev) => {
           const current = prev[slotId]

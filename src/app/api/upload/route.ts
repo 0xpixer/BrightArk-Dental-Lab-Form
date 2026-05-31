@@ -1,38 +1,48 @@
-import { put } from '@vercel/blob'
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+// POST is called TWICE by the client SDK:
+//   1st call: client asks for a secure upload token  → we return it
+//   2nd call: Vercel Blob notifies us upload finished → we confirm
+// The actual file bytes travel directly from the browser to Vercel Blob,
+// so they NEVER pass through this function — no 413 errors possible.
+export async function POST(request: Request): Promise<NextResponse> {
+  const body = (await request.json()) as HandleUploadBody
+
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    const slotName = formData.get('slotName') as string
-    const orderNo = formData.get('orderNo') as string
+    const jsonResponse = await handleUpload({
+      body,
+      request,
 
-    if (!file || !slotName || !orderNo) {
-      return NextResponse.json(
-        { error: 'Missing file, slotName, or orderNo' },
-        { status: 400 }
-      )
-    }
+      // Step 1 — before issuing the upload token, set permissions
+      onBeforeGenerateToken: async (pathname) => {
+        return {
+          // Accept images and STL/OBJ/PLY files
+          allowedContentTypes: [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'application/octet-stream', // .stl / .obj / .ply
+            'model/stl',
+            'application/sla',
+          ],
+          maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — plenty for STL files
+          tokenPayload: JSON.stringify({ pathname }),
+        }
+      },
 
-    // Sanitise filename: remove spaces and special chars
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
-    const pathname = `orders/${orderNo}/${slotName}/${safeName}`
-
-    const blob = await put(pathname, file, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      // Step 2 — Vercel Blob calls back once upload is complete
+      onUploadCompleted: async ({ blob }) => {
+        console.log('Upload complete:', blob.url)
+        // You can update the DB here if needed in the future
+      },
     })
 
-    return NextResponse.json({ url: blob.url, pathname: blob.pathname })
+    return NextResponse.json(jsonResponse)
   } catch (error) {
-    console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Upload failed' },
-      { status: 500 }
+      { error: (error as Error).message },
+      { status: 400 }
     )
   }
 }
-
-// App Router: set max file size and timeout at the route segment level
-export const maxDuration = 60  // 60 second timeout for large STL files
