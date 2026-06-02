@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect } from 'react'
 import type { FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import type { OrderFormValues } from '../types/orderForm'
 import { VITA_SHADES } from '../types/orderForm'
@@ -12,133 +12,148 @@ interface Props {
   setValue: UseFormSetValue<OrderFormValues>
 }
 
-const UPPER = Array.from({ length: 16 }, (_, i) => i + 1)
-const LOWER = Array.from({ length: 16 }, (_, i) => i + 17)
+const FDI_QUADRANTS = [
+  { label: 'Upper Right', teeth: [18, 17, 16, 15, 14, 13, 12, 11] },
+  { label: 'Upper Left', teeth: [21, 22, 23, 24, 25, 26, 27, 28] },
+  { label: 'Lower Right', teeth: [48, 47, 46, 45, 44, 43, 42, 41] },
+  { label: 'Lower Left', teeth: [31, 32, 33, 34, 35, 36, 37, 38] },
+] as const
+const FDI_TEETH = FDI_QUADRANTS.flatMap((quadrant) => quadrant.teeth)
 
-function toothPath(cx: number, cy: number, w: number, h: number): string {
-  return `M${cx - w / 2},${cy + h / 2} Q${cx},${cy - h / 2} ${cx + w / 2},${cy + h / 2} Q${cx},${cy + h / 2} ${cx - w / 2},${cy + h / 2} Z`
+function isFdiTooth(tooth: number): boolean {
+  return FDI_TEETH.includes(tooth as (typeof FDI_TEETH)[number])
 }
 
-function DentalArch({
+function sortFdiTeeth(teeth: number[]): number[] {
+  return [...teeth].sort((a, b) => FDI_TEETH.indexOf(a as (typeof FDI_TEETH)[number]) - FDI_TEETH.indexOf(b as (typeof FDI_TEETH)[number]))
+}
+
+function toothShapePath(tooth: number): string {
+  const position = tooth % 10
+  if (position <= 2) {
+    return 'M18 7 C13 12 12 31 15 40 C17 47 21 51 24 51 C27 51 31 47 33 40 C36 31 35 12 30 7 C27 5 21 5 18 7Z'
+  }
+  if (position === 3) {
+    return 'M24 5 C15 13 13 32 17 42 C20 49 23 53 24 53 C25 53 28 49 31 42 C35 32 33 13 24 5Z'
+  }
+  if (position <= 5) {
+    return 'M14 10 C8 20 10 39 18 47 C21 50 27 50 30 47 C38 39 40 20 34 10 C30 5 18 5 14 10Z'
+  }
+  return 'M11 12 C6 22 8 40 18 48 C23 52 29 52 34 48 C44 40 46 22 39 12 C34 5 16 5 11 12Z'
+}
+
+function toothWidthClass(tooth: number): string {
+  const position = tooth % 10
+  if (position <= 2) return 'max-w-[42px]'
+  if (position === 3) return 'max-w-[44px]'
+  return 'max-w-[48px]'
+}
+
+function ToothButton({
+  tooth,
   selected,
-  mode,
+  onToggle,
+}: {
+  tooth: number
+  selected: boolean
+  onToggle: (n: number) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(tooth)}
+      aria-label={`FDI tooth ${tooth}${selected ? ', selected' : ''}`}
+      aria-pressed={selected}
+      className={`group flex flex-col items-center justify-center gap-0.5 rounded-[6px] border px-1 py-1 transition-colors duration-brand focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+        selected
+          ? 'border-primary bg-primary/10 text-primary'
+          : 'border-border bg-surface text-text-muted hover:border-primary hover:text-primary'
+      }`}
+      style={{ minHeight: 56, minWidth: 44 }}
+    >
+      <svg viewBox="0 0 48 56" className={`h-10 w-full ${toothWidthClass(tooth)}`} aria-hidden>
+        <path
+          d={toothShapePath(tooth)}
+          fill={selected ? '#F47B20' : '#E8EBF2'}
+          stroke={selected ? '#D96A10' : '#C5CAD8'}
+          strokeWidth="1.6"
+          className="transition-[fill,stroke] duration-brand"
+        />
+        <path
+          d="M17 19 C21 16 27 16 31 19 M16 29 C21 32 27 32 32 29"
+          fill="none"
+          stroke={selected ? '#FFFFFF' : '#A8AFBF'}
+          strokeLinecap="round"
+          strokeWidth="1.2"
+          opacity="0.75"
+        />
+      </svg>
+      <span className="text-[11px] font-semibold leading-none">{tooth}</span>
+    </button>
+  )
+}
+
+function DentalChart({
+  selected,
   onToggle,
 }: {
   selected: number[]
-  mode: 'single' | 'bridge'
   onToggle: (n: number) => void
 }) {
-  const upperPos = useMemo(() => {
-    return UPPER.map((num, i) => {
-      const t = i / 15
-      const cx = 50 + i * (700 / 15)
-      const cy = 80 + Math.sin(t * Math.PI) * 35
-      return { num, cx, cy }
-    })
-  }, [])
-
-  const lowerPos = useMemo(() => {
-    return LOWER.map((num, i) => {
-      const t = i / 15
-      const cx = 50 + i * (700 / 15)
-      const cy = 200 - Math.sin(t * Math.PI) * 35
-      return { num, cx, cy }
-    })
-  }, [])
-
-  const bridges = useMemo(() => {
-    if (mode !== 'bridge' || selected.length < 2) return []
-    const lines: { x1: number; y1: number; x2: number; y2: number }[] = []
-    const all = [...upperPos, ...lowerPos]
-    const sorted = [...selected].sort((a, b) => a - b)
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const a = sorted[i]
-      const b = sorted[i + 1]
-      if (b - a !== 1) continue
-      const pa = all.find((p) => p.num === a)
-      const pb = all.find((p) => p.num === b)
-      if (pa && pb) lines.push({ x1: pa.cx, y1: pa.cy, x2: pb.cx, y2: pb.cy })
-    }
-    return lines
-  }, [mode, selected, upperPos, lowerPos])
-
-  const renderTooth = (num: number, cx: number, cy: number) => {
-    const isSelected = selected.includes(num)
-    return (
-      <g key={num}>
-        <path
-          d={toothPath(cx, cy, 28, 36)}
-          fill={isSelected ? '#F47B20' : '#E8EBF2'}
-          stroke={isSelected ? '#D96A10' : '#C5CAD8'}
-          strokeWidth={1.5}
-          className="cursor-pointer transition-[fill,stroke] duration-brand hover:opacity-90"
-          onClick={() => onToggle(num)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              onToggle(num)
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label={`Tooth ${num}${isSelected ? ', selected' : ''}`}
-          aria-pressed={isSelected}
-        />
-        <text
-          x={cx}
-          y={cy + 4}
-          textAnchor="middle"
-          fontSize="9"
-          fill={isSelected ? '#fff' : '#6B7280'}
-          className="pointer-events-none select-none"
-        >
-          {num}
-        </text>
-      </g>
-    )
-  }
-
   return (
-    <svg
-      viewBox="0 0 800 280"
-      className="mx-auto w-full max-w-3xl"
-      role="img"
-      aria-label="Dental arch tooth selector, Universal Numbering System"
-    >
-      <ellipse cx="400" cy="140" rx="340" ry="100" fill="none" stroke="#E0E3ED" strokeWidth="1" strokeDasharray="4 4" />
-      {bridges.map((line, i) => (
-        <line
-          key={i}
-          x1={line.x1}
-          y1={line.y1}
-          x2={line.x2}
-          y2={line.y2}
-          stroke="#F47B20"
-          strokeWidth="4"
-          strokeLinecap="round"
-          opacity={0.7}
-        />
-      ))}
-      {upperPos.map(({ num, cx, cy }) => renderTooth(num, cx, cy))}
-      {lowerPos.map(({ num, cx, cy }) => renderTooth(num, cx, cy))}
-      <text x="400" y="20" textAnchor="middle" fontSize="11" fill="#6B7280">
-        Upper (1–16)
-      </text>
-      <text x="400" y="270" textAnchor="middle" fontSize="11" fill="#6B7280">
-        Lower (17–32)
-      </text>
-    </svg>
+    <div className="overflow-x-auto rounded-card border border-border bg-bg p-3">
+      <div
+        className="grid grid-cols-2 rounded-card bg-surface shadow-sm"
+        style={{ minWidth: 900 }}
+        role="group"
+        aria-label="FDI adult dental chart"
+      >
+        {FDI_QUADRANTS.map((quadrant, index) => {
+          const isRightColumn = index % 2 === 1
+          const isLowerRow = index >= 2
+          return (
+            <div
+              key={quadrant.label}
+              className={`p-3 ${
+                isRightColumn ? '' : 'border-r-2 border-primary/30'
+              } ${
+                isLowerRow ? 'border-t-2 border-primary/30' : ''
+              }`}
+            >
+              <p className="mb-2 text-center text-xs font-semibold text-text-muted">{quadrant.label}</p>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(8, minmax(44px, 1fr))' }}>
+                {quadrant.teeth.map((tooth) => (
+                  <ToothButton
+                    key={tooth}
+                    tooth={tooth}
+                    selected={selected.includes(tooth)}
+                    onToggle={onToggle}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
 export function ToothSelectorSection({ register, errors, watch, setValue }: Props) {
-  const selected = watch('selectedTeeth') ?? []
+  const selectedRaw = watch('selectedTeeth') ?? []
+  const selected = sortFdiTeeth(selectedRaw.filter(isFdiTooth))
   const mode = watch('toothMode')
+
+  useEffect(() => {
+    if (selected.length !== selectedRaw.length) {
+      setValue('selectedTeeth', selected)
+    }
+  }, [selected, selectedRaw.length, setValue])
 
   const toggleTooth = (n: number) => {
     const next = selected.includes(n)
       ? selected.filter((t) => t !== n)
-      : [...selected, n].sort((a, b) => a - b)
+      : sortFdiTeeth([...selected, n])
     setValue('selectedTeeth', next)
   }
 
@@ -169,7 +184,7 @@ export function ToothSelectorSection({ register, errors, watch, setValue }: Prop
         <p className="text-xs text-text-muted">Click teeth to select. Multi-select supported.</p>
       </div>
 
-      <DentalArch selected={selected} mode={mode} onToggle={toggleTooth} />
+      <DentalChart selected={selected} onToggle={toggleTooth} />
 
       {selected.length > 0 && (
         <p className="mt-3 text-sm text-text">

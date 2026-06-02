@@ -80,6 +80,7 @@ function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
 
 function buildToothSelection(values: OrderFormValues): Record<string, unknown> {
   return {
+    notation: 'FDI',
     selectedTeeth: values.selectedTeeth,
     toothMode: values.toothMode,
     shade: values.shade,
