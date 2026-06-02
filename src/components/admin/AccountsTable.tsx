@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { KeyRound } from 'lucide-react'
+import { Toast } from './Toast'
+import { ADMIN_ROLES, formatAdminRole, type AdminRole } from '@/lib/admin/roles'
 
 interface Account {
   id: number
@@ -10,6 +12,7 @@ interface Account {
   role: string
   isActive: boolean
   createdBy: number | null
+  createdByUsername: string | null
   createdAt: string
   lastLoginAt: string | null
 }
@@ -20,12 +23,21 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const [resetModal, setResetModal] = useState<{ id: number; username: string } | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [pendingAccountId, setPendingAccountId] = useState<number | null>(null)
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
+    setError(null)
     const res = await fetch('/api/admin/accounts')
     const data = await res.json()
-    setAccounts(data.accounts ?? [])
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to load accounts')
+      setAccounts([])
+    } else {
+      setAccounts(data.accounts ?? [])
+    }
     setLoading(false)
   }, [])
 
@@ -34,16 +46,44 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   }, [fetchAccounts])
 
   const toggleActive = async (id: number, isActive: boolean) => {
-    await fetch(`/api/admin/accounts/${id}`, {
+    setPendingAccountId(id)
+    const res = await fetch(`/api/admin/accounts/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !isActive }),
     })
+    const data = await res.json()
+    setPendingAccountId(null)
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to update account')
+      return
+    }
+    setToast(`Account ${isActive ? 'deactivated' : 'activated'}`)
+    fetchAccounts()
+  }
+
+  const updateRole = async (id: number, role: AdminRole) => {
+    setPendingAccountId(id)
+    setError(null)
+    const res = await fetch(`/api/admin/accounts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    const data = await res.json()
+    setPendingAccountId(null)
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to update role')
+      fetchAccounts()
+      return
+    }
+    setToast(`Role updated to ${formatAdminRole(role)}`)
     fetchAccounts()
   }
 
   const resetPassword = async () => {
     if (!resetModal || !newPassword) return
+    setError(null)
     const res = await fetch(`/api/admin/accounts/${resetModal.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -53,6 +93,9 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     if (res.ok) {
       setTempPassword(data.temporaryPassword ?? newPassword)
       setNewPassword('')
+      setToast(`Password reset for ${resetModal.username}`)
+    } else {
+      setError(data.error ?? 'Failed to reset password')
     }
   }
 
@@ -96,11 +139,34 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                   Loading…
                 </td>
               </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-red-600">
+                  {error}
+                </td>
+              </tr>
             ) : (
               accounts.map((acc) => (
                 <tr key={acc.id} className="border-b border-border last:border-0 hover:bg-bg/50">
                   <td className="px-4 py-3 text-sm font-medium">{acc.username}</td>
-                  <td className="px-4 py-3 text-sm capitalize">{acc.role}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {acc.id === currentUserId ? (
+                      <span className="font-medium">{formatAdminRole(acc.role)}</span>
+                    ) : (
+                      <select
+                        value={acc.role}
+                        disabled={pendingAccountId === acc.id}
+                        onChange={(e) => updateRole(acc.id, e.target.value as AdminRole)}
+                        className="rounded border border-border bg-surface px-2 py-1 text-xs"
+                      >
+                        {ADMIN_ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {formatAdminRole(role)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -111,7 +177,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">
-                    {acc.createdBy ? `#${acc.createdBy}` : '—'}
+                    {acc.createdByUsername ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{formatRelative(acc.lastLoginAt)}</td>
                   <td className="px-4 py-3">
@@ -119,15 +185,17 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                       <div className="flex gap-2">
                         <button
                           type="button"
+                          disabled={pendingAccountId === acc.id}
                           onClick={() => toggleActive(acc.id, acc.isActive)}
-                          className="rounded border border-border px-2 py-1 text-xs hover:border-primary"
+                          className="rounded border border-border px-2 py-1 text-xs hover:border-primary disabled:opacity-60"
                         >
                           {acc.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                         <button
                           type="button"
+                          disabled={pendingAccountId === acc.id}
                           onClick={() => setResetModal({ id: acc.id, username: acc.username })}
-                          className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-secondary"
+                          className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-secondary disabled:opacity-60"
                         >
                           <KeyRound className="h-3 w-3" />
                           Reset
@@ -191,6 +259,8 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
           </div>
         </div>
       )}
+
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </>
   )
 }

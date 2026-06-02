@@ -4,6 +4,7 @@ import { eq, desc } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
+import { isAdminRole } from '@/lib/admin/roles'
 
 export async function GET() {
   const { error } = await requireSuperadmin()
@@ -11,6 +12,7 @@ export async function GET() {
 
   const db = getDb()
   const users = await db.select().from(adminUsers).orderBy(desc(adminUsers.createdAt))
+  const usernameById = new Map(users.map((u) => [u.id, u.username]))
 
   return NextResponse.json({
     accounts: users.map((u) => ({
@@ -19,6 +21,7 @@ export async function GET() {
       role: u.role,
       isActive: u.isActive,
       createdBy: u.createdBy,
+      createdByUsername: u.createdBy ? usernameById.get(u.createdBy) ?? null : null,
       createdAt: u.createdAt,
       lastLoginAt: u.lastLoginAt,
     })),
@@ -30,10 +33,14 @@ export async function POST(request: Request) {
   if (error) return error
 
   const body = await request.json()
-  const { username, password } = body
+  const { username, password, role } = body
 
   if (!username || !password) {
     return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
+  }
+
+  if (!isAdminRole(role)) {
+    return NextResponse.json({ error: 'A valid role is required' }, { status: 400 })
   }
 
   if (!/^[a-zA-Z0-9_]+$/.test(username)) {
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
     .values({
       username,
       passwordHash,
-      role: 'admin',
+      role,
       createdBy: parseInt(session!.user.id, 10),
       isActive: true,
     })
