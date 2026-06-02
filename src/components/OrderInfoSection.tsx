@@ -31,6 +31,7 @@ function formatDate(date: Date | null): string {
 }
 
 export function OrderInfoSection({ register, control, errors, watch, setValue }: Props) {
+  const repair = watch('repair')
   const redo = watch('redo')
 
   return (
@@ -69,7 +70,7 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
             <input id="patient" {...register('patient')} className={orderInputClassName(!!errors.patient)} />
           </FormField>
 
-          <FormField label="Patient DOB" htmlFor="patientDob" className="lg:col-span-4">
+          <FormField label="Patient DOB" htmlFor="patientDob" required error={errors.patientDob?.message} className="lg:col-span-4">
             <Controller
               name="patientDob"
               control={control}
@@ -80,7 +81,7 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
                   onChange={(date: Date | null) => field.onChange(formatDate(date))}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="DD/MM/YYYY"
-                  className={orderInputClassName()}
+                  className={orderInputClassName(!!errors.patientDob)}
                   showPopperArrow={false}
                   maxDate={new Date()}
                 />
@@ -144,7 +145,7 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
           />
         </FormField>
 
-        {redo && (
+        {(repair || redo) && (
           <FormField label="Old Order No" htmlFor="oldOrderNo" className="max-w-sm">
             <input id="oldOrderNo" {...register('oldOrderNo')} className={orderInputClassName()} />
           </FormField>

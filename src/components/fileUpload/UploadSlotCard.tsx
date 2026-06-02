@@ -65,7 +65,7 @@ export function UploadSlotCard({
             : isError
               ? 'border-red-400'
               : slotFile
-                ? 'border-accent/50'
+                ? 'border-primary/50'
                 : 'border-border hover:border-primary'
       } ${isUploading ? 'pointer-events-none' : ''}`}
     >
@@ -130,7 +130,7 @@ export function UploadSlotCard({
           {(isUploading || (slotFile.progress > 0 && slotFile.progress < 100)) && (
             <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-border">
               <div
-                className="h-full bg-accent transition-all duration-brand"
+                className="h-full bg-primary transition-all duration-brand"
                 style={{ width: `${slotFile.progress}%` }}
               />
             </div>

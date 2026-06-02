@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form'
+import type { FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import type { OrderFormValues } from '../types/orderForm'
 import { VITA_SHADES } from '../types/orderForm'
 import { SectionCard } from './ui/SectionCard'
@@ -7,6 +7,7 @@ import { FormField, inputClassName } from './ui/FormField'
 
 interface Props {
   register: UseFormRegister<OrderFormValues>
+  errors: FieldErrors<OrderFormValues>
   watch: UseFormWatch<OrderFormValues>
   setValue: UseFormSetValue<OrderFormValues>
 }
@@ -130,7 +131,7 @@ function DentalArch({
   )
 }
 
-export function ToothSelectorSection({ register, watch, setValue }: Props) {
+export function ToothSelectorSection({ register, errors, watch, setValue }: Props) {
   const selected = watch('selectedTeeth') ?? []
   const mode = watch('toothMode')
 
@@ -178,8 +179,8 @@ export function ToothSelectorSection({ register, watch, setValue }: Props) {
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <FormField label="Shade" htmlFor="shade">
-          <input id="shade" list="vita-shades" {...register('shade')} className={inputClassName()} placeholder="e.g. A2" />
+        <FormField label="Shade" htmlFor="shade" required error={errors.shade?.message}>
+          <input id="shade" list="vita-shades" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. A2" />
           <datalist id="vita-shades">
             {VITA_SHADES.map((s) => (
               <option key={s} value={s} />

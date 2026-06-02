@@ -208,7 +208,7 @@ export default function OrderForm() {
         <form onSubmit={onSubmit} noValidate className="space-y-4 md:space-y-6">
           <OrderInfoSection {...formProps} />
           <TreatmentTypeSection register={register} watch={watch} setValue={setValue} />
-          <ToothSelectorSection register={register} watch={watch} setValue={setValue} />
+          <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} />
           <InstructionsSection register={register} watch={watch} />
           <FileUploadSection
             orderNo={sessionOrderNo}

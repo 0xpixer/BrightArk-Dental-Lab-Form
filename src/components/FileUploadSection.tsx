@@ -129,12 +129,12 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
   }, [])
 
   return (
-    <SectionCard title="Upload Files" id="file-upload" className="!border-accent/20">
+    <SectionCard title="Upload Files" id="file-upload" className="!border-primary/20">
       <div className="space-y-6">
         {FILE_SLOT_GROUPS.map((group) => (
           <div key={group.heading}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-accent">{group.heading}</h3>
+              <h3 className="text-sm font-semibold text-primary">{group.heading}</h3>
               {group.tooltip && <Tooltip text={group.tooltip} />}
             </div>
             {group.note && (

@@ -56,7 +56,7 @@ export const orderFormSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   phone: z.string().optional(),
   address: z.string().min(1, 'Address is required'),
-  patientDob: z.string().optional(),
+  patientDob: z.string().min(1, 'Patient DOB is required'),
   sex: z.enum(['male', 'female', '']).optional(),
   dateRequired: z.string().optional(),
   oldOrderNo: z.string().optional(),
@@ -99,7 +99,7 @@ export const orderFormSchema = z.object({
 
   selectedTeeth: z.array(z.number()),
   toothMode: z.enum(['single', 'bridge']),
-  shade: z.string().optional(),
+  shade: z.string().min(1, 'Shade is required'),
   stumpShade: z.string().optional(),
   occlusalStain: z.enum(['none', 'light', 'medium', 'heavy']),
   restOn: z.string().optional(),
