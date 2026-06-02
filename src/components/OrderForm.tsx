@@ -45,7 +45,13 @@ export default function OrderForm() {
 
   useEffect(() => {
     const draft = loadDraft()
-    if (draft) reset(draft)
+    if (draft) {
+      reset({
+        ...defaultFormValues,
+        ...draft,
+        treatmentCategory: draft.treatmentCategory || defaultFormValues.treatmentCategory,
+      })
+    }
   }, [loadDraft, reset])
 
   useEffect(() => {

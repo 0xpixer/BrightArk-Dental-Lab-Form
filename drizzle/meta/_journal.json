@@ -15,6 +15,13 @@
       "when": 1780151864089,
       "tag": "0001_mushy_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780328489893,
+      "tag": "0002_yellow_longshot",
+      "breakpoints": true
     }
   ]
 }

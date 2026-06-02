@@ -44,6 +44,7 @@ function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
       }
     case 'implant':
       return {
+        implantSeries: values.implantSeries,
         implantBrand: values.implantBrand,
         implantSystem: values.implantSystem,
         implantSize: values.implantSize,
@@ -53,9 +54,7 @@ function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
     case 'fixed':
       return {
         fixedType: values.fixedType,
-        fixedTypeOther: values.fixedTypeOther,
-        fixedMaterial: values.fixedMaterial,
-        fixedMaterialOther: values.fixedMaterialOther,
+        fixedSubDetail: values.fixedSubDetail,
         marginDesign: values.marginDesign,
         marginMetalLingualMm: values.marginMetalLingualMm,
         marginOther: values.marginOther,
@@ -113,10 +112,13 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
     dateSent,
     dentist: payload.dentist,
     clinic: payload.clinic,
+    email: payload.email,
+    phone: payload.phone || null,
+    address: payload.address,
     patientName: payload.patient,
     patientDob,
     sex: formatSex(payload.sex),
-    dateRequired: defaultDateRequired(),
+    dateRequired: parseDateDDMMYYYY(payload.dateRequired) || defaultDateRequired(),
     isRepair: payload.repair,
     isRedo: payload.redo,
     isUrgent: payload.urgent,

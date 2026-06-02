@@ -21,9 +21,9 @@ const CATEGORY_LABELS: Record<TreatmentCategory, string> = {
 
 const CATEGORY_FIELDS: Record<TreatmentCategory, (keyof OrderFormValues)[]> = {
   orthodontics: ['orthodontics', 'nightGuardType', 'orthodonticsOther', 'allergies', 'looseTooth', 'toothDecay'],
-  implant: ['implantBrand', 'implantSystem', 'implantSize', 'implantType', 'implantOther'],
+  implant: ['implantSeries', 'implantBrand', 'implantSystem', 'implantSize', 'implantType', 'implantOther'],
   fixed: [
-    'fixedType', 'fixedTypeOther', 'fixedMaterial', 'fixedMaterialOther',
+    'fixedType', 'fixedSubDetail',
     'marginDesign', 'marginMetalLingualMm', 'marginOther',
     'ponticDesign', 'interproximal', 'occlusalContact', 'insufficientRoom', 'insufficientRoomSub',
   ],
@@ -101,11 +101,6 @@ const IMPLANT_OPTIONS = [
   'Ti-base Overdenture', 'Framework', 'Others',
 ]
 
-const FIXED_TYPES = ['Crown', 'Veneer', 'Inlay/Onlay', 'Post-core', 'Maryland Bridge', 'Others']
-const FIXED_MATERIALS = [
-  'PFM', 'Full Metal', 'Zirconia Full Contour', 'Zirconia with Layered',
-  'E-max', 'E-max with Layered', 'Others',
-]
 const MARGIN_OPTIONS = [
   'Metal Lingual', '360° Metal', '3/4 Metal', 'Full Metal', '180° Porcelain', '360° Porcelain', 'Others',
 ]
@@ -209,6 +204,35 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
 
         {category === 'implant' && (
           <div key="implant" className="panel-fade-in space-y-3 rounded-card border border-border bg-bg p-4">
+            <label className="block">
+              <span className="text-xs font-semibold text-secondary">Implant Series</span>
+              <select
+                {...register('implantSeries')}
+                className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+              >
+                <option value="">-- Select Implant Series --</option>
+                {[
+                  'Layered Zirconia Crown over Implant (Ti-base+100$/unit)',
+                  'Full Coutour Zirconia Crown over Implant (Ti-base+100$/unit)',
+                  'PFM Non-precious Crown over Implant',
+                  'PFM Noble&High Noble Crown over Implant *',
+                  'All-on-4 Zirconia Denture(tibase 25/unit)',
+                  'PFM Non-precious Crown over Implant Metal Try-in',
+                  'PFM Noble&High Noble Crown over Implant Metal Try-in *',
+                  'PFM Non-precious Crown over Implant Porcelain Finish',
+                  'PFM Noble&High Noble Crown over Implant Porcelain Finish',
+                  'Analog',
+                  'Casted Plastic Sleeve Abutment(including screw)',
+                  'CAD/CAM Pure Titanium Custom Abutment(including screw)',
+                  'CAD/CAM Zirconia Custom Abutment(including screw) zirconia abutment on ti base',
+                  'Custom Implant Bar (Titanium / N.P.) 1--6 Abutments',
+                  'Custom Implant Bar (Titanium / N.P.) 7--14 Abutments',
+                ].map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </label>
+
             <div className="space-y-2">
               {(['implantBrand', 'implantSystem', 'implantSize'] as const).map((field) => (
                 <label key={field} className="block">
@@ -232,24 +256,123 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
 
         {category === 'fixed' && (
           <div key="fixed" className="panel-fade-in space-y-3 rounded-card border border-border bg-bg p-4">
-            <p className="text-xs font-semibold text-secondary">Type</p>
-            <div className="space-y-1">
-              {FIXED_TYPES.map((opt) => (
-                <RadioOption key={opt} name="fixedType" value={opt} label={opt} register={register} current={watch('fixedType') ?? ''} />
-              ))}
-            </div>
-            {watch('fixedType') === 'Others' && (
-              <input {...register('fixedTypeOther')} placeholder="Specify..." className={inputClassName()} />
+            <label className="block">
+              <span className="text-xs font-semibold text-secondary">Type</span>
+              <select
+                {...register('fixedType')}
+                className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                onChange={(e) => {
+                  setValue('fixedType', e.target.value)
+                  setValue('fixedSubDetail', '') // reset child selection
+                }}
+              >
+                <option value="">-- Select Type --</option>
+                <option value="All Ceramic">All Ceramic</option>
+                <option value="PFM">PFM</option>
+                <option value="Full Metal">Full Metal</option>
+              </select>
+            </label>
+
+            {watch('fixedType') === 'All Ceramic' && (
+              <div className="space-y-2">
+                <label className="block">
+                  <span className="text-xs font-medium text-text-muted">All Ceramic Sub-Detail</span>
+                  <select
+                    {...register('fixedSubDetail')}
+                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                  >
+                    <option value="">-- Select Sub-Detail --</option>
+                    {[
+                      'Full/Solid E.max crown',
+                      'Layered Zirconia Crown/Bridge',
+                      'Full Coutour / Solid Zirconia Crown',
+                      'Emax Press Porcelain Crown',
+                      'Emax Veneer/Inlay/Onlay',
+                      'E.max Wing',
+                      'E.max post&core',
+                      'Over 6-unit Zirconia Bridge',
+                      'Full Coutour Zirconia/Solid Crown(self-designed)',
+                      'Full Coutour Emax/Solid Crown(self-designed)',
+                      'Noritake Katana UTML Zirconia Crown (<3 units)',
+                      'Porcelain Build-up Only',
+                      'Zirconia-Coping Only',
+                      'Zirconia Wing',
+                      'Zirconia Post Core',
+                    ].map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             )}
 
-            <p className="text-xs font-semibold text-secondary">Material</p>
-            <div className="space-y-1">
-              {FIXED_MATERIALS.map((opt) => (
-                <RadioOption key={opt} name="fixedMaterial" value={opt} label={opt} register={register} current={watch('fixedMaterial') ?? ''} />
-              ))}
-            </div>
-            {watch('fixedMaterial') === 'Others' && (
-              <input {...register('fixedMaterialOther')} placeholder="Specify..." className={inputClassName()} />
+            {watch('fixedType') === 'PFM' && (
+              <div className="space-y-2">
+                <label className="block">
+                  <span className="text-xs font-medium text-text-muted">PFM Sub-Detail</span>
+                  <select
+                    {...register('fixedSubDetail')}
+                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                  >
+                    <option value="">-- Select Sub-Detail --</option>
+                    {[
+                      'PFM Non-precious (Argen Cr. Co)',
+                      'PFM Semi-precious(Argen) *',
+                      'Porcelain to White Precious-40% *',
+                      'Porcelain to Yellow Precious-74% *',
+                      'Maryland Bridge Non-precious',
+                      'Maryland Bridge Noble&High Noble *',
+                      'Additional Non-precious Wing',
+                      'PFM Non-precious&Post Core one piece',
+                      'Noble PFM&Post Core one piece *',
+                      'PFM Non-precious Metal Try-in (apply porcelain later)',
+                      'PFM Semi-precious Metal Try-in (Argen) *',
+                      'PFM Noble&High Noble Metal Try-in(Argen) *',
+                      'Apply Porcelain Only (metal coping made by factory)',
+                      'Apply Porcelain Only (NO metal coping)',
+                    ].map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </label>
+                <p className="text-xs italic text-primary/80 mt-1">
+                  *Porcelain Alloy Additional: Weight+15%
+                </p>
+              </div>
+            )}
+
+            {watch('fixedType') === 'Full Metal' && (
+              <div className="space-y-2">
+                <label className="block">
+                  <span className="text-xs font-medium text-text-muted">Full Metal Sub-Detail</span>
+                  <select
+                    {...register('fixedSubDetail')}
+                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                  >
+                    <option value="">-- Select Sub-Detail --</option>
+                    {[
+                      'Full Cast Non-precious (Argen Cr. Co)',
+                      'Full Cast Semi-precious(Argen) *',
+                      'Full Yellow Gold Crown/Inlay/Onlay-Y+ *',
+                      'Full Yellow Gold Crown/Inlay/Onlay-20% *',
+                      'Full Yellow Gold Crown/Inlay/Onlay-52% *',
+                      'NP Inlay/Onlay/Post',
+                      'Noble&High Noble Inlay/Onlay/Post *',
+                      'Titanium post',
+                      'Metal Post & Core with key',
+                      'Gold plated',
+                      'Metal Rest',
+                      'NPG(No gold) Crown/Inlay/Onlay',
+                      'NPG+2 (2% AU) Crown/Inlay/Onlay',
+                    ].map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </label>
+                <p className="text-xs italic text-primary/80 mt-1">
+                  *Metal Alloy Additional: Weight+15%. Alloy charged by per gram, cost per crown depends on the weight
+                </p>
+              </div>
             )}
 
             <p className="text-xs font-semibold text-secondary">Margin Design</p>

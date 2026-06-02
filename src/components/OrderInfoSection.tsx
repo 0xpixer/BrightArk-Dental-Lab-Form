@@ -45,6 +45,19 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
           </FormField>
         </div>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Email" htmlFor="email" required error={errors.email?.message}>
+            <input type="email" id="email" {...register('email')} className={orderInputClassName(!!errors.email)} />
+          </FormField>
+          <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
+            <input id="phone" {...register('phone')} className={orderInputClassName(!!errors.phone)} />
+          </FormField>
+        </div>
+
+        <FormField label="Address" htmlFor="address" required error={errors.address?.message}>
+          <input id="address" {...register('address')} className={orderInputClassName(!!errors.address)} />
+        </FormField>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
           <FormField
             label="Patient Name"
@@ -111,6 +124,25 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
             />
           </div>
         </div>
+
+        <FormField label="Date Required" htmlFor="dateRequired" error={errors.dateRequired?.message} className="max-w-sm">
+          <Controller
+            name="dateRequired"
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                id="dateRequired"
+                selected={parseDate(field.value ?? '')}
+                onChange={(date: Date | null) => field.onChange(formatDate(date))}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="DD/MM/YYYY (Optional)"
+                className={orderInputClassName(!!errors.dateRequired)}
+                showPopperArrow={false}
+                minDate={new Date()}
+              />
+            )}
+          />
+        </FormField>
 
         {redo && (
           <FormField label="Old Order No" htmlFor="oldOrderNo" className="max-w-sm">

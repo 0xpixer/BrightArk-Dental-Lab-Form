@@ -53,8 +53,12 @@ export const orderFormSchema = z.object({
   dentist: z.string().min(1, 'Dentist name is required'),
   patient: z.string().min(1, 'Patient name is required'),
   clinic: z.string().min(1, 'Clinic name is required'),
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  phone: z.string().optional(),
+  address: z.string().min(1, 'Address is required'),
   patientDob: z.string().optional(),
   sex: z.enum(['male', 'female', '']).optional(),
+  dateRequired: z.string().optional(),
   oldOrderNo: z.string().optional(),
 
   orthodontics: z.string().optional(),
@@ -64,6 +68,7 @@ export const orderFormSchema = z.object({
   looseTooth: z.enum(['yes', 'no', '']).optional(),
   toothDecay: z.enum(['yes', 'no', '']).optional(),
 
+  implantSeries: z.string().optional(),
   implantBrand: z.string().optional(),
   implantSystem: z.string().optional(),
   implantSize: z.string().optional(),
@@ -72,6 +77,7 @@ export const orderFormSchema = z.object({
 
   fixedType: z.string().optional(),
   fixedTypeOther: z.string().optional(),
+  fixedSubDetail: z.string().optional(),
   fixedMaterial: z.string().optional(),
   fixedMaterialOther: z.string().optional(),
   marginDesign: z.string().optional(),
@@ -105,15 +111,19 @@ export const orderFormSchema = z.object({
 export type OrderFormValues = z.infer<typeof orderFormSchema>
 
 export const defaultFormValues: OrderFormValues = {
-  treatmentCategory: '',
+  treatmentCategory: 'fixed',
   repair: false,
   redo: false,
   urgent: false,
   dentist: '',
   patient: '',
   clinic: '',
+  email: '',
+  phone: '',
+  address: '',
   patientDob: '',
   sex: '',
+  dateRequired: '',
   oldOrderNo: '',
 
   orthodontics: '',
@@ -123,6 +133,7 @@ export const defaultFormValues: OrderFormValues = {
   looseTooth: '',
   toothDecay: '',
 
+  implantSeries: '',
   implantBrand: '',
   implantSystem: '',
   implantSize: '',
@@ -131,6 +142,7 @@ export const defaultFormValues: OrderFormValues = {
 
   fixedType: '',
   fixedTypeOther: '',
+  fixedSubDetail: '',
   fixedMaterial: '',
   fixedMaterialOther: '',
   marginDesign: '',

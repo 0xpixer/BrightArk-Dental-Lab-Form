@@ -8,9 +8,9 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as OrderApiPayload
 
-    if (!body.dentist || !body.clinic || !body.patient) {
+    if (!body.dentist || !body.clinic || !body.patient || !body.email || !body.address) {
       return NextResponse.json(
-        { success: false, error: 'Dentist, clinic, and patient name are required' },
+        { success: false, error: 'Dentist, clinic, email, address, and patient name are required' },
         { status: 400 },
       )
     }

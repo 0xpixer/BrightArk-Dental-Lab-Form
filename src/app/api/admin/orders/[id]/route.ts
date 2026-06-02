@@ -46,6 +46,9 @@ export async function PATCH(
   if (body.status !== undefined) updateData.status = body.status
   if (body.dentist !== undefined) updateData.dentist = body.dentist
   if (body.clinic !== undefined) updateData.clinic = body.clinic
+  if (body.email !== undefined) updateData.email = body.email
+  if (body.phone !== undefined) updateData.phone = body.phone || null
+  if (body.address !== undefined) updateData.address = body.address
   if (body.patientName !== undefined) updateData.patientName = body.patientName
   if (body.patientDob !== undefined) updateData.patientDob = body.patientDob
   if (body.sex !== undefined) updateData.sex = body.sex

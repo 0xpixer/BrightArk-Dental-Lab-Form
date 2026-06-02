@@ -14,6 +14,9 @@ interface Order {
   dateSent: string
   dentist: string
   clinic: string
+  email: string
+  phone: string | null
+  address: string
   patientName: string
   patientDob: string
   sex: string | null
@@ -127,9 +130,13 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
               setDraft({
                 dentist: order.dentist,
                 clinic: order.clinic,
+                email: order.email,
+                phone: order.phone ?? '',
+                address: order.address,
                 patientName: order.patientName,
                 patientDob: order.patientDob,
                 sex: order.sex ?? '',
+                dateRequired: order.dateRequired,
                 isRepair: order.isRepair,
                 isRedo: order.isRedo,
                 isUrgent: order.isUrgent,
@@ -141,7 +148,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           >
             {editingSection === 'info' ? (
               <div className="grid grid-cols-2 gap-3">
-                {(['dentist', 'clinic', 'patientName', 'patientDob', 'sex', 'oldOrderNo'] as const).map((f) => (
+                {(['dentist', 'clinic', 'email', 'phone', 'address', 'patientName', 'patientDob', 'sex', 'dateRequired', 'oldOrderNo'] as const).map((f) => (
                   <label key={f} className="block text-xs">
                     <span className="font-medium capitalize">{f.replace(/([A-Z])/g, ' $1')}</span>
                     <input
@@ -168,9 +175,13 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
               <dl className="grid grid-cols-2 gap-2 text-sm">
                 <Field label="Dentist" value={order.dentist} />
                 <Field label="Clinic" value={order.clinic} />
+                <Field label="Email" value={order.email} />
+                <Field label="Phone" value={order.phone ?? '—'} />
+                <Field label="Address" value={order.address} />
                 <Field label="Patient" value={order.patientName} />
                 <Field label="DOB" value={order.patientDob} />
                 <Field label="Sex" value={order.sex ?? '—'} />
+                <Field label="Date Required" value={order.dateRequired} />
                 <Field label="Flags" value={[order.isRepair && 'Repair', order.isRedo && 'Redo', order.isUrgent && 'Urgent'].filter(Boolean).join(', ') || '—'} />
                 {order.oldOrderNo && <Field label="Old Order No" value={order.oldOrderNo} />}
               </dl>
