@@ -49,4 +49,4 @@ npm run db:studio     # drizzle-kit studio
 
 ## Deploy
 
-Deploy to Vercel — the project is configured for Next.js with serverless API routes.
+Deploy to Vercel — the project is configured for Next.js with serverless API routes. The build script runs Drizzle migrations before `next build`, so `DATABASE_URL` must be available in the deployment environment.
