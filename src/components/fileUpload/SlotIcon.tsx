@@ -34,14 +34,6 @@ export function SlotIcon({ type }: { type: FileSlotConfig['icon'] }) {
           <path d="M12 44 L28 30 L40 38 L52 26" stroke={stroke} strokeWidth="1.5" fill="none" />
         </svg>
       )
-    case 'xray':
-      return (
-        <svg viewBox="0 0 64 64" className="h-14 w-14" aria-hidden>
-          <rect x="10" y="10" width="44" height="44" rx="4" fill={fill} stroke={stroke} strokeWidth="1.5" />
-          <ellipse cx="32" cy="32" rx="14" ry="10" fill="none" stroke={stroke} strokeWidth="1.5" />
-          <path d="M20 32 H44 M32 20 V44" stroke={stroke} strokeWidth="1" opacity="0.5" />
-        </svg>
-      )
     case 'intraoral':
       return (
         <svg viewBox="0 0 64 64" className="h-14 w-14" aria-hidden>

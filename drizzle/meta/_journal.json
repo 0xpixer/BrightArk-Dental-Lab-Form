@@ -22,6 +22,13 @@
       "when": 1780328489893,
       "tag": "0002_yellow_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780490920831,
+      "tag": "0003_rainy_zaran",
+      "breakpoints": true
     }
   ]
 }

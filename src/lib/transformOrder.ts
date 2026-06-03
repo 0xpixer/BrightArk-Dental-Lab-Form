@@ -86,8 +86,6 @@ function buildToothSelection(values: OrderFormValues): Record<string, unknown> {
     shade: values.shade,
     stumpShade: values.stumpShade,
     occlusalStain: values.occlusalStain,
-    restOn: values.restOn,
-    claspOn: values.claspOn,
   }
 }
 
@@ -101,10 +99,6 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
   const dateSent = new Date()
   const patientDob = parseDateDDMMYYYY(payload.patientDob)
 
-  if (!patientDob) {
-    throw new Error('Patient DOB is required and must be in DD/MM/YYYY format')
-  }
-
   const category = payload.treatmentCategory as TreatmentCategory | ''
   const treatmentType = category ? TREATMENT_TYPE_LABELS[category] : null
 
@@ -114,10 +108,12 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
     dentist: payload.dentist,
     clinic: payload.clinic,
     email: payload.email,
+    altEmail: payload.altEmail || null,
     phone: payload.phone || null,
     address: payload.address,
     patientName: payload.patient,
     patientDob,
+    patientAge: payload.patientAge || null,
     sex: formatSex(payload.sex),
     dateRequired: parseDateDDMMYYYY(payload.dateRequired) || defaultDateRequired(),
     isRepair: payload.repair,

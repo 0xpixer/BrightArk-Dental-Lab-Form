@@ -1,6 +1,6 @@
+import { Controller, type Control, type FieldErrors, type UseFormRegister, type UseFormWatch, type UseFormSetValue } from 'react-hook-form'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { Controller, type Control, type FieldErrors, type UseFormRegister, type UseFormWatch, type UseFormSetValue } from 'react-hook-form'
 import type { OrderFormValues } from '../types/orderForm'
 import { FormField, orderInputClassName } from './ui/FormField'
 import { ToggleChip } from './ui/ToggleChip'
@@ -50,14 +50,19 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
           <FormField label="Email" htmlFor="email" required error={errors.email?.message}>
             <input type="email" id="email" {...register('email')} className={orderInputClassName(!!errors.email)} />
           </FormField>
-          <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
-            <input id="phone" {...register('phone')} className={orderInputClassName(!!errors.phone)} />
+          <FormField label="Alt Email" htmlFor="altEmail" error={errors.altEmail?.message}>
+            <input type="email" id="altEmail" {...register('altEmail')} className={orderInputClassName(!!errors.altEmail)} />
           </FormField>
         </div>
 
-        <FormField label="Address" htmlFor="address" required error={errors.address?.message}>
-          <input id="address" {...register('address')} className={orderInputClassName(!!errors.address)} />
-        </FormField>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
+            <input id="phone" {...register('phone')} className={orderInputClassName(!!errors.phone)} />
+          </FormField>
+          <FormField label="Address" htmlFor="address" required error={errors.address?.message}>
+            <input id="address" {...register('address')} className={orderInputClassName(!!errors.address)} />
+          </FormField>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
           <FormField
@@ -70,22 +75,13 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
             <input id="patient" {...register('patient')} className={orderInputClassName(!!errors.patient)} />
           </FormField>
 
-          <FormField label="Patient DOB" htmlFor="patientDob" required error={errors.patientDob?.message} className="lg:col-span-4">
-            <Controller
-              name="patientDob"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  id="patientDob"
-                  selected={parseDate(field.value ?? '')}
-                  onChange={(date: Date | null) => field.onChange(formatDate(date))}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="DD/MM/YYYY"
-                  className={orderInputClassName(!!errors.patientDob)}
-                  showPopperArrow={false}
-                  maxDate={new Date()}
-                />
-              )}
+          <FormField label="Patient Age" htmlFor="patientAge" error={errors.patientAge?.message} className="lg:col-span-4">
+            <input
+              id="patientAge"
+              {...register('patientAge')}
+              inputMode="numeric"
+              placeholder="Optional"
+              className={orderInputClassName(!!errors.patientAge)}
             />
           </FormField>
 

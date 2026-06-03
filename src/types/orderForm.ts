@@ -1,12 +1,5 @@
 import { z } from 'zod'
 
-export const VITA_SHADES = [
-  'A1', 'A2', 'A3', 'A3.5', 'A4',
-  'B1', 'B2', 'B3', 'B4',
-  'C1', 'C2', 'C3', 'C4',
-  'D2', 'D3', 'D4',
-] as const
-
 export const TREATMENT_CATEGORIES = [
   'orthodontics',
   'implant',
@@ -24,9 +17,8 @@ export const FILE_SLOT_IDS = [
   'frontal-view',
   'frontal-smile',
   'profile-view',
-  'panoramic-xray',
-  'lateral-ceph',
   'upper-arch',
+  'shade-tab',
   '45-central',
   'right-occlusal',
   'central-occlusal',
@@ -54,9 +46,11 @@ export const orderFormSchema = z.object({
   patient: z.string().min(1, 'Patient name is required'),
   clinic: z.string().min(1, 'Clinic name is required'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  altEmail: z.string().email('Invalid alternate email address').or(z.literal('')).optional(),
   phone: z.string().optional(),
   address: z.string().min(1, 'Address is required'),
-  patientDob: z.string().min(1, 'Patient DOB is required'),
+  patientAge: z.string().optional(),
+  patientDob: z.string().optional(),
   sex: z.enum(['male', 'female', '']).optional(),
   dateRequired: z.string().optional(),
   oldOrderNo: z.string().optional(),
@@ -102,8 +96,6 @@ export const orderFormSchema = z.object({
   shade: z.string().min(1, 'Shade is required'),
   stumpShade: z.string().optional(),
   occlusalStain: z.enum(['none', 'light', 'medium', 'heavy']),
-  restOn: z.string().optional(),
-  claspOn: z.string().optional(),
 
   instructions: z.string().optional(),
 })
@@ -119,8 +111,10 @@ export const defaultFormValues: OrderFormValues = {
   patient: '',
   clinic: '',
   email: '',
+  altEmail: '',
   phone: '',
   address: '',
+  patientAge: '',
   patientDob: '',
   sex: '',
   dateRequired: '',
@@ -167,8 +161,6 @@ export const defaultFormValues: OrderFormValues = {
   shade: '',
   stumpShade: '',
   occlusalStain: 'none',
-  restOn: '',
-  claspOn: '',
 
   instructions: '',
 }

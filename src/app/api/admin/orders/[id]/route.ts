@@ -47,10 +47,12 @@ export async function PATCH(
   if (body.dentist !== undefined) updateData.dentist = body.dentist
   if (body.clinic !== undefined) updateData.clinic = body.clinic
   if (body.email !== undefined) updateData.email = body.email
+  if (body.altEmail !== undefined) updateData.altEmail = body.altEmail || null
   if (body.phone !== undefined) updateData.phone = body.phone || null
   if (body.address !== undefined) updateData.address = body.address
   if (body.patientName !== undefined) updateData.patientName = body.patientName
-  if (body.patientDob !== undefined) updateData.patientDob = body.patientDob
+  if (body.patientDob !== undefined) updateData.patientDob = body.patientDob || null
+  if (body.patientAge !== undefined) updateData.patientAge = body.patientAge || null
   if (body.sex !== undefined) updateData.sex = body.sex
   if (body.dateRequired !== undefined) updateData.dateRequired = body.dateRequired
   if (body.isRepair !== undefined) updateData.isRepair = body.isRepair

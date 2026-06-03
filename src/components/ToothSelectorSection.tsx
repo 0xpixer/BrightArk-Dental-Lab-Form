@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import type { FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import type { OrderFormValues } from '../types/orderForm'
-import { VITA_SHADES } from '../types/orderForm'
 import { SectionCard } from './ui/SectionCard'
 import { FormField, inputClassName } from './ui/FormField'
 
@@ -195,12 +194,7 @@ export function ToothSelectorSection({ register, errors, watch, setValue }: Prop
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <FormField label="Shade" htmlFor="shade" required error={errors.shade?.message}>
-          <input id="shade" list="vita-shades" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. A2" />
-          <datalist id="vita-shades">
-            {VITA_SHADES.map((s) => (
-              <option key={s} value={s} />
-            ))}
-          </datalist>
+          <input id="shade" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. VITA A2" />
         </FormField>
         <FormField label="Stump Shade" htmlFor="stumpShade">
           <input id="stumpShade" {...register('stumpShade')} className={inputClassName()} />
@@ -223,12 +217,6 @@ export function ToothSelectorSection({ register, errors, watch, setValue }: Prop
             ))}
           </div>
         </fieldset>
-        <FormField label="Rest on" htmlFor="restOn">
-          <input id="restOn" {...register('restOn')} className={inputClassName()} />
-        </FormField>
-        <FormField label="Clasp on" htmlFor="claspOn" className="sm:col-span-2">
-          <input id="claspOn" {...register('claspOn')} className={inputClassName()} />
-        </FormField>
       </div>
     </SectionCard>
   )

@@ -46,10 +46,14 @@ export default function OrderForm() {
   useEffect(() => {
     const draft = loadDraft()
     if (draft) {
+      const treatmentCategory =
+        draft.treatmentCategory === 'removable'
+          ? defaultFormValues.treatmentCategory
+          : draft.treatmentCategory || defaultFormValues.treatmentCategory
       reset({
         ...defaultFormValues,
         ...draft,
-        treatmentCategory: draft.treatmentCategory || defaultFormValues.treatmentCategory,
+        treatmentCategory,
       })
     }
   }, [loadDraft, reset])
@@ -89,10 +93,10 @@ export default function OrderForm() {
     const upper = files['upper-model']
     const lower = files['lower-model']
     if (!upper || upper.status !== 'success' || !upper.blobUrl) {
-      next.upperModel = 'Upper Model is required'
+      next.upperModel = 'Upper Arch is required'
     }
     if (!lower || lower.status !== 'success' || !lower.blobUrl) {
-      next.lowerModel = 'Lower Model is required'
+      next.lowerModel = 'Lower Arch is required'
     }
     setFileErrors(next)
     return !next.upperModel && !next.lowerModel

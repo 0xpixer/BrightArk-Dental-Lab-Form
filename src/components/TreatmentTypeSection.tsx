@@ -19,6 +19,8 @@ const CATEGORY_LABELS: Record<TreatmentCategory, string> = {
   removable: 'Removable Restoration',
 }
 
+const VISIBLE_TREATMENT_CATEGORIES = TREATMENT_CATEGORIES.filter((cat) => cat !== 'removable')
+
 const CATEGORY_FIELDS: Record<TreatmentCategory, (keyof OrderFormValues)[]> = {
   orthodontics: ['orthodontics', 'nightGuardType', 'orthodonticsOther', 'allergies', 'looseTooth', 'toothDecay'],
   implant: ['implantSeries', 'implantBrand', 'implantSystem', 'implantSize', 'implantType', 'implantOther'],
@@ -92,8 +94,8 @@ function OptionGroup({
 }
 
 const ORTHO_OPTIONS = [
-  'Clear Aligner', 'Essix Retainer', 'Hawley Retainer', 'Space Maintainer',
-  'Frankle', 'Palatal Expander', 'Sports Guard', 'Night Guard', 'Snore Guard', 'Others',
+  'Hawley Retainer', 'Space Maintainer', 'Frankle', 'Palatal Expander',
+  'Sports Guard', 'Night Guard', 'Snore Guard', 'Others',
 ]
 
 const IMPLANT_OPTIONS = [
@@ -132,6 +134,7 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
   const removableType = watch('removableType')
   const marginDesign = watch('marginDesign')
   const insufficientRoom = watch('insufficientRoom')
+  const fixedType = watch('fixedType')
 
   const handleCategoryChange = useCallback(
     (next: TreatmentCategory) => {
@@ -147,8 +150,11 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
 
   return (
     <SectionCard title="Treatment Type" id="treatment-type">
+      <p className="mb-3 text-xs text-text-muted">
+        Digital dental impressions only. Physical impressions are not accepted.
+      </p>
       <div className="flex flex-wrap gap-1 rounded-card border border-border bg-bg p-1">
-        {TREATMENT_CATEGORIES.map((cat) => (
+        {VISIBLE_TREATMENT_CATEGORIES.map((cat) => (
           <button
             key={cat}
             type="button"
@@ -273,7 +279,7 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
               </select>
             </label>
 
-            {watch('fixedType') === 'All Ceramic' && (
+            {fixedType === 'All Ceramic' && (
               <div className="space-y-2">
                 <label className="block">
                   <span className="text-xs font-medium text-text-muted">All Ceramic Sub-Detail</span>
@@ -306,7 +312,7 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
               </div>
             )}
 
-            {watch('fixedType') === 'PFM' && (
+            {fixedType === 'PFM' && (
               <div className="space-y-2">
                 <label className="block">
                   <span className="text-xs font-medium text-text-muted">PFM Sub-Detail</span>
@@ -341,7 +347,7 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
               </div>
             )}
 
-            {watch('fixedType') === 'Full Metal' && (
+            {fixedType === 'Full Metal' && (
               <div className="space-y-2">
                 <label className="block">
                   <span className="text-xs font-medium text-text-muted">Full Metal Sub-Detail</span>
@@ -375,20 +381,24 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
               </div>
             )}
 
-            <p className="text-xs font-semibold text-secondary">Margin Design</p>
-            <div className="space-y-1">
-              {MARGIN_OPTIONS.map((opt) => (
-                <RadioOption key={opt} name="marginDesign" value={opt} label={opt} register={register} current={marginDesign ?? ''} />
-              ))}
-            </div>
-            {marginDesign === 'Metal Lingual' && (
-              <div className="flex items-center gap-1">
-                <input type="number" min={0} step={0.1} {...register('marginMetalLingualMm')} className={`w-16 ${inputClassName()}`} aria-label="Metal lingual mm" />
-                <span className="text-xs text-text-muted">mm</span>
+            {fixedType === 'PFM' && (
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-secondary">Margin Design</p>
+                <div className="mt-2 space-y-1">
+                  {MARGIN_OPTIONS.map((opt) => (
+                    <RadioOption key={opt} name="marginDesign" value={opt} label={opt} register={register} current={marginDesign ?? ''} />
+                  ))}
+                </div>
+                {marginDesign === 'Metal Lingual' && (
+                  <div className="mt-2 flex items-center gap-1">
+                    <input type="number" min={0} step={0.1} {...register('marginMetalLingualMm')} className={`w-16 ${inputClassName()}`} aria-label="Metal lingual mm" />
+                    <span className="text-xs text-text-muted">mm</span>
+                  </div>
+                )}
+                {marginDesign === 'Others' && (
+                  <input {...register('marginOther')} placeholder="Specify..." className={`mt-2 ${inputClassName()}`} />
+                )}
               </div>
-            )}
-            {marginDesign === 'Others' && (
-              <input {...register('marginOther')} placeholder="Specify..." className={inputClassName()} />
             )}
 
             <OptionGroup

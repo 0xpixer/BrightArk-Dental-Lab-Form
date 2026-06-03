@@ -5,7 +5,7 @@ export interface FileSlotConfig {
   label: string
   required?: boolean
   accept: string
-  icon: 'scan' | 'photo' | 'xray' | 'intraoral' | 'buccal'
+  icon: 'scan' | 'photo' | 'intraoral' | 'buccal'
   formatBadge?: string
 }
 
@@ -21,8 +21,8 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
     heading: 'Oral Scans',
     note: 'Do not upload back-cover scan files',
     slots: [
-      { id: 'upper-model', label: 'Upper Model', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
-      { id: 'lower-model', label: 'Lower Model', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
+      { id: 'upper-model', label: 'Upper Arch', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
+      { id: 'lower-model', label: 'Lower Arch', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
       { id: 'left-buccal', label: 'Left Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
       { id: 'right-buccal', label: 'Right Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
     ],
@@ -37,18 +37,11 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
     ],
   },
   {
-    heading: 'X-ray',
-    tooltip: 'JPG/JPEG/PNG only',
-    slots: [
-      { id: 'panoramic-xray', label: 'Panoramic X-ray', accept: 'image/jpeg,image/png,image/jpg', icon: 'xray' },
-      { id: 'lateral-ceph', label: 'Lateral Ceph', accept: 'image/jpeg,image/png,image/jpg', icon: 'xray' },
-    ],
-  },
-  {
     heading: 'Intraoral Photos',
     tooltip: 'JPG/JPEG/PNG only',
     slots: [
       { id: 'upper-arch', label: 'Upper Arch', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
+      { id: 'shade-tab', label: 'Tooth with Shade Tab', accept: 'image/jpeg,image/png,image/jpg', icon: 'photo' },
       { id: '45-central', label: '45° Central', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
       { id: 'right-occlusal', label: 'Right (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
       { id: 'central-occlusal', label: 'Central (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
