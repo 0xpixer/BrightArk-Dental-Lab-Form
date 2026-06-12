@@ -62,6 +62,10 @@ export function generateOrderPdfBuffer(order: Order): Promise<Buffer> {
       addSection(doc, 'Instructions', [order.instructions])
     }
 
+    if (order.cloudDriveLink) {
+      addSection(doc, 'Cloud Drive Link', [order.cloudDriveLink])
+    }
+
     const fileUrls = order.fileUrls as Record<string, string> | null
     if (fileUrls && Object.keys(fileUrls).length > 0) {
       addSection(

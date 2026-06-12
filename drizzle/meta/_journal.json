@@ -29,6 +29,13 @@
       "when": 1780490920831,
       "tag": "0003_rainy_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781244559218,
+      "tag": "0004_shallow_talon",
+      "breakpoints": true
     }
   ]
 }

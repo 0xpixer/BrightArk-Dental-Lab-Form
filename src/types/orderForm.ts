@@ -98,6 +98,7 @@ export const orderFormSchema = z.object({
   occlusalStain: z.enum(['none', 'light', 'medium', 'heavy']),
 
   instructions: z.string().optional(),
+  cloudDriveLink: z.string().url('Enter a valid download link').or(z.literal('')).optional(),
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
@@ -163,6 +164,7 @@ export const defaultFormValues: OrderFormValues = {
   occlusalStain: 'none',
 
   instructions: '',
+  cloudDriveLink: '',
 }
 
 export const DRAFT_STORAGE_KEY = 'brightark-dental-lab-order-draft'

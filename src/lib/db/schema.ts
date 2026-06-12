@@ -33,6 +33,7 @@ export const orders = pgTable('orders', {
   toothSelection: jsonb('tooth_selection'),
   instructions: text('instructions'),
   fileUrls: jsonb('file_urls'),
+  cloudDriveLink: text('cloud_drive_link'),
   status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })

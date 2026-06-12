@@ -32,6 +32,7 @@ interface Order {
   toothSelection: Record<string, unknown> | null
   instructions: string | null
   fileUrls: Record<string, string> | null
+  cloudDriveLink: string | null
   status: string
   createdAt: string
 }
@@ -145,6 +146,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                 isRedo: order.isRedo,
                 isUrgent: order.isUrgent,
                 oldOrderNo: order.oldOrderNo ?? '',
+                cloudDriveLink: order.cloudDriveLink ?? '',
               })
             }}
             onSave={() => saveSection('Order Information')}
@@ -152,7 +154,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           >
             {editingSection === 'info' ? (
               <div className="grid grid-cols-2 gap-3">
-                {(['dentist', 'clinic', 'email', 'altEmail', 'phone', 'address', 'patientName', 'patientAge', 'patientDob', 'sex', 'dateRequired', 'oldOrderNo'] as const).map((f) => (
+                {(['dentist', 'clinic', 'email', 'altEmail', 'phone', 'address', 'patientName', 'patientAge', 'patientDob', 'sex', 'dateRequired', 'oldOrderNo', 'cloudDriveLink'] as const).map((f) => (
                   <label key={f} className="block text-xs">
                     <span className="font-medium capitalize">{f.replace(/([A-Z])/g, ' $1')}</span>
                     <input
@@ -190,6 +192,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                 <Field label="Date Required" value={order.dateRequired} />
                 <Field label="Flags" value={[order.isRepair && 'Repair', order.isRedo && 'Redo', order.isUrgent && 'Urgent'].filter(Boolean).join(', ') || '—'} />
                 {order.oldOrderNo && <Field label="Old Order No" value={order.oldOrderNo} />}
+                <Field label="Cloud Drive Link" value={order.cloudDriveLink ?? '—'} />
               </dl>
             )}
           </SectionCard>
@@ -238,6 +241,19 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
 
         <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-secondary">Uploaded Files</h2>
+          {order.cloudDriveLink && (
+            <div className="mb-4 rounded border border-primary/20 bg-primary/5 p-3">
+              <p className="text-xs font-semibold text-secondary">Cloud Drive Link</p>
+              <a
+                href={order.cloudDriveLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 block break-all text-xs text-primary underline"
+              >
+                {order.cloudDriveLink}
+              </a>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             {Object.entries(fileUrls).map(([slotId, url]) => {
               const label = SLOT_FOLDER_MAP[slotId]?.filename ?? slotId
@@ -258,8 +274,8 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                 </div>
               )
             })}
-            {Object.keys(fileUrls).length === 0 && (
-              <p className="text-sm text-text-muted">No files uploaded</p>
+            {Object.keys(fileUrls).length === 0 && !order.cloudDriveLink && (
+              <p className="text-sm text-text-muted">No files uploaded or linked</p>
             )}
           </div>
         </div>

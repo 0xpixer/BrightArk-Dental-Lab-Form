@@ -21,8 +21,8 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
     heading: 'Oral Scans',
     note: 'Do not upload back-cover scan files',
     slots: [
-      { id: 'upper-model', label: 'Upper Arch', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
-      { id: 'lower-model', label: 'Lower Arch', required: true, accept: '.obj,.ply,.stl', icon: 'scan' },
+      { id: 'upper-model', label: 'Upper Arch', accept: '.obj,.ply,.stl', icon: 'scan' },
+      { id: 'lower-model', label: 'Lower Arch', accept: '.obj,.ply,.stl', icon: 'scan' },
       { id: 'left-buccal', label: 'Left Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
       { id: 'right-buccal', label: 'Right Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
     ],

@@ -125,6 +125,7 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
     toothSelection: buildToothSelection(payload),
     instructions: payload.instructions || null,
     fileUrls: payload.file_urls ?? {},
+    cloudDriveLink: payload.cloudDriveLink || null,
     status: 'pending' as const,
   }
 }

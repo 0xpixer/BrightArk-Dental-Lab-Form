@@ -19,7 +19,6 @@ import { orderFormSchema, defaultFormValues, generateOrderNo, type OrderFormValu
 export default function OrderForm() {
   const [sessionOrderNo] = useState(() => generateOrderNo())
   const [files, setFiles] = useState<FilesState>({})
-  const [fileErrors, setFileErrors] = useState<{ upperModel?: string; lowerModel?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submittedOrderNo, setSubmittedOrderNo] = useState('')
@@ -88,27 +87,8 @@ export default function OrderForm() {
     return () => observer.disconnect()
   }, [])
 
-  const validateFiles = useCallback(() => {
-    const next: typeof fileErrors = {}
-    const upper = files['upper-model']
-    const lower = files['lower-model']
-    if (!upper || upper.status !== 'success' || !upper.blobUrl) {
-      next.upperModel = 'Upper Arch is required'
-    }
-    if (!lower || lower.status !== 'success' || !lower.blobUrl) {
-      next.lowerModel = 'Lower Arch is required'
-    }
-    setFileErrors(next)
-    return !next.upperModel && !next.lowerModel
-  }, [files])
-
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null)
-    const filesValid = validateFiles()
-    if (!filesValid) {
-      document.getElementById('file-upload')?.scrollIntoView({ behavior: 'smooth' })
-      return
-    }
 
     const file_urls = Object.fromEntries(
       Object.entries(files)
@@ -157,7 +137,6 @@ export default function OrderForm() {
     if (!confirm('Reset the entire form? This cannot be undone.')) return
     reset(defaultFormValues)
     setFiles({})
-    setFileErrors({})
     setSubmitted(false)
     setSubmitError(null)
     clearDraft()
@@ -218,7 +197,8 @@ export default function OrderForm() {
             orderNo={sessionOrderNo}
             files={files}
             onFilesChange={setFiles}
-            fileErrors={fileErrors}
+            register={register}
+            error={errors.cloudDriveLink?.message}
           />
 
           <SubmitSection

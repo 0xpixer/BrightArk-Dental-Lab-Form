@@ -3,8 +3,10 @@
 import { useCallback, useEffect } from 'react'
 import { upload } from '@vercel/blob/client'
 import { Info } from 'lucide-react'
-import type { FileSlotId } from '@/types/orderForm'
+import type { FieldError, UseFormRegister } from 'react-hook-form'
+import type { FileSlotId, OrderFormValues } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
+import { FormField, inputClassName } from './ui/FormField'
 import { FILE_SLOT_GROUPS } from './fileUpload/slotConfig'
 import { UploadSlotCard, type SlotFile } from './fileUpload/UploadSlotCard'
 import type { Dispatch, SetStateAction } from 'react'
@@ -15,7 +17,8 @@ interface FileUploadSectionProps {
   orderNo: string
   files: FilesState
   onFilesChange: Dispatch<SetStateAction<FilesState>>
-  fileErrors?: { upperModel?: string; lowerModel?: string }
+  register: UseFormRegister<OrderFormValues>
+  error?: FieldError['message']
 }
 
 function Tooltip({ text }: { text: string }) {
@@ -35,7 +38,7 @@ function slotGridClass(heading: string, slotCount: number): string {
   return 'grid-cols-2'
 }
 
-export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }: FileUploadSectionProps) {
+export function FileUploadSection({ orderNo, files, onFilesChange, register, error }: FileUploadSectionProps) {
   const uploadFile = useCallback(
     async (slotId: FileSlotId, file: File) => {
       const existing = files[slotId]
@@ -131,6 +134,19 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
   return (
     <SectionCard title="Upload Files" id="file-upload" className="!border-primary/20">
       <div className="space-y-6">
+        <FormField label="Cloud Drive Download Link" htmlFor="cloudDriveLink" error={error}>
+          <input
+            id="cloudDriveLink"
+            type="url"
+            placeholder="https://drive.google.com/..."
+            {...register('cloudDriveLink')}
+            className={inputClassName(!!error)}
+          />
+          <p className="mt-1 text-xs text-text-muted">
+            Optional. Use this for Google Drive, Dropbox, OneDrive, WeTransfer, or another shared download link.
+          </p>
+        </FormField>
+
         {FILE_SLOT_GROUPS.map((group) => (
           <div key={group.heading}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -146,10 +162,6 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
                   key={slot.id}
                   slot={slot}
                   slotFile={files[slot.id]}
-                  hasError={
-                    (slot.id === 'upper-model' && !!fileErrors?.upperModel) ||
-                    (slot.id === 'lower-model' && !!fileErrors?.lowerModel)
-                  }
                   onSelect={(file) => uploadFile(slot.id, file)}
                   onRemove={() => removeFile(slot.id)}
                   onRetry={() => {
@@ -159,16 +171,6 @@ export function FileUploadSection({ orderNo, files, onFilesChange, fileErrors }:
                 />
               ))}
             </div>
-            {group.slots.some((s) => s.id === 'upper-model') && fileErrors?.upperModel && (
-              <p role="alert" className="mt-1 text-xs text-red-600">
-                {fileErrors.upperModel}
-              </p>
-            )}
-            {group.slots.some((s) => s.id === 'lower-model') && fileErrors?.lowerModel && (
-              <p role="alert" className="mt-1 text-xs text-red-600">
-                {fileErrors.lowerModel}
-              </p>
-            )}
           </div>
         ))}
       </div>
