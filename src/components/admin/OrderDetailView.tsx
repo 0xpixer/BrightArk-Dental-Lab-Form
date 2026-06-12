@@ -7,6 +7,7 @@ import { StatusBadge } from './StatusBadge'
 import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
 import { SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
+import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
 
 interface Order {
   id: number
@@ -83,6 +84,8 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
   }
 
   const fileUrls = order.fileUrls ?? {}
+  const treatmentLines = formatDetailLines(order.treatmentData)
+  const toothSelectionLines = formatDetailLines(order.toothSelection)
 
   return (
     <>
@@ -200,17 +203,13 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           {order.treatmentType && (
             <SectionCard title="Treatment" editing={false} hideEdit>
               <p className="mb-2 text-sm font-medium text-secondary">{order.treatmentType}</p>
-              <pre className="overflow-auto rounded bg-bg p-3 text-xs text-text">
-                {JSON.stringify(order.treatmentData, null, 2)}
-              </pre>
+              <DetailList lines={treatmentLines} />
             </SectionCard>
           )}
 
           {order.toothSelection && (
             <SectionCard title="Tooth Selection & Shade" editing={false} hideEdit>
-              <pre className="overflow-auto rounded bg-bg p-3 text-xs text-text">
-                {JSON.stringify(order.toothSelection, null, 2)}
-              </pre>
+              <DetailList lines={toothSelectionLines} />
             </SectionCard>
           )}
 
@@ -293,6 +292,24 @@ function Field({ label, value }: { label: string; value: string }) {
       <dt className="text-xs text-text-muted">{label}</dt>
       <dd className="font-medium text-text">{value}</dd>
     </div>
+  )
+}
+
+function DetailList({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return <p className="text-sm text-text-muted">No details provided</p>
+
+  return (
+    <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+      {lines.map((line) => {
+        const [label, ...valueParts] = line.split(': ')
+        return (
+          <div key={line}>
+            <dt className="text-xs text-text-muted">{label}</dt>
+            <dd className="font-medium text-text">{valueParts.join(': ')}</dd>
+          </div>
+        )
+      })}
+    </dl>
   )
 }
 

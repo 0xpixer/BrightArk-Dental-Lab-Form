@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit'
 import type { Order } from '@/lib/db/schema'
+import { formatDetailLines } from './formatOrderDetails'
 
 function addSection(doc: InstanceType<typeof PDFDocument>, title: string, lines: string[]) {
   doc.fontSize(12).fillColor('#1E6DBF').text(title, { underline: true })
@@ -46,16 +47,19 @@ export function generateOrderPdfBuffer(order: Order): Promise<Buffer> {
     ])
 
     if (order.treatmentType) {
+      const treatmentLines = formatDetailLines(order.treatmentData as Record<string, unknown> | null)
       addSection(doc, 'Treatment', [
         `Type: ${order.treatmentType}`,
-        `Details: ${JSON.stringify(order.treatmentData ?? {}, null, 2)}`,
+        ...treatmentLines,
       ])
     }
 
     if (order.toothSelection) {
-      addSection(doc, 'Tooth Selection & Shade', [
-        JSON.stringify(order.toothSelection, null, 2),
-      ])
+      addSection(
+        doc,
+        'Tooth Selection & Shade',
+        formatDetailLines(order.toothSelection as Record<string, unknown> | null),
+      )
     }
 
     if (order.instructions) {
