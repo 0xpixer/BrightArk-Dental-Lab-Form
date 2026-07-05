@@ -45,17 +45,54 @@ function RadioOption({
   register: UseFormRegister<OrderFormValues>
   current: string
 }) {
+  const selected = current === value
+
   return (
-    <label className="flex cursor-pointer items-start gap-2 text-xs leading-snug">
+    <label
+      className={`flex min-h-10 cursor-pointer items-start gap-2 rounded-[6px] border px-2.5 py-2 text-xs leading-snug transition-colors duration-brand ${
+        selected
+          ? 'border-secondary bg-secondary/10 text-secondary'
+          : 'border-border bg-surface text-text hover:border-primary/60'
+      }`}
+    >
       <input
         type="radio"
         value={value}
         {...register(name)}
-        checked={current === value}
+        checked={selected}
         className="mt-0.5 accent-secondary"
       />
       <span>{label}</span>
     </label>
+  )
+}
+
+function RadioGrid({
+  name,
+  options,
+  register,
+  current,
+  columns = 'grid-cols-2 lg:grid-cols-3',
+}: {
+  name: keyof OrderFormValues
+  options: string[]
+  register: UseFormRegister<OrderFormValues>
+  current: string
+  columns?: string
+}) {
+  return (
+    <div className={`grid gap-2 ${columns}`}>
+      {options.map((opt) => (
+        <RadioOption
+          key={opt}
+          name={name}
+          value={opt}
+          label={opt}
+          register={register}
+          current={current}
+        />
+      ))}
+    </div>
   )
 }
 
@@ -75,9 +112,16 @@ function OptionGroup({
   return (
     <div className="border-t border-border pt-4">
       <h3 className="mb-2 text-xs font-semibold text-secondary">{title}</h3>
-      <div className="space-y-1.5">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
         {options.map((opt) => (
-          <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-xs">
+          <label
+            key={opt.value}
+            className={`flex min-h-10 cursor-pointer items-start gap-2 rounded-[6px] border px-2.5 py-2 text-xs leading-snug transition-colors duration-brand ${
+              current === opt.value
+                ? 'border-secondary bg-secondary/10 text-secondary'
+                : 'border-border bg-surface text-text hover:border-primary/60'
+            }`}
+          >
             <input
               type="radio"
               value={opt.value}
@@ -179,17 +223,18 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
 
         {category === 'orthodontics' && (
           <div key="orthodontics" className="panel-fade-in space-y-3 rounded-card border border-border bg-bg p-4">
-            <div className="space-y-1.5">
-              {ORTHO_OPTIONS.map((opt) => (
-                <RadioOption key={opt} name="orthodontics" value={opt} label={opt} register={register} current={orthodontics ?? ''} />
-              ))}
-            </div>
+            <RadioGrid
+              name="orthodontics"
+              options={ORTHO_OPTIONS}
+              register={register}
+              current={orthodontics ?? ''}
+            />
             {orthodontics === 'Night Guard' && (
               <div className="rounded border border-border bg-surface p-2">
                 <p className="mb-1 text-xs font-medium text-text-muted">Night Guard Type</p>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
                   {(['soft', 'hard'] as const).map((t) => (
-                    <label key={t} className="flex cursor-pointer items-center gap-1 text-xs capitalize">
+                    <label key={t} className="flex cursor-pointer items-center gap-1 rounded-[6px] border border-border px-2.5 py-2 text-xs capitalize">
                       <input type="radio" value={t} {...register('nightGuardType')} className="accent-secondary" />
                       {t}
                     </label>
@@ -249,11 +294,12 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
                 </label>
               ))}
             </div>
-            <div className="space-y-1.5">
-              {IMPLANT_OPTIONS.map((opt) => (
-                <RadioOption key={opt} name="implantType" value={opt} label={opt} register={register} current={watch('implantType') ?? ''} />
-              ))}
-            </div>
+            <RadioGrid
+              name="implantType"
+              options={IMPLANT_OPTIONS}
+              register={register}
+              current={watch('implantType') ?? ''}
+            />
             {watch('implantType') === 'Others' && (
               <input placeholder="Specify..." {...register('implantOther')} className={inputClassName()} />
             )}
@@ -384,10 +430,13 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
             {fixedType === 'PFM' && (
               <div className="border-t border-border pt-4">
                 <p className="text-xs font-semibold text-secondary">Margin Design</p>
-                <div className="mt-2 space-y-1">
-                  {MARGIN_OPTIONS.map((opt) => (
-                    <RadioOption key={opt} name="marginDesign" value={opt} label={opt} register={register} current={marginDesign ?? ''} />
-                  ))}
+                <div className="mt-2">
+                  <RadioGrid
+                    name="marginDesign"
+                    options={MARGIN_OPTIONS}
+                    register={register}
+                    current={marginDesign ?? ''}
+                  />
                 </div>
                 {marginDesign === 'Metal Lingual' && (
                   <div className="mt-2 flex items-center gap-1">
@@ -437,12 +486,19 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
             />
             <div className="border-t border-border pt-4">
               <h3 className="mb-2 text-xs font-semibold text-secondary">If Insufficient Room</h3>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
                 {[
                   'Metal Island', 'Adjust Opposing & Mark', 'Adjust Prep & Mark Die',
                   'Metal Occlusal', 'Adjust Prep & Reduction Coping',
                 ].map((opt) => (
-                  <label key={opt} className="flex cursor-pointer items-start gap-2 text-xs">
+                  <label
+                    key={opt}
+                    className={`flex min-h-10 cursor-pointer items-start gap-2 rounded-[6px] border px-2.5 py-2 text-xs leading-snug transition-colors duration-brand ${
+                      insufficientRoom === opt
+                        ? 'border-secondary bg-secondary/10 text-secondary'
+                        : 'border-border bg-surface text-text hover:border-primary/60'
+                    }`}
+                  >
                     <input type="radio" value={opt} {...register('insufficientRoom')} checked={insufficientRoom === opt} className="mt-0.5 accent-secondary" />
                     <span>{opt}</span>
                   </label>
@@ -481,11 +537,12 @@ export function TreatmentTypeSection({ register, watch, setValue }: Props) {
                 </label>
               ))}
             </div>
-            <div className="space-y-1.5">
-              {REMOVABLE_TYPES.map((opt) => (
-                <RadioOption key={opt} name="removableType" value={opt} label={opt} register={register} current={removableType ?? ''} />
-              ))}
-            </div>
+            <RadioGrid
+              name="removableType"
+              options={REMOVABLE_TYPES}
+              register={register}
+              current={removableType ?? ''}
+            />
             {removableType === 'Custom Tray' && (
               <div className="flex gap-2">
                 {(['with-hole', 'without-hole'] as const).map((h) => (
