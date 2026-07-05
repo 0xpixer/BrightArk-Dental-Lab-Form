@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { orders } from '@/lib/db/schema'
+import { orders, sharedLinks } from '@/lib/db/schema'
 import { requireSession } from '@/lib/admin/session'
+
+const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete'])
 
 export async function GET(
   _request: Request,
@@ -43,7 +45,12 @@ export async function PATCH(
 
   const updateData: Record<string, unknown> = {}
 
-  if (body.status !== undefined) updateData.status = body.status
+  if (body.status !== undefined) {
+    if (!VALID_STATUSES.has(body.status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+    updateData.status = body.status
+  }
   if (body.dentist !== undefined) updateData.dentist = body.dentist
   if (body.clinic !== undefined) updateData.clinic = body.clinic
   if (body.email !== undefined) updateData.email = body.email
@@ -81,4 +88,31 @@ export async function PATCH(
   }
 
   return NextResponse.json({ success: true, order: updated })
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } },
+) {
+  const { error } = await requireSession()
+  if (error) return error
+
+  const id = parseInt(params.id, 10)
+  if (isNaN(id)) {
+    return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })
+  }
+
+  const db = getDb()
+  await db.delete(sharedLinks).where(eq(sharedLinks.orderId, id))
+
+  const [deleted] = await db
+    .delete(orders)
+    .where(eq(orders.id, id))
+    .returning({ id: orders.id })
+
+  if (!deleted) {
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ success: true })
 }
