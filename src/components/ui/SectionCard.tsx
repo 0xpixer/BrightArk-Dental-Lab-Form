@@ -5,9 +5,10 @@ interface SectionCardProps {
   children: ReactNode
   id?: string
   className?: string
+  onTitleClick?: () => void
 }
 
-export function SectionCard({ title, children, id, className = '' }: SectionCardProps) {
+export function SectionCard({ title, children, id, className = '', onTitleClick }: SectionCardProps) {
   return (
     <section
       id={id}
@@ -18,7 +19,20 @@ export function SectionCard({ title, children, id, className = '' }: SectionCard
         id={id ? `${id}-heading` : undefined}
         className="mb-4 border-b border-border pb-2 text-base font-semibold text-secondary"
       >
-        {title}
+        {onTitleClick ? (
+          <button
+            type="button"
+            onClick={onTitleClick}
+            className="flex w-full items-center justify-between text-left text-base font-semibold text-secondary transition-colors hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            aria-label={`Collapse ${title}`}
+            aria-expanded
+          >
+            <span>{title}</span>
+            <span className="text-xs font-medium text-text-muted">Click to fold</span>
+          </button>
+        ) : (
+          title
+        )}
       </h2>
       {children}
     </section>

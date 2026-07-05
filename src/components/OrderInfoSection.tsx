@@ -9,11 +9,12 @@ interface Props {
   errors: FieldErrors<OrderFormValues>
   watch: UseFormWatch<OrderFormValues>
   setValue: UseFormSetValue<OrderFormValues>
+  onTitleClick?: () => void
 }
 
-export function OrderInfoSection({ register, errors }: Props) {
+export function OrderInfoSection({ register, errors, onTitleClick }: Props) {
   return (
-    <SectionCard title="Order Information" id="order-info">
+    <SectionCard title="Order Information" id="order-info" onTitleClick={onTitleClick}>
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Dentist" htmlFor="dentist" required error={errors.dentist?.message}>

@@ -9,6 +9,7 @@ interface Props {
   errors: FieldErrors<OrderFormValues>
   watch: UseFormWatch<OrderFormValues>
   setValue: UseFormSetValue<OrderFormValues>
+  onTitleClick?: () => void
 }
 
 const FDI_QUADRANTS = [
@@ -138,7 +139,7 @@ function DentalChart({
   )
 }
 
-export function ToothSelectorSection({ register, errors, watch, setValue }: Props) {
+export function ToothSelectorSection({ register, errors, watch, setValue, onTitleClick }: Props) {
   const selectedRaw = watch('selectedTeeth') ?? []
   const selected = sortFdiTeeth(selectedRaw.filter(isFdiTooth))
   const mode = watch('toothMode')
@@ -157,7 +158,7 @@ export function ToothSelectorSection({ register, errors, watch, setValue }: Prop
   }
 
   return (
-    <SectionCard title="Tooth Selector & Shade" id="tooth-selector">
+    <SectionCard title="Tooth Selector & Shade" id="tooth-selector" onTitleClick={onTitleClick}>
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <fieldset>
           <legend className="sr-only">Selection mode</legend>

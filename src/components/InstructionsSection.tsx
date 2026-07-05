@@ -5,16 +5,17 @@ import { SectionCard } from './ui/SectionCard'
 interface Props {
   register: UseFormRegister<OrderFormValues>
   watch: UseFormWatch<OrderFormValues>
+  onTitleClick?: () => void
 }
 
 const MAX_CHARS = 2000
 
-export function InstructionsSection({ register, watch }: Props) {
+export function InstructionsSection({ register, watch, onTitleClick }: Props) {
   const text = watch('instructions') ?? ''
   const count = text.length
 
   return (
-    <SectionCard title="Instructions" id="instructions">
+    <SectionCard title="Instructions" id="instructions" onTitleClick={onTitleClick}>
       <div className="relative">
         <label htmlFor="instructions" className="sr-only">
           Special instructions

@@ -19,6 +19,7 @@ interface FileUploadSectionProps {
   onFilesChange: Dispatch<SetStateAction<FilesState>>
   register: UseFormRegister<OrderFormValues>
   error?: FieldError['message']
+  onTitleClick?: () => void
 }
 
 function Tooltip({ text }: { text: string }) {
@@ -38,7 +39,7 @@ function slotGridClass(heading: string, slotCount: number): string {
   return 'grid-cols-2'
 }
 
-export function FileUploadSection({ orderNo, files, onFilesChange, register, error }: FileUploadSectionProps) {
+export function FileUploadSection({ orderNo, files, onFilesChange, register, error, onTitleClick }: FileUploadSectionProps) {
   const uploadFile = useCallback(
     async (slotId: FileSlotId, file: File) => {
       const existing = files[slotId]
@@ -132,7 +133,7 @@ export function FileUploadSection({ orderNo, files, onFilesChange, register, err
   }, [])
 
   return (
-    <SectionCard title="Upload Files" id="file-upload" className="!border-primary/20">
+    <SectionCard title="Upload Files" id="file-upload" className="!border-primary/20" onTitleClick={onTitleClick}>
       <div className="space-y-6">
         <FormField label="Cloud Drive Download Link" htmlFor="cloudDriveLink" error={error}>
           <input

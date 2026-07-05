@@ -9,7 +9,7 @@ const STEPS = [
 ] as const
 
 interface ProgressBarProps {
-  activeStep: number
+  activeStep: number | null
 }
 
 export function ProgressBar({ activeStep }: ProgressBarProps) {
@@ -17,7 +17,7 @@ export function ProgressBar({ activeStep }: ProgressBarProps) {
     <nav aria-label="Form progress" className="rounded-card bg-surface p-4 shadow-sm">
       <ol className="flex items-center justify-between gap-2">
         {STEPS.map((step, index) => {
-          const isComplete = step.id < activeStep
+          const isComplete = activeStep !== null && step.id < activeStep
           const isActive = step.id === activeStep
           return (
             <li key={step.id} className="flex flex-1 items-center">
@@ -46,7 +46,7 @@ export function ProgressBar({ activeStep }: ProgressBarProps) {
               {index < STEPS.length - 1 && (
                 <div
                   className={`mx-1 hidden h-0.5 flex-1 sm:block ${
-                    step.id < activeStep ? 'bg-secondary' : 'bg-border'
+                    activeStep !== null && step.id < activeStep ? 'bg-secondary' : 'bg-border'
                   }`}
                   aria-hidden
                 />

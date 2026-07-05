@@ -32,7 +32,7 @@ export default function OrderForm() {
   const [submittedOrderNo, setSubmittedOrderNo] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [draftSaved, setDraftSaved] = useState(false)
-  const [activeStep, setActiveStep] = useState(1)
+  const [activeStep, setActiveStep] = useState<number | null>(1)
 
   const { saveDraft, loadDraft, clearDraft } = useFormDraft()
 
@@ -121,7 +121,7 @@ export default function OrderForm() {
     clearDraft()
   }, [reset, clearDraft])
 
-  const currentStep = FORM_STEPS[activeStep - 1]
+  const currentStep = activeStep ? FORM_STEPS[activeStep - 1] : null
   const isFirstStep = activeStep === 1
   const isLastStep = activeStep === FORM_STEPS.length
 
@@ -130,12 +130,17 @@ export default function OrderForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
+  const foldActiveStep = useCallback(() => {
+    setActiveStep(null)
+  }, [])
+
   const handleNext = useCallback(async () => {
+    if (!activeStep || !currentStep) return
     const fields = [...currentStep.fields] as (keyof OrderFormValues)[]
     const valid = fields.length === 0 ? true : await trigger(fields)
     if (!valid) return
     goToStep(Math.min(activeStep + 1, FORM_STEPS.length))
-  }, [activeStep, currentStep.fields, goToStep, trigger])
+  }, [activeStep, currentStep, goToStep, trigger])
 
   const formProps = useMemo(
     () => ({ register, control, errors, watch, setValue }),
@@ -189,10 +194,10 @@ export default function OrderForm() {
             {FORM_STEPS.map((step) => (
               step.step === activeStep ? (
                 <div key={step.id}>
-                  {step.id === 'order-info' && <OrderInfoSection {...formProps} />}
-                  {step.id === 'treatment-type' && <TreatmentTypeSection register={register} watch={watch} setValue={setValue} />}
-                  {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} />}
-                  {step.id === 'instructions' && <InstructionsSection register={register} watch={watch} />}
+                  {step.id === 'order-info' && <OrderInfoSection {...formProps} onTitleClick={foldActiveStep} />}
+                  {step.id === 'treatment-type' && <TreatmentTypeSection register={register} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />}
+                  {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />}
+                  {step.id === 'instructions' && <InstructionsSection register={register} watch={watch} onTitleClick={foldActiveStep} />}
                   {step.id === 'file-upload' && (
                     <FileUploadSection
                       orderNo={uploadFolderId}
@@ -200,6 +205,7 @@ export default function OrderForm() {
                       onFilesChange={setFiles}
                       register={register}
                       error={errors.cloudDriveLink?.message}
+                      onTitleClick={foldActiveStep}
                     />
                   )}
                 </div>
@@ -219,38 +225,44 @@ export default function OrderForm() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => goToStep(Math.max(activeStep - 1, 1))}
-              disabled={isFirstStep}
-              className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Previous
-            </button>
-            <p className="text-center text-xs font-medium text-text-muted">
-              Step {activeStep} of {FORM_STEPS.length}: {currentStep.label}
-            </p>
-            {!isLastStep ? (
+          {currentStep ? (
+            <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                onClick={handleNext}
-                className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e06d15]"
+                onClick={() => goToStep(Math.max((activeStep ?? 1) - 1, 1))}
+                disabled={isFirstStep}
+                className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Next
+                Previous
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => goToStep(1)}
-                className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
-              >
-                Back to Start
-              </button>
-            )}
-          </div>
+              <p className="text-center text-xs font-medium text-text-muted">
+                Step {activeStep} of {FORM_STEPS.length}: {currentStep.label}
+              </p>
+              {!isLastStep ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e06d15]"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => goToStep(1)}
+                  className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
+                >
+                  Back to Start
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-card border border-border bg-surface p-3 text-center text-xs font-medium text-text-muted shadow-sm">
+              Select a folded section above to continue.
+            </div>
+          )}
 
-          {isLastStep && (
+          {isLastStep && currentStep && (
             <SubmitSection
               isSubmitting={isSubmitting}
               onSaveDraft={handleSaveDraft}
