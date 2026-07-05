@@ -12,14 +12,10 @@ export type TreatmentCategory = (typeof TREATMENT_CATEGORIES)[number]
 export const FILE_SLOT_IDS = [
   'upper-model',
   'lower-model',
-  'left-buccal',
-  'right-buccal',
   'frontal-view',
   'frontal-smile',
   'profile-view',
   'upper-arch',
-  'shade-tab',
-  '45-central',
   'right-occlusal',
   'central-occlusal',
   'left-occlusal',
@@ -46,14 +42,10 @@ export const orderFormSchema = z.object({
   patient: z.string().min(1, 'Patient name is required'),
   clinic: z.string().min(1, 'Clinic name is required'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  altEmail: z.string().email('Invalid alternate email address').or(z.literal('')).optional(),
-  phone: z.string().optional(),
-  address: z.string().min(1, 'Address is required'),
+  address: z.string().optional(),
   patientAge: z.string().optional(),
   patientDob: z.string().optional(),
   sex: z.enum(['male', 'female', '']).optional(),
-  dateRequired: z.string().optional(),
-  oldOrderNo: z.string().optional(),
 
   orthodontics: z.string().optional(),
   nightGuardType: z.enum(['soft', 'hard', '']).optional(),
@@ -94,8 +86,6 @@ export const orderFormSchema = z.object({
   selectedTeeth: z.array(z.number()),
   toothMode: z.enum(['single', 'bridge']),
   shade: z.string().min(1, 'Shade is required'),
-  stumpShade: z.string().optional(),
-  occlusalStain: z.enum(['none', 'light', 'medium', 'heavy']),
 
   instructions: z.string().optional(),
   cloudDriveLink: z.string().url('Enter a valid download link').or(z.literal('')).optional(),
@@ -112,14 +102,10 @@ export const defaultFormValues: OrderFormValues = {
   patient: '',
   clinic: '',
   email: '',
-  altEmail: '',
-  phone: '',
   address: '',
   patientAge: '',
   patientDob: '',
   sex: '',
-  dateRequired: '',
-  oldOrderNo: '',
 
   orthodontics: '',
   nightGuardType: '',
@@ -160,8 +146,6 @@ export const defaultFormValues: OrderFormValues = {
   selectedTeeth: [],
   toothMode: 'single',
   shade: '',
-  stumpShade: '',
-  occlusalStain: 'none',
 
   instructions: '',
   cloudDriveLink: '',
@@ -169,6 +153,6 @@ export const defaultFormValues: OrderFormValues = {
 
 export const DRAFT_STORAGE_KEY = 'brightark-dental-lab-order-draft'
 
-export function generateOrderNo(): string {
-  return `BA-${Date.now()}`
+export function generateUploadFolderId(): string {
+  return `draft-${Date.now()}`
 }

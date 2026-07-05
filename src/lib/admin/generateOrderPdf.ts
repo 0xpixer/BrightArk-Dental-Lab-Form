@@ -32,18 +32,11 @@ export function generateOrderPdfBuffer(order: Order): Promise<Buffer> {
       `Dentist: ${order.dentist}`,
       `Clinic: ${order.clinic}`,
       `Email: ${order.email}`,
-      `Alt Email: ${order.altEmail ?? '—'}`,
-      `Phone: ${order.phone ?? '—'}`,
-      `Address: ${order.address}`,
+      order.address ? `Address: ${order.address}` : '',
       `Patient: ${order.patientName}`,
       `Patient Age: ${order.patientAge ?? '—'}`,
       order.patientDob ? `Patient DOB: ${order.patientDob}` : '',
       `Sex: ${order.sex ?? '—'}`,
-      `Date Required: ${order.dateRequired}`,
-      `Repair: ${order.isRepair ? 'Yes' : 'No'}`,
-      `Redo: ${order.isRedo ? 'Yes' : 'No'}`,
-      `Urgent: ${order.isUrgent ? 'Yes' : 'No'}`,
-      order.oldOrderNo ? `Old Order No: ${order.oldOrderNo}` : '',
     ])
 
     if (order.treatmentType) {

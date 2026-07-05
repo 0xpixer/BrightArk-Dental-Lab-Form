@@ -2,12 +2,14 @@ import { Check } from 'lucide-react'
 
 const STEPS = [
   { id: 1, label: 'Order Info' },
-  { id: 2, label: 'Treatment Details' },
-  { id: 3, label: 'Upload Files' },
+  { id: 2, label: 'Treatment' },
+  { id: 3, label: 'Teeth & Shade' },
+  { id: 4, label: 'Instructions' },
+  { id: 5, label: 'Upload Files' },
 ] as const
 
 interface ProgressBarProps {
-  activeStep: 1 | 2 | 3
+  activeStep: number
 }
 
 export function ProgressBar({ activeStep }: ProgressBarProps) {

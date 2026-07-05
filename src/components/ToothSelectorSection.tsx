@@ -196,27 +196,6 @@ export function ToothSelectorSection({ register, errors, watch, setValue }: Prop
         <FormField label="Shade" htmlFor="shade" required error={errors.shade?.message}>
           <input id="shade" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. VITA A2" />
         </FormField>
-        <FormField label="Stump Shade" htmlFor="stumpShade">
-          <input id="stumpShade" {...register('stumpShade')} className={inputClassName()} />
-        </FormField>
-        <fieldset>
-          <legend className="mb-1 text-xs font-medium text-text">Occlusal Stain</legend>
-          <div className="flex flex-wrap gap-2">
-            {(['none', 'light', 'medium', 'heavy'] as const).map((s) => (
-              <label
-                key={s}
-                className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-xs capitalize transition-colors duration-brand ${
-                  watch('occlusalStain') === s
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-text-muted'
-                }`}
-              >
-                <input type="radio" value={s} {...register('occlusalStain')} className="sr-only" />
-                {s}
-              </label>
-            ))}
-          </div>
-        </fieldset>
       </div>
     </SectionCard>
   )

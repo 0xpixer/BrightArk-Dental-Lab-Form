@@ -18,12 +18,12 @@ interface Order {
   email: string
   altEmail: string | null
   phone: string | null
-  address: string
+  address: string | null
   patientName: string
   patientDob: string | null
   patientAge: string | null
   sex: string | null
-  dateRequired: string
+  dateRequired: string | null
   isRepair: boolean
   isRedo: boolean
   isUrgent: boolean
@@ -137,18 +137,11 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                 dentist: order.dentist,
                 clinic: order.clinic,
                 email: order.email,
-                altEmail: order.altEmail ?? '',
-                phone: order.phone ?? '',
-                address: order.address,
+                address: order.address ?? '',
                 patientName: order.patientName,
                 patientAge: order.patientAge ?? '',
                 patientDob: order.patientDob ?? '',
                 sex: order.sex ?? '',
-                dateRequired: order.dateRequired,
-                isRepair: order.isRepair,
-                isRedo: order.isRedo,
-                isUrgent: order.isUrgent,
-                oldOrderNo: order.oldOrderNo ?? '',
                 cloudDriveLink: order.cloudDriveLink ?? '',
               })
             }}
@@ -157,7 +150,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           >
             {editingSection === 'info' ? (
               <div className="grid grid-cols-2 gap-3">
-                {(['dentist', 'clinic', 'email', 'altEmail', 'phone', 'address', 'patientName', 'patientAge', 'patientDob', 'sex', 'dateRequired', 'oldOrderNo', 'cloudDriveLink'] as const).map((f) => (
+                {(['dentist', 'clinic', 'email', 'address', 'patientName', 'patientAge', 'patientDob', 'sex', 'cloudDriveLink'] as const).map((f) => (
                   <label key={f} className="block text-xs">
                     <span className="font-medium capitalize">{f.replace(/([A-Z])/g, ' $1')}</span>
                     <input
@@ -167,34 +160,17 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                     />
                   </label>
                 ))}
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!draft.isRepair} onChange={(e) => setDraft({ ...draft, isRepair: e.target.checked })} />
-                  Repair
-                </label>
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!draft.isRedo} onChange={(e) => setDraft({ ...draft, isRedo: e.target.checked })} />
-                  Redo
-                </label>
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!draft.isUrgent} onChange={(e) => setDraft({ ...draft, isUrgent: e.target.checked })} />
-                  Urgent
-                </label>
               </div>
             ) : (
               <dl className="grid grid-cols-2 gap-2 text-sm">
                 <Field label="Dentist" value={order.dentist} />
                 <Field label="Clinic" value={order.clinic} />
                 <Field label="Email" value={order.email} />
-                <Field label="Alt Email" value={order.altEmail ?? '—'} />
-                <Field label="Phone" value={order.phone ?? '—'} />
-                <Field label="Address" value={order.address} />
+                <Field label="Address" value={order.address ?? '—'} />
                 <Field label="Patient" value={order.patientName} />
                 <Field label="Age" value={order.patientAge ?? '—'} />
                 {order.patientDob && <Field label="DOB" value={order.patientDob} />}
                 <Field label="Sex" value={order.sex ?? '—'} />
-                <Field label="Date Required" value={order.dateRequired} />
-                <Field label="Flags" value={[order.isRepair && 'Repair', order.isRedo && 'Redo', order.isUrgent && 'Urgent'].filter(Boolean).join(', ') || '—'} />
-                {order.oldOrderNo && <Field label="Old Order No" value={order.oldOrderNo} />}
                 <Field label="Cloud Drive Link" value={order.cloudDriveLink ?? '—'} />
               </dl>
             )}

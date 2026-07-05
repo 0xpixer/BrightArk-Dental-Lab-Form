@@ -1,9 +1,6 @@
-import { Controller, type Control, type FieldErrors, type UseFormRegister, type UseFormWatch, type UseFormSetValue } from 'react-hook-form'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import type { Control, FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import type { OrderFormValues } from '../types/orderForm'
 import { FormField, orderInputClassName } from './ui/FormField'
-import { ToggleChip } from './ui/ToggleChip'
 import { SectionCard } from './ui/SectionCard'
 
 interface Props {
@@ -14,26 +11,7 @@ interface Props {
   setValue: UseFormSetValue<OrderFormValues>
 }
 
-function parseDate(value: string): Date | null {
-  if (!value) return null
-  const [d, m, y] = value.split('/').map(Number)
-  if (d && m && y) return new Date(y, m - 1, d)
-  const iso = new Date(value)
-  return isNaN(iso.getTime()) ? null : iso
-}
-
-function formatDate(date: Date | null): string {
-  if (!date) return ''
-  const d = String(date.getDate()).padStart(2, '0')
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const y = date.getFullYear()
-  return `${d}/${m}/${y}`
-}
-
-export function OrderInfoSection({ register, control, errors, watch, setValue }: Props) {
-  const repair = watch('repair')
-  const redo = watch('redo')
-
+export function OrderInfoSection({ register, errors }: Props) {
   return (
     <SectionCard title="Order Information" id="order-info">
       <div className="space-y-4">
@@ -50,16 +28,7 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
           <FormField label="Email" htmlFor="email" required error={errors.email?.message}>
             <input type="email" id="email" {...register('email')} className={orderInputClassName(!!errors.email)} />
           </FormField>
-          <FormField label="Alt Email" htmlFor="altEmail" error={errors.altEmail?.message}>
-            <input type="email" id="altEmail" {...register('altEmail')} className={orderInputClassName(!!errors.altEmail)} />
-          </FormField>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
-            <input id="phone" {...register('phone')} className={orderInputClassName(!!errors.phone)} />
-          </FormField>
-          <FormField label="Address" htmlFor="address" required error={errors.address?.message}>
+          <FormField label="Address" htmlFor="address" error={errors.address?.message}>
             <input id="address" {...register('address')} className={orderInputClassName(!!errors.address)} />
           </FormField>
         </div>
@@ -97,55 +66,6 @@ export function OrderInfoSection({ register, control, errors, watch, setValue }:
             </div>
           </fieldset>
         </div>
-
-        <div>
-          <p className="mb-2 text-xs font-medium text-text">Order Flags</p>
-          <div className="flex flex-wrap gap-2">
-            <ToggleChip
-              id="repair"
-              label="Repair"
-              checked={watch('repair')}
-              onChange={(v) => setValue('repair', v)}
-            />
-            <ToggleChip
-              id="redo"
-              label="Redo"
-              checked={watch('redo')}
-              onChange={(v) => setValue('redo', v)}
-            />
-            <ToggleChip
-              id="urgent"
-              label="Urgent Order"
-              checked={watch('urgent')}
-              onChange={(v) => setValue('urgent', v)}
-            />
-          </div>
-        </div>
-
-        <FormField label="Date Required" htmlFor="dateRequired" error={errors.dateRequired?.message} className="max-w-sm">
-          <Controller
-            name="dateRequired"
-            control={control}
-            render={({ field }) => (
-              <DatePicker
-                id="dateRequired"
-                selected={parseDate(field.value ?? '')}
-                onChange={(date: Date | null) => field.onChange(formatDate(date))}
-                dateFormat="dd/MM/yyyy"
-                placeholderText="DD/MM/YYYY (Optional)"
-                className={orderInputClassName(!!errors.dateRequired)}
-                showPopperArrow={false}
-                minDate={new Date()}
-              />
-            )}
-          />
-        </FormField>
-
-        {(repair || redo) && (
-          <FormField label="Old Order No" htmlFor="oldOrderNo" className="max-w-sm">
-            <input id="oldOrderNo" {...register('oldOrderNo')} className={orderInputClassName()} />
-          </FormField>
-        )}
       </div>
     </SectionCard>
   )

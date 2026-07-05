@@ -23,8 +23,6 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
     slots: [
       { id: 'upper-model', label: 'Upper Arch', accept: '.obj,.ply,.stl', icon: 'scan' },
       { id: 'lower-model', label: 'Lower Arch', accept: '.obj,.ply,.stl', icon: 'scan' },
-      { id: 'left-buccal', label: 'Left Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
-      { id: 'right-buccal', label: 'Right Buccal', accept: '.stl', icon: 'buccal', formatBadge: 'STL' },
     ],
   },
   {
@@ -41,8 +39,6 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
     tooltip: 'JPG/JPEG/PNG only',
     slots: [
       { id: 'upper-arch', label: 'Upper Arch', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
-      { id: 'shade-tab', label: 'Tooth with Shade Tab', accept: 'image/jpeg,image/png,image/jpg', icon: 'photo' },
-      { id: '45-central', label: '45° Central', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
       { id: 'right-occlusal', label: 'Right (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
       { id: 'central-occlusal', label: 'Central (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
       { id: 'left-occlusal', label: 'Left (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },

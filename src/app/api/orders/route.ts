@@ -1,22 +1,57 @@
 import { NextResponse } from 'next/server'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert, type OrderApiPayload } from '@/lib/transformOrder'
+
+function todayOrderPrefix(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const year = parts.find((part) => part.type === 'year')?.value ?? ''
+  const month = parts.find((part) => part.type === 'month')?.value ?? ''
+  const day = parts.find((part) => part.type === 'day')?.value ?? ''
+  return `${year}${month}${day}`
+}
+
+async function generateDailyOrderNo(db: ReturnType<typeof getDb>): Promise<string> {
+  const prefix = todayOrderPrefix()
+  const [latest] = await db
+    .select({ orderNo: orders.orderNo })
+    .from(orders)
+    .where(sql`${orders.orderNo} like ${`${prefix}%`}`)
+    .orderBy(desc(orders.orderNo))
+    .limit(1)
+
+  const latestSequence = latest?.orderNo.startsWith(prefix)
+    ? Number.parseInt(latest.orderNo.slice(8), 10)
+    : 0
+  const nextSequence = Number.isFinite(latestSequence) ? latestSequence + 1 : 1
+
+  if (nextSequence > 99) {
+    throw new Error('Daily order limit reached. Please contact BrightArk.')
+  }
+
+  return `${prefix}${String(nextSequence).padStart(2, '0')}`
+}
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as OrderApiPayload
 
-    if (!body.dentist || !body.clinic || !body.patient || !body.email || !body.address) {
+    if (!body.dentist || !body.clinic || !body.patient || !body.email) {
       return NextResponse.json(
-        { success: false, error: 'Dentist, clinic, email, address, and patient name are required' },
+        { success: false, error: 'Dentist, clinic, email, and patient name are required' },
         { status: 400 },
       )
     }
 
-    const orderData = mapPayloadToOrderInsert(body)
     const db = getDb()
+    const orderNo = await generateDailyOrderNo(db)
+    const orderData = mapPayloadToOrderInsert({ ...body, orderNo })
     const [inserted] = await db.insert(orders).values(orderData).returning({
       orderNo: orders.orderNo,
     })

@@ -14,17 +14,25 @@ import { SubmitSection } from '@/components/SubmitSection'
 import { SuccessCard } from '@/components/SuccessCard'
 import { FormFooter } from '@/components/FormFooter'
 import { useFormDraft } from '@/hooks/useFormDraft'
-import { orderFormSchema, defaultFormValues, generateOrderNo, type OrderFormValues } from '@/types/orderForm'
+import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
+
+const FORM_STEPS = [
+  { id: 'order-info', label: 'Order Information', step: 1, fields: ['dentist', 'clinic', 'email', 'patient'] },
+  { id: 'treatment-type', label: 'Treatment Type', step: 2, fields: [] },
+  { id: 'tooth-selector', label: 'Tooth Selector & Shade', step: 3, fields: ['shade'] },
+  { id: 'instructions', label: 'Instructions', step: 4, fields: [] },
+  { id: 'file-upload', label: 'Upload Files', step: 5, fields: ['cloudDriveLink'] },
+] as const
 
 export default function OrderForm() {
-  const [sessionOrderNo] = useState(() => generateOrderNo())
+  const [uploadFolderId] = useState(() => generateUploadFolderId())
   const [files, setFiles] = useState<FilesState>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submittedOrderNo, setSubmittedOrderNo] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [draftSaved, setDraftSaved] = useState(false)
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1)
+  const [activeStep, setActiveStep] = useState(1)
 
   const { saveDraft, loadDraft, clearDraft } = useFormDraft()
 
@@ -35,6 +43,7 @@ export default function OrderForm() {
     watch,
     setValue,
     reset,
+    trigger,
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -57,36 +66,6 @@ export default function OrderForm() {
     }
   }, [loadDraft, reset])
 
-  useEffect(() => {
-    const sections = [
-      { id: 'order-info', step: 1 as const },
-      { id: 'treatment-type', step: 2 as const },
-      { id: 'tooth-selector', step: 2 as const },
-      { id: 'instructions', step: 2 as const },
-      { id: 'file-upload', step: 3 as const },
-    ]
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (a.boundingClientRect.top ?? 0) - (b.boundingClientRect.top ?? 0))
-        if (visible[0]) {
-          const match = sections.find((s) => s.id === visible[0].target.id)
-          if (match) setActiveStep(match.step)
-        }
-      },
-      { rootMargin: '-20% 0px -60% 0px', threshold: 0.1 },
-    )
-
-    sections.forEach(({ id }) => {
-      const el = document.getElementById(id)
-      if (el) observer.observe(el)
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null)
 
@@ -104,7 +83,6 @@ export default function OrderForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
-          orderNo: sessionOrderNo,
           file_urls,
         }),
       })
@@ -115,7 +93,7 @@ export default function OrderForm() {
         throw new Error(data.error ?? 'Failed to submit order')
       }
 
-      setSubmittedOrderNo(data.orderNo ?? sessionOrderNo)
+      setSubmittedOrderNo(data.orderNo ?? '')
       setSubmitted(true)
       clearDraft()
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -137,10 +115,27 @@ export default function OrderForm() {
     if (!confirm('Reset the entire form? This cannot be undone.')) return
     reset(defaultFormValues)
     setFiles({})
+    setActiveStep(1)
     setSubmitted(false)
     setSubmitError(null)
     clearDraft()
   }, [reset, clearDraft])
+
+  const currentStep = FORM_STEPS[activeStep - 1]
+  const isFirstStep = activeStep === 1
+  const isLastStep = activeStep === FORM_STEPS.length
+
+  const goToStep = useCallback((step: number) => {
+    setActiveStep(step)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  const handleNext = useCallback(async () => {
+    const fields = [...currentStep.fields] as (keyof OrderFormValues)[]
+    const valid = fields.length === 0 ? true : await trigger(fields)
+    if (!valid) return
+    goToStep(Math.min(activeStep + 1, FORM_STEPS.length))
+  }, [activeStep, currentStep.fields, goToStep, trigger])
 
   const formProps = useMemo(
     () => ({ register, control, errors, watch, setValue }),
@@ -159,6 +154,7 @@ export default function OrderForm() {
               setSubmitted(false)
               reset(defaultFormValues)
               setFiles({})
+              setActiveStep(1)
               setSubmitError(null)
             }}
             className="mt-6 w-full rounded-card border border-border py-2 text-sm text-text-muted transition-colors hover:text-text"
@@ -189,23 +185,78 @@ export default function OrderForm() {
         )}
 
         <form onSubmit={onSubmit} noValidate className="space-y-4 md:space-y-6">
-          <OrderInfoSection {...formProps} />
-          <TreatmentTypeSection register={register} watch={watch} setValue={setValue} />
-          <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} />
-          <InstructionsSection register={register} watch={watch} />
-          <FileUploadSection
-            orderNo={sessionOrderNo}
-            files={files}
-            onFilesChange={setFiles}
-            register={register}
-            error={errors.cloudDriveLink?.message}
-          />
+          <div className="space-y-3">
+            {FORM_STEPS.map((step) => (
+              step.step === activeStep ? (
+                <div key={step.id}>
+                  {step.id === 'order-info' && <OrderInfoSection {...formProps} />}
+                  {step.id === 'treatment-type' && <TreatmentTypeSection register={register} watch={watch} setValue={setValue} />}
+                  {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} />}
+                  {step.id === 'instructions' && <InstructionsSection register={register} watch={watch} />}
+                  {step.id === 'file-upload' && (
+                    <FileUploadSection
+                      orderNo={uploadFolderId}
+                      files={files}
+                      onFilesChange={setFiles}
+                      register={register}
+                      error={errors.cloudDriveLink?.message}
+                    />
+                  )}
+                </div>
+              ) : (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => goToStep(step.step)}
+                  className="flex w-full items-center justify-between rounded-card border border-border bg-surface px-4 py-3 text-left text-sm font-semibold text-text-muted shadow-sm transition-colors hover:border-primary hover:text-primary"
+                  aria-expanded={false}
+                  aria-controls={step.id}
+                >
+                  <span>{step.label}</span>
+                  <span className="text-xs">Step {step.step}</span>
+                </button>
+              )
+            ))}
+          </div>
 
-          <SubmitSection
-            isSubmitting={isSubmitting}
-            onSaveDraft={handleSaveDraft}
-            draftSaved={draftSaved}
-          />
+          <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => goToStep(Math.max(activeStep - 1, 1))}
+              disabled={isFirstStep}
+              className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <p className="text-center text-xs font-medium text-text-muted">
+              Step {activeStep} of {FORM_STEPS.length}: {currentStep.label}
+            </p>
+            {!isLastStep ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e06d15]"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => goToStep(1)}
+                className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
+              >
+                Back to Start
+              </button>
+            )}
+          </div>
+
+          {isLastStep && (
+            <SubmitSection
+              isSubmitting={isSubmitting}
+              onSaveDraft={handleSaveDraft}
+              draftSaved={draftSaved}
+            />
+          )}
 
           <button
             type="button"

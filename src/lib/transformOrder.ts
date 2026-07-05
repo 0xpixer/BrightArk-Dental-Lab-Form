@@ -16,12 +16,6 @@ export function parseDateDDMMYYYY(value: string | undefined): string | null {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-function defaultDateRequired(): string {
-  const d = new Date()
-  d.setDate(d.getDate() + 14)
-  return d.toISOString().slice(0, 10)
-}
-
 function formatSex(sex: string | undefined): string | null {
   if (sex === 'male') return 'Male'
   if (sex === 'female') return 'Female'
@@ -84,18 +78,15 @@ function buildToothSelection(values: OrderFormValues): Record<string, unknown> {
     selectedTeeth: values.selectedTeeth,
     toothMode: values.toothMode,
     shade: values.shade,
-    stumpShade: values.stumpShade,
-    occlusalStain: values.occlusalStain,
   }
 }
 
 export interface OrderApiPayload extends OrderFormValues {
-  orderNo?: string
+  orderNo: string
   file_urls?: Record<string, string>
 }
 
 export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
-  const orderNo = payload.orderNo ?? `BA-${Date.now()}`
   const dateSent = new Date()
   const patientDob = parseDateDDMMYYYY(payload.patientDob)
 
@@ -103,23 +94,23 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
   const treatmentType = category ? TREATMENT_TYPE_LABELS[category] : null
 
   return {
-    orderNo,
+    orderNo: payload.orderNo,
     dateSent,
     dentist: payload.dentist,
     clinic: payload.clinic,
     email: payload.email,
-    altEmail: payload.altEmail || null,
-    phone: payload.phone || null,
-    address: payload.address,
+    altEmail: null,
+    phone: null,
+    address: payload.address || null,
     patientName: payload.patient,
     patientDob,
     patientAge: payload.patientAge || null,
     sex: formatSex(payload.sex),
-    dateRequired: parseDateDDMMYYYY(payload.dateRequired) || defaultDateRequired(),
-    isRepair: payload.repair,
-    isRedo: payload.redo,
-    isUrgent: payload.urgent,
-    oldOrderNo: payload.oldOrderNo || null,
+    dateRequired: null,
+    isRepair: false,
+    isRedo: false,
+    isUrgent: false,
+    oldOrderNo: null,
     treatmentType,
     treatmentData: buildTreatmentData(payload),
     toothSelection: buildToothSelection(payload),
