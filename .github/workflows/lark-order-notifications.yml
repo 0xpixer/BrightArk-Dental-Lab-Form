@@ -1,0 +1,19 @@
+name: Lark Order Notifications
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+jobs:
+  notify-lark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Lark about newly submitted orders
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/cron/lark-orders"

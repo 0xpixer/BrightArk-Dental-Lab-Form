@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/lark-orders",
-      "schedule": "0 */3 * * *"
-    }
-  ]
-}

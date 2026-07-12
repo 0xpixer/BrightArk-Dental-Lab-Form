@@ -25,7 +25,7 @@ CRON_SECRET=use-a-long-random-secret
 
 On Vercel, these are auto-injected when you connect Neon Postgres and Blob storage.
 
-`APP_URL`, `LARK_WEBHOOK_URL`, and `CRON_SECRET` must be set manually. A Vercel Cron job runs every three hours and sends one Lark notification for each newly submitted order.
+`APP_URL`, `LARK_WEBHOOK_URL`, and `CRON_SECRET` must be set manually. GitHub Actions runs every three hours and calls the notification route for each newly submitted order.
 
 ## Development
 
