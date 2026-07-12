@@ -13,6 +13,7 @@ import { FileUploadSection, type FilesState } from '@/components/FileUploadSecti
 import { SubmitSection } from '@/components/SubmitSection'
 import { SuccessCard } from '@/components/SuccessCard'
 import { FormFooter } from '@/components/FormFooter'
+import { AuthModal } from '@/components/AuthModal'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
 
@@ -39,6 +40,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [draftSaved, setDraftSaved] = useState(false)
   const [activeStep, setActiveStep] = useState<number | null>(1)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
 
   const { saveDraft, loadDraft, clearDraft } = useFormDraft()
 
@@ -113,6 +115,12 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
       })
 
       const data = (await res.json()) as { success: boolean; orderNo?: string; error?: string }
+
+      if (res.status === 401 && !orderId) {
+        saveDraft(values)
+        setAuthModalOpen(true)
+        return
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error ?? 'Failed to submit order')
@@ -200,6 +208,13 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   return (
     <div className="min-h-screen bg-bg">
       <FormHeader />
+
+      {authModalOpen && (
+        <AuthModal
+          onClose={() => setAuthModalOpen(false)}
+          onSignedIn={() => setAuthModalOpen(false)}
+        />
+      )}
 
       <main className="mx-auto max-w-form space-y-4 px-4 py-6 md:space-y-6 md:px-6 md:py-8">
         <ProgressBar activeStep={activeStep} />

@@ -6,7 +6,7 @@ import { requireAdmin } from '@/lib/admin/session'
 import { buildOrderZip } from '@/lib/admin/buildOrderZip'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } },
 ) {
   const { error } = await requireAdmin()
@@ -24,7 +24,7 @@ export async function GET(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
 
-  const zipBuffer = await buildOrderZip(order)
+  const zipBuffer = await buildOrderZip(order, request.url)
 
   return new NextResponse(new Uint8Array(zipBuffer), {
     status: 200,

@@ -3,9 +3,9 @@ import type { Order } from '@/lib/db/schema'
 import { generateOrderPdfBuffer } from './generateOrderPdf'
 import { SLOT_FOLDER_MAP, getExtensionFromUrl } from './fileSlots'
 
-export async function buildOrderZip(order: Order): Promise<Buffer> {
+export async function buildOrderZip(order: Order, zipDownloadUrl?: string): Promise<Buffer> {
   const zip = new JSZip()
-  const pdfBuffer = await generateOrderPdfBuffer(order)
+  const pdfBuffer = await generateOrderPdfBuffer(order, zipDownloadUrl)
   zip.file(`order_${order.orderNo}_form.pdf`, pdfBuffer)
 
   const fileUrls = (order.fileUrls as Record<string, string> | null) ?? {}

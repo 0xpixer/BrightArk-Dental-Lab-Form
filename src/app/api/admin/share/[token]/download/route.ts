@@ -5,7 +5,7 @@ import { orders, sharedLinks } from '@/lib/db/schema'
 import { buildOrderZip } from '@/lib/admin/buildOrderZip'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { token: string } },
 ) {
   const db = getDb()
@@ -35,7 +35,7 @@ export async function GET(
     .set({ downloadCount: link.downloadCount + 1 })
     .where(eq(sharedLinks.id, link.id))
 
-  const zipBuffer = await buildOrderZip(order)
+  const zipBuffer = await buildOrderZip(order, request.url)
 
   return new NextResponse(new Uint8Array(zipBuffer), {
     status: 200,

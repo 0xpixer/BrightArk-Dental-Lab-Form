@@ -6,7 +6,7 @@ import { requirePortalUser } from '@/lib/admin/session'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { buildOrderZip } from '@/lib/admin/buildOrderZip'
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   const { session, error } = await requirePortalUser()
   if (error) return error
   const id = parseInt(params.id, 10)
@@ -20,6 +20,6 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     : eq(orders.submittedBy, ownerId)
   const [order] = await db.select().from(orders).where(and(eq(orders.id, id), accessCondition)).limit(1)
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-  const zipBuffer = await buildOrderZip(order)
+  const zipBuffer = await buildOrderZip(order, request.url)
   return new NextResponse(new Uint8Array(zipBuffer), { headers: { 'Content-Type': 'application/zip', 'Content-Disposition': `attachment; filename="order_${order.orderNo}.zip"` } })
 }

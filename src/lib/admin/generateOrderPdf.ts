@@ -12,7 +12,13 @@ function addSection(doc: InstanceType<typeof PDFDocument>, title: string, lines:
   doc.moveDown(0.8)
 }
 
-export function generateOrderPdfBuffer(order: Order): Promise<Buffer> {
+function addDownloadLink(doc: InstanceType<typeof PDFDocument>, label: string, url: string) {
+  doc.fontSize(10).fillColor('#1D1D1F').text(`${label}: `, { continued: true })
+  doc.fillColor('#1E6DBF').text('Download', { link: url, underline: true })
+  doc.fillColor('#1D1D1F')
+}
+
+export function generateOrderPdfBuffer(order: Order, zipDownloadUrl?: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 })
     const chunks: Buffer[] = []
@@ -60,16 +66,22 @@ export function generateOrderPdfBuffer(order: Order): Promise<Buffer> {
     }
 
     if (order.cloudDriveLink) {
-      addSection(doc, 'Cloud Drive Link', [order.cloudDriveLink])
+      doc.fontSize(12).fillColor('#1E6DBF').text('Cloud Drive Files', { underline: true })
+      doc.moveDown(0.3)
+      addDownloadLink(doc, 'Cloud Drive', order.cloudDriveLink)
+      doc.moveDown(0.8)
     }
 
     const fileUrls = order.fileUrls as Record<string, string> | null
     if (fileUrls && Object.keys(fileUrls).length > 0) {
-      addSection(
-        doc,
-        'Uploaded Files',
-        Object.entries(fileUrls).map(([slot, url]) => `${slot}: ${url}`),
-      )
+      doc.fontSize(12).fillColor('#1E6DBF').text('Uploaded Files', { underline: true })
+      doc.moveDown(0.3)
+      if (zipDownloadUrl) {
+        addDownloadLink(doc, 'All uploaded files', zipDownloadUrl)
+      } else {
+        doc.fontSize(10).fillColor('#1D1D1F').text('Download all uploaded files from the order portal.')
+      }
+      doc.moveDown(0.8)
     }
 
     doc.end()
