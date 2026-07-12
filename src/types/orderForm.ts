@@ -4,6 +4,7 @@ export const TREATMENT_CATEGORIES = [
   'orthodontics',
   'implant',
   'fixed',
+  'additional',
   'removable',
 ] as const
 
@@ -34,7 +35,7 @@ export interface UploadedFileMeta {
 }
 
 export const orderFormSchema = z.object({
-  treatmentCategory: z.enum(['orthodontics', 'implant', 'fixed', 'removable', '']).optional(),
+  treatmentCategory: z.enum(['orthodontics', 'implant', 'fixed', 'additional', 'removable', '']).optional(),
   repair: z.boolean(),
   redo: z.boolean(),
   urgent: z.boolean(),
@@ -76,6 +77,10 @@ export const orderFormSchema = z.object({
   removableOther: z.string().optional(),
   removableMaterial: z.string().optional(),
   tissueShade: z.string().optional(),
+
+  additionalGroup: z.string().optional(),
+  additionalProduct: z.string().optional(),
+  additionalOther: z.string().optional(),
 
   ponticDesign: z.string().optional(),
   interproximal: z.string().optional(),
@@ -136,6 +141,10 @@ export const defaultFormValues: OrderFormValues = {
   removableOther: '',
   removableMaterial: '',
   tissueShade: '',
+
+  additionalGroup: '',
+  additionalProduct: '',
+  additionalOther: '',
 
   ponticDesign: '',
   interproximal: '',

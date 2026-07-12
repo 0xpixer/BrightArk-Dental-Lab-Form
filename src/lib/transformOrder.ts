@@ -4,6 +4,7 @@ const TREATMENT_TYPE_LABELS: Record<TreatmentCategory, string> = {
   orthodontics: 'Orthodontics',
   implant: 'Implant',
   fixed: 'Fixed Restoration',
+  additional: 'Additional Products',
   removable: 'Removable Restoration',
 }
 
@@ -66,6 +67,12 @@ function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
         removableOther: values.removableOther,
         removableMaterial: values.removableMaterial,
         tissueShade: values.tissueShade,
+      }
+    case 'additional':
+      return {
+        additionalGroup: values.additionalGroup,
+        additionalProduct: values.additionalProduct,
+        additionalOther: values.additionalOther,
       }
     default:
       return {}

@@ -37,6 +37,9 @@ const DETAIL_LABELS: Record<string, string> = {
   removableOther: 'Other',
   removableMaterial: 'Material',
   tissueShade: 'Tissue Shade',
+  additionalGroup: 'Product Group',
+  additionalProduct: 'Product',
+  additionalOther: 'Other Product',
 }
 
 const DETAIL_ORDER = [
@@ -76,6 +79,9 @@ const DETAIL_ORDER = [
   'removableOther',
   'removableMaterial',
   'tissueShade',
+  'additionalGroup',
+  'additionalProduct',
+  'additionalOther',
 ]
 
 function isEmptyValue(value: DetailValue): boolean {

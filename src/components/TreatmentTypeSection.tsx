@@ -17,6 +17,7 @@ const CATEGORY_LABELS: Record<TreatmentCategory, string> = {
   orthodontics: 'Orthodontics',
   implant: 'Implant',
   fixed: 'Fixed Restoration',
+  additional: 'Additional Products',
   removable: 'Removable Restoration',
 }
 
@@ -30,6 +31,7 @@ const CATEGORY_FIELDS: Record<TreatmentCategory, (keyof OrderFormValues)[]> = {
     'marginDesign', 'marginMetalLingualMm', 'marginOther',
     'ponticDesign', 'interproximal', 'occlusalContact', 'insufficientRoom', 'insufficientRoomSub',
   ],
+  additional: ['additionalGroup', 'additionalProduct', 'additionalOther'],
   removable: ['removableArch', 'removableType', 'customTrayHole', 'removableOther', 'removableMaterial', 'tissueShade'],
 }
 
@@ -139,8 +141,21 @@ function OptionGroup({
 }
 
 const ORTHO_OPTIONS = [
-  'Hawley Retainer', 'Space Maintainer', 'Frankle', 'Palatal Expander',
-  'Sports Guard', 'Night Guard', 'Snore Guard', 'Others',
+  'Hawley Retainer',
+  'Snoring Guard(shark)',
+  'Space Maintainer(Unilateral)',
+  'Space Maintainer(Bilateral)',
+  'Soft Night Guard',
+  'Hard Night Guard',
+  'Combo Night Guard(Soft inside/Hard outside)',
+  'ImPak Soft Night Guard',
+  'Nance retainer (exlude band)',
+  'Lingual arch Fixed Maintainer',
+  'Sport Guard (standard)',
+  'Bleaching Tray',
+  'Essix Retainer',
+  'NTI',
+  'Others',
 ]
 
 const IMPLANT_OPTIONS = [
@@ -154,6 +169,96 @@ const MARGIN_OPTIONS = [
 const REMOVABLE_TYPES = [
   'Custom Tray', 'Bite Block', 'Framework', 'Teeth Set up Try in', 'Re-try', 'Finish', 'Others',
 ]
+
+const ADDITIONAL_PRODUCT_GROUPS: Record<string, string[]> = {
+  'Attachments & Telescope': [
+    'ERA Attachment',
+    'Attached (parts enclosed, technician fee)',
+    'Locator (parts enclosed, technician fee)',
+    'Locator Cap',
+    'Locator Abutment',
+    'locator Analog',
+    'Telescopic Crown-Co-Cr(inner&outer crown+composite)',
+    'Cast Implant Abutment Technician Fee',
+    'Surgical Stent',
+    'COCR IMPLANT BAR 3-6 elements',
+    'Extra Element for COCR IMPLANT BAR',
+    'Key & Key Way',
+    'Implant Technician Fee',
+    'Artificial Gum Fee',
+    'Crown & Bridge fit to partial',
+  ],
+  'Composites Restoration': [
+    'Ivoclar- Composite Crown',
+    'Ivoclar-Composite Inlay or Onlay',
+    'Ivoclar-Composite fused to copping',
+  ],
+  'Removable Cases': [
+    'Cast CoCr Partial Framework',
+    'Cast Vitallium Partial Framework',
+    'Titanium Framework',
+    'Cast CoCr Partial Framework Complete directly',
+    'Cast Vitallium Partial Framework Complete directly',
+    'Draw framework design',
+    'Valplast Partial Denture Complete directly(per arch)',
+    'Valplast Full Denture Complete (per arch)',
+    '1-4 Teeth Set up Try-in',
+    '5-9 Teeth Set up Try-in',
+    '10-14 Teeth Set up Try-in',
+    'Valplast Partial Only Finish',
+    'Valplast Denture Only Finish',
+    'Add Valplast Clasp',
+    'Add Teeth to Valplast Partial/Denture',
+    'Mixed color Acrylic Partial, Extra cost',
+    'Acrylic Partial Denture Complete directly **',
+    'Acrylic Full Denture Complete directly **',
+    'Acrylic Partial Denture Only Finish',
+    'Acrylic Full Denture Only Finish',
+    'Add Teeth to Acrylic Partial ./Denture Finish',
+  ],
+  'Digital Center': [
+    'CAD/CAM Design for Crown',
+    'CAD/CAM Design for Bridge',
+    'Titanium Implant Bar ^^',
+    'Chrome Cobalt Implant Bar ^^',
+    '3D Printing Digital Model(partial arch upper and lower)',
+    '3D Printing Digital Model(full arch upper and lower)',
+    'Ivoclar EmaxCAD',
+    'Modelless Full Contour Zirconia',
+    'PMMA Temporary',
+  ],
+  Miscellaneous: [
+    'Individual Tray',
+    'Bite Rim + Base Plate',
+    'Change Shade PFM',
+    'Change Shade Metal Free Crown',
+    'Porcelain Butt Margin',
+    'Gum Porcelain',
+    'Add Wire Clasp',
+    'Add Ball Clasp',
+    'Add Cast Clasp',
+    'Add Flexible / transparent clasp',
+    'Add Metal Rest on Valplast Partial',
+    'Add Metal rest for Denture',
+    'Change denture teeth color',
+    "Dr's teeth-hand fee",
+    'Metal Occlusal',
+    'Metal Lingual',
+    'Metal Reduction Coping',
+    'Resin Reduction Coping',
+    'Duralay Coping',
+    'Opaque on Metal Post',
+    'Opaque on Framework',
+    'Solder Only',
+    'Re-Base',
+    'Soft reline',
+    'Add Product Metal Mesh',
+    'ID For Denture',
+    'Premium Denture Teeth',
+    'Matrix',
+    'Others',
+  ],
+}
 
 function categoryHasValues(values: OrderFormValues, category: TreatmentCategory): boolean {
   return CATEGORY_FIELDS[category].some((field) => {
@@ -180,6 +285,8 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
   const marginDesign = watch('marginDesign')
   const insufficientRoom = watch('insufficientRoom')
   const fixedType = watch('fixedType')
+  const additionalGroup = watch('additionalGroup') ?? ''
+  const additionalProduct = watch('additionalProduct') ?? ''
 
   const handleCategoryChange = useCallback(
     (next: TreatmentCategory) => {
@@ -517,6 +624,55 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {category === 'additional' && (
+          <div key="additional" className="panel-fade-in space-y-3 rounded-card border border-border bg-bg p-4">
+            <label className="block">
+              <span className="text-xs font-semibold text-secondary">Product Group</span>
+              <select
+                {...register('additionalGroup')}
+                className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(e) => {
+                  setValue('additionalGroup', e.target.value)
+                  setValue('additionalProduct', '')
+                  setValue('additionalOther', '')
+                }}
+              >
+                <option value="">-- Select Product Group --</option>
+                {Object.keys(ADDITIONAL_PRODUCT_GROUPS).map((group) => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+            </label>
+
+            {additionalGroup && (
+              <label className="block">
+                <span className="text-xs font-medium text-text-muted">Product</span>
+                <select
+                  {...register('additionalProduct')}
+                  className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                >
+                  <option value="">-- Select Product --</option>
+                  {ADDITIONAL_PRODUCT_GROUPS[additionalGroup]?.map((product) => (
+                    <option key={product} value={product}>{product}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {additionalProduct === 'Others' && (
+              <input
+                placeholder="Specify product..."
+                {...register('additionalOther')}
+                className={inputClassName()}
+              />
+            )}
+
+            <p className="text-xs text-text-muted">
+              Use this section for lab products from the latest price list that do not fit Fixed, Implant, or Orthodontics.
+            </p>
           </div>
         )}
 
