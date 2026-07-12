@@ -135,6 +135,13 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
     } finally {
       setIsSubmitting(false)
     }
+  }, (formErrors) => {
+    const invalidStep = FORM_STEPS.find((step) =>
+      step.fields.some((field) => Boolean(formErrors[field as keyof typeof formErrors])),
+    )?.step ?? 1
+    setActiveStep(invalidStep)
+    setSubmitError('Please complete all required fields before submitting your order.')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   })
 
   const handleSaveDraft = useCallback(() => {
