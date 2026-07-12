@@ -73,6 +73,7 @@ export const orderFormSchema = z.object({
 
   removableArch: z.enum(['upper', 'lower', '']).optional(),
   removableType: z.string().optional(),
+  removableProduct: z.string().optional(),
   customTrayHole: z.enum(['with-hole', 'without-hole', '']).optional(),
   removableOther: z.string().optional(),
   removableMaterial: z.string().optional(),
@@ -137,6 +138,7 @@ export const defaultFormValues: OrderFormValues = {
 
   removableArch: '',
   removableType: '',
+  removableProduct: '',
   customTrayHole: '',
   removableOther: '',
   removableMaterial: '',

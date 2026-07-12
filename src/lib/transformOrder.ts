@@ -4,7 +4,7 @@ const TREATMENT_TYPE_LABELS: Record<TreatmentCategory, string> = {
   orthodontics: 'Orthodontics',
   implant: 'Implant',
   fixed: 'Fixed Restoration',
-  additional: 'Additional Products',
+  additional: 'Lab Services',
   removable: 'Removable Restoration',
 }
 
@@ -63,6 +63,7 @@ function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
       return {
         removableArch: values.removableArch,
         removableType: values.removableType,
+        removableProduct: values.removableProduct,
         customTrayHole: values.customTrayHole,
         removableOther: values.removableOther,
         removableMaterial: values.removableMaterial,

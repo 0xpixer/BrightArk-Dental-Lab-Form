@@ -17,11 +17,11 @@ const CATEGORY_LABELS: Record<TreatmentCategory, string> = {
   orthodontics: 'Orthodontics',
   implant: 'Implant',
   fixed: 'Fixed Restoration',
-  additional: 'Additional Products',
+  additional: 'Lab Services',
   removable: 'Removable Restoration',
 }
 
-const VISIBLE_TREATMENT_CATEGORIES = TREATMENT_CATEGORIES.filter((cat) => cat !== 'removable')
+const VISIBLE_TREATMENT_CATEGORIES = TREATMENT_CATEGORIES
 
 const CATEGORY_FIELDS: Record<TreatmentCategory, (keyof OrderFormValues)[]> = {
   orthodontics: ['orthodontics', 'nightGuardType', 'orthodonticsOther', 'allergies', 'looseTooth', 'toothDecay'],
@@ -32,7 +32,7 @@ const CATEGORY_FIELDS: Record<TreatmentCategory, (keyof OrderFormValues)[]> = {
     'ponticDesign', 'interproximal', 'occlusalContact', 'insufficientRoom', 'insufficientRoomSub',
   ],
   additional: ['additionalGroup', 'additionalProduct', 'additionalOther'],
-  removable: ['removableArch', 'removableType', 'customTrayHole', 'removableOther', 'removableMaterial', 'tissueShade'],
+  removable: ['removableArch', 'removableType', 'removableProduct', 'customTrayHole', 'removableOther', 'removableMaterial', 'tissueShade'],
 }
 
 function RadioOption({
@@ -166,74 +166,37 @@ const IMPLANT_OPTIONS = [
 const MARGIN_OPTIONS = [
   'Metal Lingual', '360° Metal', '3/4 Metal', 'Full Metal', '180° Porcelain', '360° Porcelain', 'Others',
 ]
-const REMOVABLE_TYPES = [
-  'Custom Tray', 'Bite Block', 'Framework', 'Teeth Set up Try in', 'Re-try', 'Finish', 'Others',
-]
-
-const ADDITIONAL_PRODUCT_GROUPS: Record<string, string[]> = {
-  'Attachments & Telescope': [
-    'ERA Attachment',
-    'Attached (parts enclosed, technician fee)',
-    'Locator (parts enclosed, technician fee)',
-    'Locator Cap',
-    'Locator Abutment',
-    'locator Analog',
-    'Telescopic Crown-Co-Cr(inner&outer crown+composite)',
-    'Cast Implant Abutment Technician Fee',
-    'Surgical Stent',
-    'COCR IMPLANT BAR 3-6 elements',
-    'Extra Element for COCR IMPLANT BAR',
-    'Key & Key Way',
-    'Implant Technician Fee',
-    'Artificial Gum Fee',
-    'Crown & Bridge fit to partial',
-  ],
-  'Composites Restoration': [
-    'Ivoclar- Composite Crown',
-    'Ivoclar-Composite Inlay or Onlay',
-    'Ivoclar-Composite fused to copping',
-  ],
-  'Removable Cases': [
+const REMOVABLE_PRODUCT_GROUPS: Record<string, string[]> = {
+  Frameworks: [
     'Cast CoCr Partial Framework',
     'Cast Vitallium Partial Framework',
     'Titanium Framework',
     'Cast CoCr Partial Framework Complete directly',
     'Cast Vitallium Partial Framework Complete directly',
     'Draw framework design',
+  ],
+  'Flexible Dentures': [
     'Valplast Partial Denture Complete directly(per arch)',
     'Valplast Full Denture Complete (per arch)',
-    '1-4 Teeth Set up Try-in',
-    '5-9 Teeth Set up Try-in',
-    '10-14 Teeth Set up Try-in',
     'Valplast Partial Only Finish',
     'Valplast Denture Only Finish',
     'Add Valplast Clasp',
     'Add Teeth to Valplast Partial/Denture',
     'Mixed color Acrylic Partial, Extra cost',
+  ],
+  'Acrylic Dentures': [
     'Acrylic Partial Denture Complete directly **',
     'Acrylic Full Denture Complete directly **',
     'Acrylic Partial Denture Only Finish',
     'Acrylic Full Denture Only Finish',
     'Add Teeth to Acrylic Partial ./Denture Finish',
+    '1-4 Teeth Set up Try-in',
+    '5-9 Teeth Set up Try-in',
+    '10-14 Teeth Set up Try-in',
   ],
-  'Digital Center': [
-    'CAD/CAM Design for Crown',
-    'CAD/CAM Design for Bridge',
-    'Titanium Implant Bar ^^',
-    'Chrome Cobalt Implant Bar ^^',
-    '3D Printing Digital Model(partial arch upper and lower)',
-    '3D Printing Digital Model(full arch upper and lower)',
-    'Ivoclar EmaxCAD',
-    'Modelless Full Contour Zirconia',
-    'PMMA Temporary',
-  ],
-  Miscellaneous: [
+  'Removable Accessories': [
     'Individual Tray',
     'Bite Rim + Base Plate',
-    'Change Shade PFM',
-    'Change Shade Metal Free Crown',
-    'Porcelain Butt Margin',
-    'Gum Porcelain',
     'Add Wire Clasp',
     'Add Ball Clasp',
     'Add Cast Clasp',
@@ -241,7 +204,30 @@ const ADDITIONAL_PRODUCT_GROUPS: Record<string, string[]> = {
     'Add Metal Rest on Valplast Partial',
     'Add Metal rest for Denture',
     'Change denture teeth color',
-    "Dr's teeth-hand fee",
+    'Re-Base',
+    'Soft reline',
+    'Add Product Metal Mesh',
+    'ID For Denture',
+    'Premium Denture Teeth',
+  ],
+}
+
+const ADDITIONAL_PRODUCT_GROUPS: Record<string, string[]> = {
+  'Digital Design & Models': [
+    'CAD/CAM Design for Crown',
+    'CAD/CAM Design for Bridge',
+    '3D Printing Digital Model(partial arch upper and lower)',
+    '3D Printing Digital Model(full arch upper and lower)',
+    'PMMA Temporary',
+  ],
+  'Fixed Restoration Services': [
+    'Ivoclar- Composite Crown',
+    'Ivoclar-Composite Inlay or Onlay',
+    'Ivoclar-Composite fused to copping',
+    'Change Shade PFM',
+    'Change Shade Metal Free Crown',
+    'Porcelain Butt Margin',
+    'Gum Porcelain',
     'Metal Occlusal',
     'Metal Lingual',
     'Metal Reduction Coping',
@@ -250,12 +236,11 @@ const ADDITIONAL_PRODUCT_GROUPS: Record<string, string[]> = {
     'Opaque on Metal Post',
     'Opaque on Framework',
     'Solder Only',
-    'Re-Base',
-    'Soft reline',
-    'Add Product Metal Mesh',
-    'ID For Denture',
-    'Premium Denture Teeth',
     'Matrix',
+  ],
+  'General Lab Services': [
+    "Dr's teeth-hand fee",
+    'Crown & Bridge fit to partial',
     'Others',
   ],
 }
@@ -282,6 +267,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
   const category = watch('treatmentCategory') ?? ''
   const orthodontics = watch('orthodontics')
   const removableType = watch('removableType')
+  const removableProduct = watch('removableProduct') ?? ''
   const marginDesign = watch('marginDesign')
   const insufficientRoom = watch('insufficientRoom')
   const fixedType = watch('fixedType')
@@ -370,25 +356,49 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
                 className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
               >
                 <option value="">-- Select Implant Series --</option>
-                {[
-                  'Layered Zirconia Crown over Implant (Ti-base+100$/unit)',
-                  'Full Coutour Zirconia Crown over Implant (Ti-base+100$/unit)',
-                  'PFM Non-precious Crown over Implant',
-                  'PFM Noble&High Noble Crown over Implant *',
-                  'All-on-4 Zirconia Denture(tibase 25/unit)',
-                  'PFM Non-precious Crown over Implant Metal Try-in',
-                  'PFM Noble&High Noble Crown over Implant Metal Try-in *',
-                  'PFM Non-precious Crown over Implant Porcelain Finish',
-                  'PFM Noble&High Noble Crown over Implant Porcelain Finish',
-                  'Analog',
-                  'Casted Plastic Sleeve Abutment(including screw)',
-                  'CAD/CAM Pure Titanium Custom Abutment(including screw)',
-                  'CAD/CAM Zirconia Custom Abutment(including screw) zirconia abutment on ti base',
-                  'Custom Implant Bar (Titanium / N.P.) 1--6 Abutments',
-                  'Custom Implant Bar (Titanium / N.P.) 7--14 Abutments',
-                ].map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+                <optgroup label="Implant Crowns & Dentures">
+                  {[
+                    'Layered Zirconia Crown over Implant (Ti-base+100$/unit)',
+                    'Full Coutour Zirconia Crown over Implant (Ti-base+100$/unit)',
+                    'PFM Non-precious Crown over Implant',
+                    'PFM Noble&High Noble Crown over Implant *',
+                    'All-on-4 Zirconia Denture(tibase 25/unit)',
+                    'PFM Non-precious Crown over Implant Metal Try-in',
+                    'PFM Noble&High Noble Crown over Implant Metal Try-in *',
+                    'PFM Non-precious Crown over Implant Porcelain Finish',
+                    'PFM Noble&High Noble Crown over Implant Porcelain Finish',
+                  ].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                </optgroup>
+                <optgroup label="Abutments & Components">
+                  {[
+                    'Analog',
+                    'Casted Plastic Sleeve Abutment(including screw)',
+                    'CAD/CAM Pure Titanium Custom Abutment(including screw)',
+                    'CAD/CAM Zirconia Custom Abutment(including screw) zirconia abutment on ti base',
+                    'ERA Attachment',
+                    'Attached (parts enclosed, technician fee)',
+                    'Locator (parts enclosed, technician fee)',
+                    'Locator Cap',
+                    'Locator Abutment',
+                    'locator Analog',
+                    'Cast Implant Abutment Technician Fee',
+                    'Surgical Stent',
+                    'Implant Technician Fee',
+                  ].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                </optgroup>
+                <optgroup label="Bars & Attachments">
+                  {[
+                    'Custom Implant Bar (Titanium / N.P.) 1--6 Abutments',
+                    'Custom Implant Bar (Titanium / N.P.) 7--14 Abutments',
+                    'Titanium Implant Bar ^^',
+                    'Chrome Cobalt Implant Bar ^^',
+                    'COCR IMPLANT BAR 3-6 elements',
+                    'Extra Element for COCR IMPLANT BAR',
+                    'Telescopic Crown-Co-Cr(inner&outer crown+composite)',
+                    'Key & Key Way',
+                    'Artificial Gum Fee',
+                  ].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                </optgroup>
               </select>
             </label>
 
@@ -454,6 +464,8 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
                       'Full Coutour Zirconia/Solid Crown(self-designed)',
                       'Full Coutour Emax/Solid Crown(self-designed)',
                       'Noritake Katana UTML Zirconia Crown (<3 units)',
+                      'Ivoclar EmaxCAD',
+                      'Modelless Full Contour Zirconia',
                       'Porcelain Build-up Only',
                       'Zirconia-Coping Only',
                       'Zirconia Wing',
@@ -671,57 +683,53 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
             )}
 
             <p className="text-xs text-text-muted">
-              Use this section for lab products from the latest price list that do not fit Fixed, Implant, or Orthodontics.
+              Use this section for digital design, fixed-restoration services, and general lab work.
             </p>
           </div>
         )}
 
         {category === 'removable' && (
           <div key="removable" className="panel-fade-in space-y-3 rounded-card border border-border bg-bg p-4">
+            <label className="block">
+              <span className="text-xs font-semibold text-secondary">Product Group</span>
+              <select
+                {...register('removableType')}
+                className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(e) => {
+                  setValue('removableType', e.target.value)
+                  setValue('removableProduct', '')
+                  setValue('removableOther', '')
+                }}
+              >
+                <option value="">-- Select Product Group --</option>
+                {Object.keys(REMOVABLE_PRODUCT_GROUPS).map((group) => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+            </label>
+            {removableType && (
+              <label className="block">
+                <span className="text-xs font-medium text-text-muted">Product</span>
+                <select {...register('removableProduct')} className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary">
+                  <option value="">-- Select Product --</option>
+                  {REMOVABLE_PRODUCT_GROUPS[removableType]?.map((product) => (
+                    <option key={product} value={product}>{product}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="flex gap-2">
               <span className="text-xs text-text-muted">Arch:</span>
               {(['upper', 'lower'] as const).map((arch) => (
-                <label
-                  key={arch}
-                  className={`cursor-pointer rounded border px-2 py-0.5 text-xs font-medium uppercase transition-colors duration-brand ${
-                    watch('removableArch') === arch
-                      ? 'border-secondary bg-secondary text-white'
-                      : 'border-border text-text-muted'
-                  }`}
-                >
+                <label key={arch} className={`cursor-pointer rounded border px-2 py-0.5 text-xs font-medium uppercase transition-colors duration-brand ${watch('removableArch') === arch ? 'border-secondary bg-secondary text-white' : 'border-border text-text-muted'}`}>
                   <input type="radio" value={arch} {...register('removableArch')} className="sr-only" />
                   {arch === 'upper' ? 'U' : 'L'}
                 </label>
               ))}
             </div>
-            <RadioGrid
-              name="removableType"
-              options={REMOVABLE_TYPES}
-              register={register}
-              current={removableType ?? ''}
-            />
-            {removableType === 'Custom Tray' && (
-              <div className="flex gap-2">
-                {(['with-hole', 'without-hole'] as const).map((h) => (
-                  <label key={h} className="flex cursor-pointer items-center gap-1 text-xs">
-                    <input type="radio" value={h} {...register('customTrayHole')} className="accent-secondary" />
-                    {h === 'with-hole' ? 'With Hole' : 'Without Hole'}
-                  </label>
-                ))}
-              </div>
-            )}
-            {removableType === 'Others' && (
+            {removableProduct === 'Others' && (
               <input {...register('removableOther')} placeholder="Specify..." className={inputClassName()} />
             )}
-            <p className="text-xs font-semibold text-secondary">Material</p>
-            <div className="flex flex-wrap gap-2">
-              {['Co.Cr', 'Vitallium 2000', 'Titanium', 'Valplast', 'Acrylic'].map((m) => (
-                <label key={m} className="flex cursor-pointer items-center gap-1 text-xs">
-                  <input type="radio" value={m} {...register('removableMaterial')} className="accent-secondary" />
-                  {m}
-                </label>
-              ))}
-            </div>
             <p className="text-xs font-semibold text-secondary">Tissue Shade</p>
             <div className="flex flex-wrap gap-2">
               {['Pink', 'Light Pink', 'Meharry', 'Medium Meharry'].map((s) => (

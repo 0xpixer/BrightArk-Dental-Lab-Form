@@ -32,7 +32,7 @@ const DETAIL_LABELS: Record<string, string> = {
   insufficientRoom: 'Insufficient Room',
   insufficientRoomSub: 'Insufficient Room Sub-detail',
   removableArch: 'Arch',
-  removableType: 'Type',
+  removableType: 'Product Group',
   customTrayHole: 'Custom Tray Hole',
   removableOther: 'Other',
   removableMaterial: 'Material',
@@ -40,6 +40,7 @@ const DETAIL_LABELS: Record<string, string> = {
   additionalGroup: 'Product Group',
   additionalProduct: 'Product',
   additionalOther: 'Other Product',
+  removableProduct: 'Product',
 }
 
 const DETAIL_ORDER = [
@@ -75,6 +76,7 @@ const DETAIL_ORDER = [
   'insufficientRoomSub',
   'removableArch',
   'removableType',
+  'removableProduct',
   'customTrayHole',
   'removableOther',
   'removableMaterial',
