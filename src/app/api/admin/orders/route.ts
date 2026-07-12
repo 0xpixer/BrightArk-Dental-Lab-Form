@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { desc, eq, or, ilike, and, count } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
-import { requireSession } from '@/lib/admin/session'
+import { requireAdmin } from '@/lib/admin/session'
 
 export async function GET(request: Request) {
-  const { error } = await requireSession()
+  const { error } = await requireAdmin()
   if (error) return error
 
   const { searchParams } = new URL(request.url)

@@ -23,7 +23,7 @@ function formatSex(sex: string | undefined): string | null {
   return null
 }
 
-function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
+export function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
   const category = values.treatmentCategory
   if (!category) return {}
 
@@ -80,7 +80,7 @@ function buildTreatmentData(values: OrderFormValues): Record<string, unknown> {
   }
 }
 
-function buildToothSelection(values: OrderFormValues): Record<string, unknown> {
+export function buildToothSelection(values: OrderFormValues): Record<string, unknown> {
   return {
     notation: 'FDI',
     selectedTeeth: values.selectedTeeth,
@@ -126,5 +126,25 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
     fileUrls: payload.file_urls ?? {},
     cloudDriveLink: payload.cloudDriveLink || null,
     status: 'pending' as const,
+  }
+}
+
+export function mapFormValuesToOrderUpdate(values: OrderFormValues, fileUrls?: Record<string, string>) {
+  const category = values.treatmentCategory as TreatmentCategory | ''
+  return {
+    dentist: values.dentist,
+    clinic: values.clinic,
+    email: values.email,
+    address: values.address || null,
+    patientName: values.patient,
+    patientAge: values.patientAge || null,
+    patientDob: parseDateDDMMYYYY(values.patientDob),
+    sex: formatSex(values.sex),
+    treatmentType: category ? TREATMENT_TYPE_LABELS[category] : null,
+    treatmentData: buildTreatmentData(values),
+    toothSelection: buildToothSelection(values),
+    instructions: values.instructions || null,
+    fileUrls: fileUrls ?? {},
+    cloudDriveLink: values.cloudDriveLink || null,
   }
 }

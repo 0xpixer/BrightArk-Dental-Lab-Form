@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
-import { isAdminRole } from '@/lib/admin/roles'
+import { isAccountRole } from '@/lib/admin/roles'
 
 export async function PATCH(
   request: Request,
@@ -38,10 +38,19 @@ export async function PATCH(
   }
 
   if (body.role !== undefined) {
-    if (!isAdminRole(body.role)) {
+    if (!isAccountRole(body.role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
     updateData.role = body.role
+  }
+
+  if (body.linkedDoctorId !== undefined) {
+    const linkedDoctorId = body.linkedDoctorId === null || body.linkedDoctorId === '' ? null : Number(body.linkedDoctorId)
+    if (linkedDoctorId !== null) {
+      const [doctor] = await db.select({ id: adminUsers.id }).from(adminUsers).where(and(eq(adminUsers.id, linkedDoctorId), eq(adminUsers.role, 'doctor'))).limit(1)
+      if (!doctor) return NextResponse.json({ error: 'Linked doctor not found' }, { status: 400 })
+    }
+    updateData.linkedDoctorId = linkedDoctorId
   }
 
   if (body.password) {
@@ -81,6 +90,7 @@ export async function PATCH(
       id: adminUsers.id,
       username: adminUsers.username,
       role: adminUsers.role,
+      linkedDoctorId: adminUsers.linkedDoctorId,
       isActive: adminUsers.isActive,
     })
 

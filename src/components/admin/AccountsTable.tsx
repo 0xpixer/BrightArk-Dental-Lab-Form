@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { KeyRound } from 'lucide-react'
 import { Toast } from './Toast'
-import { ADMIN_ROLES, formatAdminRole, type AdminRole } from '@/lib/admin/roles'
+import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
 
 interface Account {
   id: number
   username: string
   role: string
+  linkedDoctorId: number | null
   isActive: boolean
   createdBy: number | null
   createdByUsername: string | null
@@ -19,6 +20,7 @@ interface Account {
 
 export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [doctors, setDoctors] = useState<{ id: number; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [resetModal, setResetModal] = useState<{ id: number; username: string } | null>(null)
   const [newPassword, setNewPassword] = useState('')
@@ -37,6 +39,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       setAccounts([])
     } else {
       setAccounts(data.accounts ?? [])
+      setDoctors(data.doctors ?? [])
     }
     setLoading(false)
   }, [])
@@ -62,7 +65,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     fetchAccounts()
   }
 
-  const updateRole = async (id: number, role: AdminRole) => {
+  const updateRole = async (id: number, role: AccountRole) => {
     setPendingAccountId(id)
     setError(null)
     const res = await fetch(`/api/admin/accounts/${id}`, {
@@ -78,6 +81,16 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       return
     }
     setToast(`Role updated to ${formatAdminRole(role)}`)
+    fetchAccounts()
+  }
+
+  const updateLinkedDoctor = async (id: number, linkedDoctorId: string) => {
+    setPendingAccountId(id)
+    const res = await fetch(`/api/admin/accounts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ linkedDoctorId }) })
+    const data = await res.json()
+    setPendingAccountId(null)
+    if (!res.ok) { setError(data.error ?? 'Failed to link doctor'); return }
+    setToast('Linked doctor updated')
     fetchAccounts()
   }
 
@@ -125,7 +138,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
         <table className="w-full">
           <thead className="border-b border-border bg-bg">
             <tr>
-              {['Username', 'Role', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
+              {['Username', 'Role', 'Linked Doctor', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">
                   {h}
                 </th>
@@ -135,13 +148,13 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-text-muted">
                   Loading…
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-red-600">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-red-600">
                   {error}
                 </td>
               </tr>
@@ -156,16 +169,24 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                       <select
                         value={acc.role}
                         disabled={pendingAccountId === acc.id}
-                        onChange={(e) => updateRole(acc.id, e.target.value as AdminRole)}
+                        onChange={(e) => updateRole(acc.id, e.target.value as AccountRole)}
                         className="rounded border border-border bg-surface px-2 py-1 text-xs"
                       >
-                        {ADMIN_ROLES.map((role) => (
+                        {ACCOUNT_ROLES.map((role) => (
                           <option key={role} value={role}>
                             {formatAdminRole(role)}
                           </option>
                         ))}
                       </select>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {acc.role === 'clinic_staff' ? (
+                      <select value={acc.linkedDoctorId ?? ''} disabled={pendingAccountId === acc.id} onChange={(e) => updateLinkedDoctor(acc.id, e.target.value)} className="max-w-40 rounded border border-border bg-surface px-2 py-1 text-xs">
+                        <option value="">Select doctor</option>
+                        {doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}
+                      </select>
+                    ) : <span className="text-text-muted">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span

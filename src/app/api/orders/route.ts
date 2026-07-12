@@ -3,6 +3,8 @@ import { eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert, type OrderApiPayload } from '@/lib/transformOrder'
+import { requireAdmin, requirePortalUser } from '@/lib/admin/session'
+import { getOrderOwnerId } from '@/lib/portal/access'
 
 function todayOrderPrefix(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -40,6 +42,12 @@ async function generateDailyOrderNo(db: ReturnType<typeof getDb>): Promise<strin
 
 export async function POST(request: Request) {
   try {
+    const { session, error } = await requirePortalUser()
+    if (error) return error
+    const ownerId = await getOrderOwnerId(parseInt(session!.user.id, 10), session!.user.role)
+    if (!ownerId) {
+      return NextResponse.json({ success: false, error: 'Clinic staff must be linked to a doctor before submitting orders' }, { status: 403 })
+    }
     const body = (await request.json()) as OrderApiPayload
 
     if (!body.dentist || !body.clinic || !body.patient || !body.email) {
@@ -52,7 +60,7 @@ export async function POST(request: Request) {
     const db = getDb()
     const orderNo = await generateDailyOrderNo(db)
     const orderData = mapPayloadToOrderInsert({ ...body, orderNo })
-    const [inserted] = await db.insert(orders).values(orderData).returning({
+    const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({
       orderNo: orders.orderNo,
     })
 
@@ -74,6 +82,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const { error } = await requireAdmin()
+    if (error) return error
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
 

@@ -9,6 +9,23 @@ import {
   integer,
 } from 'drizzle-orm/pg-core'
 
+export const adminUsers = pgTable('admin_users', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  email: text('email').unique(),
+  fullName: text('full_name'),
+  clinicName: text('clinic_name'),
+  phone: text('phone'),
+  address: text('address'),
+  linkedDoctorId: integer('linked_doctor_id'),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role').notNull(),
+  createdBy: integer('created_by'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true, mode: 'date' }),
+})
+
 export const orders = pgTable('orders', {
   id: serial('id').primaryKey(),
   orderNo: text('order_no').notNull().unique(),
@@ -34,19 +51,9 @@ export const orders = pgTable('orders', {
   instructions: text('instructions'),
   fileUrls: jsonb('file_urls'),
   cloudDriveLink: text('cloud_drive_link'),
+  submittedBy: integer('submitted_by').references(() => adminUsers.id),
   status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-})
-
-export const adminUsers = pgTable('admin_users', {
-  id: serial('id').primaryKey(),
-  username: text('username').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
-  role: text('role').notNull(),
-  createdBy: integer('created_by'),
-  isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-  lastLoginAt: timestamp('last_login_at', { withTimezone: true, mode: 'date' }),
 })
 
 export const sharedLinks = pgTable('shared_links', {

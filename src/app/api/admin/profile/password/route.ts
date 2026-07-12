@@ -3,10 +3,10 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
-import { requireSession } from '@/lib/admin/session'
+import { requireAdmin } from '@/lib/admin/session'
 
 export async function PATCH(request: Request) {
-  const { session, error } = await requireSession()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const body = await request.json()

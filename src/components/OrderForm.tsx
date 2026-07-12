@@ -24,7 +24,13 @@ const FORM_STEPS = [
   { id: 'file-upload', label: 'Upload Files', step: 5, fields: ['cloudDriveLink'] },
 ] as const
 
-export default function OrderForm() {
+interface OrderFormProps {
+  orderId?: string
+  initialValues?: OrderFormValues
+  initialFileUrls?: Record<string, string>
+}
+
+export default function OrderForm({ orderId, initialValues, initialFileUrls = {} }: OrderFormProps) {
   const [uploadFolderId] = useState(() => generateUploadFolderId())
   const [files, setFiles] = useState<FilesState>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -52,6 +58,10 @@ export default function OrderForm() {
   })
 
   useEffect(() => {
+    if (initialValues) {
+      reset({ ...defaultFormValues, ...initialValues })
+      return
+    }
     const draft = loadDraft()
     if (draft) {
       const treatmentCategory =
@@ -64,7 +74,22 @@ export default function OrderForm() {
         treatmentCategory,
       })
     }
-  }, [loadDraft, reset])
+  }, [initialValues, loadDraft, reset])
+
+  useEffect(() => {
+    if (initialValues) return
+    if (loadDraft()) return
+    fetch('/api/portal/profile')
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!data?.profile) return
+        setValue('dentist', data.profile.fullName ?? '')
+        setValue('clinic', data.profile.clinicName ?? '')
+        setValue('email', data.profile.email ?? '')
+        setValue('address', data.profile.address ?? '')
+      })
+      .catch(() => undefined)
+  }, [initialValues, loadDraft, setValue])
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null)
@@ -78,12 +103,12 @@ export default function OrderForm() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
+      const res = await fetch(orderId ? `/api/portal/orders/${orderId}` : '/api/orders', {
+        method: orderId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
-          file_urls,
+          file_urls: { ...initialFileUrls, ...file_urls },
         }),
       })
 
@@ -95,7 +120,7 @@ export default function OrderForm() {
 
       setSubmittedOrderNo(data.orderNo ?? '')
       setSubmitted(true)
-      clearDraft()
+      if (!orderId) clearDraft()
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to submit order')
@@ -267,6 +292,7 @@ export default function OrderForm() {
               isSubmitting={isSubmitting}
               onSaveDraft={handleSaveDraft}
               draftSaved={draftSaved}
+              submitLabel={orderId ? 'Save Order Changes' : 'Submit Order'}
             />
           )}
 

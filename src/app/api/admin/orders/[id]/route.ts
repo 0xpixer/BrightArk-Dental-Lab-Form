@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders, sharedLinks } from '@/lib/db/schema'
-import { requireSession } from '@/lib/admin/session'
+import { requireAdmin } from '@/lib/admin/session'
 
 const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete'])
 
@@ -10,7 +10,7 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { error } = await requireSession()
+  const { error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -32,7 +32,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { error } = await requireSession()
+  const { error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -94,7 +94,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { error } = await requireSession()
+  const { error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)

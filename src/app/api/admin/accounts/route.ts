@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { eq, desc } from 'drizzle-orm'
+import { and, eq, desc } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
-import { isAdminRole } from '@/lib/admin/roles'
+import { isAccountRole } from '@/lib/admin/roles'
 
 export async function GET() {
   const { error } = await requireSuperadmin()
@@ -18,13 +18,18 @@ export async function GET() {
     accounts: users.map((u) => ({
       id: u.id,
       username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      clinicName: u.clinicName,
       role: u.role,
+      linkedDoctorId: u.linkedDoctorId,
       isActive: u.isActive,
       createdBy: u.createdBy,
       createdByUsername: u.createdBy ? usernameById.get(u.createdBy) ?? null : null,
       createdAt: u.createdAt,
       lastLoginAt: u.lastLoginAt,
     })),
+    doctors: users.filter((u) => u.role === 'doctor').map((u) => ({ id: u.id, name: u.fullName ?? u.username })),
   })
 }
 
@@ -33,13 +38,13 @@ export async function POST(request: Request) {
   if (error) return error
 
   const body = await request.json()
-  const { username, password, role } = body
+  const { username, password, role, linkedDoctorId } = body
 
   if (!username || !password) {
     return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
   }
 
-  if (!isAdminRole(role)) {
+  if (!isAccountRole(role)) {
     return NextResponse.json({ error: 'A valid role is required' }, { status: 400 })
   }
 
@@ -55,6 +60,12 @@ export async function POST(request: Request) {
   }
 
   const db = getDb()
+  let linkedDoctor: number | null = null
+  if (role === 'clinic_staff') {
+    linkedDoctor = Number(linkedDoctorId)
+    const [doctor] = await db.select({ id: adminUsers.id }).from(adminUsers).where(and(eq(adminUsers.id, linkedDoctor), eq(adminUsers.role, 'doctor'))).limit(1)
+    if (!doctor) return NextResponse.json({ error: 'Clinic staff must be linked to a doctor' }, { status: 400 })
+  }
   const existing = await db
     .select()
     .from(adminUsers)
@@ -73,6 +84,7 @@ export async function POST(request: Request) {
       username,
       passwordHash,
       role,
+      linkedDoctorId: linkedDoctor,
       createdBy: parseInt(session!.user.id, 10),
       isActive: true,
     })
@@ -80,6 +92,7 @@ export async function POST(request: Request) {
       id: adminUsers.id,
       username: adminUsers.username,
       role: adminUsers.role,
+      linkedDoctorId: adminUsers.linkedDoctorId,
     })
 
   return NextResponse.json({ success: true, account: created }, { status: 201 })

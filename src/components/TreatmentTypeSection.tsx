@@ -21,7 +21,10 @@ const CATEGORY_LABELS: Record<TreatmentCategory, string> = {
   removable: 'Removable Restoration',
 }
 
-const VISIBLE_TREATMENT_CATEGORIES = TREATMENT_CATEGORIES
+const VISIBLE_TREATMENT_CATEGORIES: TreatmentCategory[] = [
+  'fixed',
+  ...TREATMENT_CATEGORIES.filter((cat) => cat !== 'fixed'),
+]
 
 const CATEGORY_FIELDS: Record<TreatmentCategory, (keyof OrderFormValues)[]> = {
   orthodontics: ['orthodontics', 'nightGuardType', 'orthodonticsOther', 'allergies', 'looseTooth', 'toothDecay'],

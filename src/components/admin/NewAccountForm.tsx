@@ -1,20 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ADMIN_ROLES, formatAdminRole, type AdminRole } from '@/lib/admin/roles'
+import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
 
 export function NewAccountForm() {
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [role, setRole] = useState<AdminRole>('admin')
+  const [role, setRole] = useState<AccountRole>('admin')
+  const [doctors, setDoctors] = useState<{ id: number; name: string }[]>([])
+  const [linkedDoctorId, setLinkedDoctorId] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<{ username: string; password: string; role: AdminRole } | null>(null)
+  const [success, setSuccess] = useState<{ username: string; password: string; role: AccountRole } | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/accounts').then(async (response) => response.ok ? response.json() : null).then((data) => setDoctors(data?.doctors ?? [])).catch(() => undefined)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,7 +40,7 @@ export function NewAccountForm() {
     const res = await fetch('/api/admin/accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role }),
+      body: JSON.stringify({ username, password, role, linkedDoctorId }),
     })
     const data = await res.json()
     setLoading(false)
@@ -87,16 +93,26 @@ export function NewAccountForm() {
               <select
                 id="role"
                 value={role}
-                onChange={(e) => setRole(e.target.value as AdminRole)}
+                onChange={(e) => setRole(e.target.value as AccountRole)}
                 className="w-full rounded-card border border-border px-3 py-2 text-sm"
               >
-                {ADMIN_ROLES.map((option) => (
+                {ACCOUNT_ROLES.map((option) => (
                   <option key={option} value={option}>
                     {formatAdminRole(option)}
                   </option>
                 ))}
               </select>
             </div>
+
+            {role === 'clinic_staff' && (
+              <div>
+                <label htmlFor="linkedDoctorId" className="mb-1 block text-xs font-medium">Linked Doctor</label>
+                <select id="linkedDoctorId" value={linkedDoctorId} onChange={(e) => setLinkedDoctorId(e.target.value)} required className="w-full rounded-card border border-border px-3 py-2 text-sm">
+                  <option value="">Select doctor</option>
+                  {doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}
+                </select>
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="mb-1 block text-xs font-medium">Temporary Password</label>

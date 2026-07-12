@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
@@ -44,13 +45,13 @@ function LoginForm() {
       <div className="w-full max-w-md rounded-card border border-border bg-surface p-8 shadow-lg">
         <div className="mb-6 flex flex-col items-center">
           <Image src="/Logo-SVG.svg" alt="BrightArk" width={160} height={48} className="mb-4 h-12 w-auto" />
-          <h1 className="text-xl font-semibold text-text">Admin Portal</h1>
+          <h1 className="text-xl font-semibold text-text">BrightArk Portal</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="mb-1 block text-xs font-medium text-text">
-              Username
+              Email or Username
             </label>
             <input
               id="username"
@@ -105,7 +106,7 @@ function LoginForm() {
         </form>
 
         <p className="mt-4 text-center text-xs text-text-muted">
-          Contact your super admin if you need access.
+          Doctors can <Link href="/register" className="font-medium text-primary hover:underline">create an account</Link> to submit and manage orders.
         </p>
       </div>
     </div>

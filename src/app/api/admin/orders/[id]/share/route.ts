@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders, sharedLinks } from '@/lib/db/schema'
-import { requireSession } from '@/lib/admin/session'
+import { requireAdmin } from '@/lib/admin/session'
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { session, error } = await requireSession()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)
