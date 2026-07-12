@@ -18,9 +18,14 @@ Copy `.env.example` to `.env.local` and fill in values from your Vercel project:
 ```bash
 DATABASE_URL=postgresql://...
 BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+APP_URL=https://your-production-domain.com
+LARK_WEBHOOK_URL=https://open.larksuite.com/open-apis/bot/v2/hook/...
+CRON_SECRET=use-a-long-random-secret
 ```
 
 On Vercel, these are auto-injected when you connect Neon Postgres and Blob storage.
+
+`APP_URL`, `LARK_WEBHOOK_URL`, and `CRON_SECRET` must be set manually. A Vercel Cron job runs every three hours and sends one Lark notification for each newly submitted order.
 
 ## Development
 

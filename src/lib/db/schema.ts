@@ -68,7 +68,14 @@ export const sharedLinks = pgTable('shared_links', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const larkNotifications = pgTable('lark_notifications', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').references(() => orders.id).notNull().unique(),
+  sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})
+
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type AdminUser = typeof adminUsers.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect
+export type LarkNotification = typeof larkNotifications.$inferSelect
