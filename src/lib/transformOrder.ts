@@ -61,7 +61,13 @@ export function buildTreatmentData(values: OrderFormValues): Record<string, unkn
       }
     case 'removable':
       return {
-        removableArch: values.removableArch,
+        removableArch: values.removableArch === 'both'
+          ? 'Upper & Lower'
+          : values.removableArch === 'upper'
+            ? 'Upper'
+            : values.removableArch === 'lower'
+              ? 'Lower'
+              : '',
         removableType: values.removableType,
         removableProduct: values.removableProduct,
         customTrayHole: values.customTrayHole,

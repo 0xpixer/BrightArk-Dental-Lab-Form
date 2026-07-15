@@ -272,6 +272,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
   const orthodontics = watch('orthodontics')
   const removableType = watch('removableType')
   const removableProduct = watch('removableProduct') ?? ''
+  const removableArch = watch('removableArch') ?? ''
   const marginDesign = watch('marginDesign')
   const insufficientRoom = watch('insufficientRoom')
   const fixedType = watch('fixedType')
@@ -289,6 +290,15 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
     },
     [category, watch, setValue],
   )
+
+  const toggleRemovableArch = (arch: 'upper' | 'lower') => {
+    const hasUpper = removableArch === 'upper' || removableArch === 'both'
+    const hasLower = removableArch === 'lower' || removableArch === 'both'
+    const nextUpper = arch === 'upper' ? !hasUpper : hasUpper
+    const nextLower = arch === 'lower' ? !hasLower : hasLower
+
+    setValue('removableArch', nextUpper && nextLower ? 'both' : nextUpper ? 'upper' : nextLower ? 'lower' : '')
+  }
 
   return (
     <SectionCard title="Treatment Type" id="treatment-type" onTitleClick={onTitleClick} embedded={embedded}>
@@ -724,12 +734,17 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
             )}
             <div className="flex gap-2">
               <span className="text-xs text-text-muted">Arch:</span>
-              {(['upper', 'lower'] as const).map((arch) => (
-                <label key={arch} className={`cursor-pointer rounded border px-2 py-0.5 text-xs font-medium uppercase transition-colors duration-brand ${watch('removableArch') === arch ? 'border-secondary bg-secondary text-white' : 'border-border text-text-muted'}`}>
-                  <input type="radio" value={arch} {...register('removableArch')} className="sr-only" />
+              {(['upper', 'lower'] as const).map((arch) => {
+                const checked = arch === 'upper'
+                  ? removableArch === 'upper' || removableArch === 'both'
+                  : removableArch === 'lower' || removableArch === 'both'
+                return (
+                <label key={arch} className={`cursor-pointer rounded border px-2 py-0.5 text-xs font-medium uppercase transition-colors duration-brand ${checked ? 'border-secondary bg-secondary text-white' : 'border-border text-text-muted'}`}>
+                  <input type="checkbox" checked={checked} onChange={() => toggleRemovableArch(arch)} className="sr-only" />
                   {arch === 'upper' ? 'U' : 'L'}
                 </label>
-              ))}
+                )
+              })}
             </div>
             {removableProduct === 'Others' && (
               <input {...register('removableOther')} placeholder="Specify..." className={inputClassName()} />

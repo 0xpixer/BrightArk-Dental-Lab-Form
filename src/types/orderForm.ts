@@ -71,7 +71,7 @@ export const orderFormSchema = z.object({
   marginMetalLingualMm: z.string().optional(),
   marginOther: z.string().optional(),
 
-  removableArch: z.enum(['upper', 'lower', '']).optional(),
+  removableArch: z.enum(['upper', 'lower', 'both', '']).optional(),
   removableType: z.string().optional(),
   removableProduct: z.string().optional(),
   customTrayHole: z.enum(['with-hole', 'without-hole', '']).optional(),
