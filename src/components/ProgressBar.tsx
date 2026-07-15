@@ -1,11 +1,9 @@
 import { Check } from 'lucide-react'
 
 const STEPS = [
-  { id: 1, label: 'Order Info' },
-  { id: 2, label: 'Treatment' },
-  { id: 3, label: 'Teeth & Shade' },
-  { id: 4, label: 'Instructions' },
-  { id: 5, label: 'Upload Files' },
+  { id: 1, label: 'Case Details' },
+  { id: 2, label: 'Teeth & Shade' },
+  { id: 3, label: 'Upload Files' },
 ] as const
 
 interface ProgressBarProps {

@@ -18,11 +18,9 @@ import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
 
 const FORM_STEPS = [
-  { id: 'order-info', label: 'Order Information', step: 1, fields: ['dentist', 'clinic', 'email', 'patient'] },
-  { id: 'treatment-type', label: 'Treatment Type', step: 2, fields: [] },
-  { id: 'tooth-selector', label: 'Tooth Selector & Shade', step: 3, fields: ['shade'] },
-  { id: 'instructions', label: 'Instructions', step: 4, fields: [] },
-  { id: 'file-upload', label: 'Upload Files', step: 5, fields: ['cloudDriveLink'] },
+  { id: 'case-details', label: 'Case Details', step: 1, fields: ['dentist', 'clinic', 'email', 'patient'] },
+  { id: 'tooth-selector', label: 'Tooth Selector & Shade', step: 2, fields: ['shade'] },
+  { id: 'file-upload', label: 'Upload Files', step: 3, fields: ['cloudDriveLink'] },
 ] as const
 
 interface OrderFormProps {
@@ -241,10 +239,14 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
             {FORM_STEPS.map((step) => (
               step.step === activeStep ? (
                 <div key={step.id}>
-                  {step.id === 'order-info' && <OrderInfoSection {...formProps} onTitleClick={foldActiveStep} />}
-                  {step.id === 'treatment-type' && <TreatmentTypeSection register={register} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />}
+                  {step.id === 'case-details' && (
+                    <div className="space-y-3 md:space-y-4">
+                      <OrderInfoSection {...formProps} onTitleClick={foldActiveStep} />
+                      <TreatmentTypeSection register={register} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />
+                      <InstructionsSection register={register} watch={watch} onTitleClick={foldActiveStep} />
+                    </div>
+                  )}
                   {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />}
-                  {step.id === 'instructions' && <InstructionsSection register={register} watch={watch} onTitleClick={foldActiveStep} />}
                   {step.id === 'file-upload' && (
                     <FileUploadSection
                       orderNo={uploadFolderId}
