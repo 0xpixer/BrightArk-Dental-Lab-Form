@@ -172,15 +172,20 @@ export function ToothSelectorSection({ register, errors, watch, setValue, onTitl
               <FormField label="Shade" htmlFor="shade" error={errors.shade?.message}>
                 <input id="shade" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. VITA A2" />
               </FormField>
-              <FormField label="Incisal" htmlFor="stumpShadeIncisal" error={errors.stumpShadeIncisal?.message}>
-                <input id="stumpShadeIncisal" {...register('stumpShadeIncisal')} className={inputClassName(!!errors.stumpShadeIncisal)} placeholder="e.g. ND1" />
-              </FormField>
-              <FormField label="Middle" htmlFor="stumpShadeMiddle" error={errors.stumpShadeMiddle?.message}>
-                <input id="stumpShadeMiddle" {...register('stumpShadeMiddle')} className={inputClassName(!!errors.stumpShadeMiddle)} placeholder="e.g. ND2" />
-              </FormField>
-              <FormField label="Cervical" htmlFor="stumpShadeCervical" error={errors.stumpShadeCervical?.message}>
-                <input id="stumpShadeCervical" {...register('stumpShadeCervical')} className={inputClassName(!!errors.stumpShadeCervical)} placeholder="e.g. ND3" />
-              </FormField>
+              <div className="border-t border-border pt-3">
+                <p className="mb-2 text-xs font-semibold text-secondary">Stump Shade</p>
+                <div className="grid gap-3">
+                  <FormField label="Incisal" htmlFor="stumpShadeIncisal" error={errors.stumpShadeIncisal?.message}>
+                    <input id="stumpShadeIncisal" {...register('stumpShadeIncisal')} className={inputClassName(!!errors.stumpShadeIncisal)} placeholder="e.g. ND1" />
+                  </FormField>
+                  <FormField label="Middle" htmlFor="stumpShadeMiddle" error={errors.stumpShadeMiddle?.message}>
+                    <input id="stumpShadeMiddle" {...register('stumpShadeMiddle')} className={inputClassName(!!errors.stumpShadeMiddle)} placeholder="e.g. ND2" />
+                  </FormField>
+                  <FormField label="Cervical" htmlFor="stumpShadeCervical" error={errors.stumpShadeCervical?.message}>
+                    <input id="stumpShadeCervical" {...register('stumpShadeCervical')} className={inputClassName(!!errors.stumpShadeCervical)} placeholder="e.g. ND3" />
+                  </FormField>
+                </div>
+              </div>
             </div>
             <figure className="mx-auto w-full max-w-[150px]">
               <img src="/stump-shade.png" alt="Stump shade guide showing incisal, middle, and cervical zones" className="h-auto w-full" />
