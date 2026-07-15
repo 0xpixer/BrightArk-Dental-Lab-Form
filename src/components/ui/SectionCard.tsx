@@ -6,13 +6,14 @@ interface SectionCardProps {
   id?: string
   className?: string
   onTitleClick?: () => void
+  embedded?: boolean
 }
 
-export function SectionCard({ title, children, id, className = '', onTitleClick }: SectionCardProps) {
+export function SectionCard({ title, children, id, className = '', onTitleClick, embedded = false }: SectionCardProps) {
   return (
     <section
       id={id}
-      className={`rounded-card border border-border bg-surface p-4 shadow-sm md:p-6 ${className}`}
+      className={embedded ? className : `rounded-card border border-border bg-surface p-4 shadow-sm md:p-6 ${className}`}
       aria-labelledby={id ? `${id}-heading` : undefined}
     >
       <h2

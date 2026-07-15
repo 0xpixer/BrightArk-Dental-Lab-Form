@@ -10,11 +10,12 @@ interface Props {
   watch: UseFormWatch<OrderFormValues>
   setValue: UseFormSetValue<OrderFormValues>
   onTitleClick?: () => void
+  embedded?: boolean
 }
 
-export function OrderInfoSection({ register, errors, onTitleClick }: Props) {
+export function OrderInfoSection({ register, errors, onTitleClick, embedded }: Props) {
   return (
-    <SectionCard title="Order Information" id="order-info" onTitleClick={onTitleClick}>
+    <SectionCard title="Order Information" id="order-info" onTitleClick={onTitleClick} embedded={embedded}>
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Dentist" htmlFor="dentist" required error={errors.dentist?.message}>

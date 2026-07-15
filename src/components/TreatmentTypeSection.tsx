@@ -11,6 +11,7 @@ interface Props {
   watch: UseFormWatch<OrderFormValues>
   setValue: UseFormSetValue<OrderFormValues>
   onTitleClick?: () => void
+  embedded?: boolean
 }
 
 const CATEGORY_LABELS: Record<TreatmentCategory, string> = {
@@ -266,7 +267,7 @@ function clearCategoryFields(
   })
 }
 
-export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }: Props) {
+export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, embedded }: Props) {
   const category = watch('treatmentCategory') ?? ''
   const orthodontics = watch('orthodontics')
   const removableType = watch('removableType')
@@ -290,7 +291,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick }
   )
 
   return (
-    <SectionCard title="Treatment Type" id="treatment-type" onTitleClick={onTitleClick}>
+    <SectionCard title="Treatment Type" id="treatment-type" onTitleClick={onTitleClick} embedded={embedded}>
       <p className="mb-3 text-xs text-text-muted">
         Digital dental impressions only. Physical impressions are not accepted.
       </p>

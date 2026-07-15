@@ -14,6 +14,7 @@ import { SubmitSection } from '@/components/SubmitSection'
 import { SuccessCard } from '@/components/SuccessCard'
 import { FormFooter } from '@/components/FormFooter'
 import { AuthModal } from '@/components/AuthModal'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
 
@@ -240,11 +241,13 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
               step.step === activeStep ? (
                 <div key={step.id}>
                   {step.id === 'case-details' && (
-                    <div className="space-y-3 md:space-y-4">
-                      <OrderInfoSection {...formProps} onTitleClick={foldActiveStep} />
-                      <TreatmentTypeSection register={register} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />
-                      <InstructionsSection register={register} watch={watch} onTitleClick={foldActiveStep} />
-                    </div>
+                    <SectionCard title="Case Details" id="case-details" onTitleClick={foldActiveStep}>
+                      <div className="space-y-6">
+                        <OrderInfoSection {...formProps} embedded />
+                        <TreatmentTypeSection register={register} watch={watch} setValue={setValue} embedded />
+                        <InstructionsSection register={register} watch={watch} embedded />
+                      </div>
+                    </SectionCard>
                   )}
                   {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />}
                   {step.id === 'file-upload' && (
