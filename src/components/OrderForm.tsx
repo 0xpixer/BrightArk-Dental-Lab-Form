@@ -20,7 +20,12 @@ import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderF
 
 const FORM_STEPS = [
   { id: 'case-details', label: 'Case Details', step: 1, fields: ['dentist', 'clinic', 'email', 'patient'] },
-  { id: 'tooth-selector', label: 'Tooth Selector & Shade', step: 2, fields: ['shade'] },
+  {
+    id: 'tooth-selector',
+    label: 'Tooth Selector & Shade',
+    step: 2,
+    fields: ['shade', 'stumpShadeIncisal', 'stumpShadeMiddle', 'stumpShadeCervical'],
+  },
   { id: 'file-upload', label: 'Upload Files', step: 3, fields: ['cloudDriveLink'] },
 ] as const
 

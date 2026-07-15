@@ -5,6 +5,7 @@ import { orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert, type OrderApiPayload } from '@/lib/transformOrder'
 import { requireAdmin, requirePortalUser } from '@/lib/admin/session'
 import { getOrderOwnerId } from '@/lib/portal/access'
+import { orderFormSchema } from '@/types/orderForm'
 
 function todayOrderPrefix(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -50,16 +51,17 @@ export async function POST(request: Request) {
     }
     const body = (await request.json()) as OrderApiPayload
 
-    if (!body.dentist || !body.clinic || !body.patient || !body.email) {
+    const parsed = orderFormSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Dentist, clinic, email, and patient name are required' },
+        { success: false, error: 'Please complete the required form fields' },
         { status: 400 },
       )
     }
 
     const db = getDb()
     const orderNo = await generateDailyOrderNo(db)
-    const orderData = mapPayloadToOrderInsert({ ...body, orderNo })
+    const orderData = mapPayloadToOrderInsert({ ...parsed.data, orderNo })
     const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({
       orderNo: orders.orderNo,
     })

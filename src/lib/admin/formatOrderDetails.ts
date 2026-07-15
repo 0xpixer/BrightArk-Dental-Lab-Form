@@ -105,6 +105,13 @@ function humanizeKey(key: string): string {
 function formatValue(key: string, value: DetailValue): string {
   if (Array.isArray(value)) return value.join(', ')
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (key === 'stumpShade' && typeof value === 'object' && value !== null) {
+    const shades = value as Record<string, unknown>
+    return ['incisal', 'middle', 'cervical']
+      .filter((zone) => !isEmptyValue(shades[zone]))
+      .map((zone) => `${humanizeKey(zone)}: ${String(shades[zone])}`)
+      .join('; ')
+  }
   if (typeof value === 'object' && value !== null) {
     return formatDetailLines(value as Record<string, unknown>).join('\n')
   }

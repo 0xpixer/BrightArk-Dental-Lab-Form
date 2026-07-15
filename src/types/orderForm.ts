@@ -91,10 +91,42 @@ export const orderFormSchema = z.object({
 
   selectedTeeth: z.array(z.number()),
   toothMode: z.enum(['single', 'bridge']),
-  shade: z.string().min(1, 'Shade is required'),
+  shade: z.string().trim(),
+  stumpShadeIncisal: z.string().trim(),
+  stumpShadeMiddle: z.string().trim(),
+  stumpShadeCervical: z.string().trim(),
 
   instructions: z.string().optional(),
   cloudDriveLink: z.string().url('Enter a valid download link').or(z.literal('')).optional(),
+}).superRefine((values, ctx) => {
+  const stumpShadeFields = [
+    'stumpShadeIncisal',
+    'stumpShadeMiddle',
+    'stumpShadeCervical',
+  ] as const
+  const hasShade = values.shade.length > 0
+  const hasAnyStumpShade = stumpShadeFields.some((field) => values[field].length > 0)
+  const hasCompleteStumpShade = stumpShadeFields.every((field) => values[field].length > 0)
+
+  if (!hasShade && !hasCompleteStumpShade) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['shade'],
+      message: 'Enter a shade or complete all three stump shade values',
+    })
+  }
+
+  if (hasAnyStumpShade && !hasCompleteStumpShade) {
+    stumpShadeFields.forEach((field) => {
+      if (!values[field]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: 'Complete all three stump shade values',
+        })
+      }
+    })
+  }
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
@@ -157,6 +189,9 @@ export const defaultFormValues: OrderFormValues = {
   selectedTeeth: [],
   toothMode: 'single',
   shade: '',
+  stumpShadeIncisal: '',
+  stumpShadeMiddle: '',
+  stumpShadeCervical: '',
 
   instructions: '',
   cloudDriveLink: '',

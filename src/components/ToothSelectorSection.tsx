@@ -193,10 +193,28 @@ export function ToothSelectorSection({ register, errors, watch, setValue, onTitl
         </p>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <FormField label="Shade" htmlFor="shade" required error={errors.shade?.message}>
-          <input id="shade" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. VITA A2" />
-        </FormField>
+      <div className="mt-6 rounded-card border border-border bg-bg p-4">
+        <p className="mb-1 text-sm font-semibold text-secondary">Shade or Stump Shade</p>
+        <p className="mb-4 text-xs text-text-muted">Enter a regular shade, or complete all three stump shade values.</p>
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_180px] md:items-center">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Shade" htmlFor="shade" error={errors.shade?.message} className="sm:col-span-2">
+              <input id="shade" {...register('shade')} className={inputClassName(!!errors.shade)} placeholder="e.g. VITA A2" />
+            </FormField>
+            <FormField label="Incisal" htmlFor="stumpShadeIncisal" error={errors.stumpShadeIncisal?.message}>
+              <input id="stumpShadeIncisal" {...register('stumpShadeIncisal')} className={inputClassName(!!errors.stumpShadeIncisal)} placeholder="e.g. ND1" />
+            </FormField>
+            <FormField label="Middle" htmlFor="stumpShadeMiddle" error={errors.stumpShadeMiddle?.message}>
+              <input id="stumpShadeMiddle" {...register('stumpShadeMiddle')} className={inputClassName(!!errors.stumpShadeMiddle)} placeholder="e.g. ND2" />
+            </FormField>
+            <FormField label="Cervical" htmlFor="stumpShadeCervical" error={errors.stumpShadeCervical?.message}>
+              <input id="stumpShadeCervical" {...register('stumpShadeCervical')} className={inputClassName(!!errors.stumpShadeCervical)} placeholder="e.g. ND3" />
+            </FormField>
+          </div>
+          <figure className="mx-auto w-full max-w-[180px]">
+            <img src="/stump-shade.png" alt="Stump shade guide showing incisal, middle, and cervical zones" className="h-auto w-full" />
+          </figure>
+        </div>
       </div>
     </SectionCard>
   )

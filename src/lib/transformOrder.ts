@@ -81,11 +81,18 @@ export function buildTreatmentData(values: OrderFormValues): Record<string, unkn
 }
 
 export function buildToothSelection(values: OrderFormValues): Record<string, unknown> {
+  const stumpShade = {
+    incisal: values.stumpShadeIncisal,
+    middle: values.stumpShadeMiddle,
+    cervical: values.stumpShadeCervical,
+  }
+
   return {
     notation: 'FDI',
     selectedTeeth: values.selectedTeeth,
     toothMode: values.toothMode,
     shade: values.shade,
+    ...(Object.values(stumpShade).some(Boolean) ? { stumpShade } : {}),
   }
 }
 
