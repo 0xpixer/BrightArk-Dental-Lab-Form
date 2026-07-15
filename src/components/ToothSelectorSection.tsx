@@ -39,6 +39,14 @@ const TOOTH_POSITIONS: Record<number, { left: number; top: number }> = {
   35: { left: 69, top: 74 }, 36: { left: 70, top: 69 }, 37: { left: 70, top: 64 }, 38: { left: 69, top: 58 },
 }
 
+function toothShapePath(tooth: number): string {
+  const position = tooth % 10
+  if (position <= 2) return 'M18 7 C13 12 12 31 15 40 C17 47 21 51 24 51 C27 51 31 47 33 40 C36 31 35 12 30 7 C27 5 21 5 18 7Z'
+  if (position === 3) return 'M24 5 C15 13 13 32 17 42 C20 49 23 53 24 53 C25 53 28 49 31 42 C35 32 33 13 24 5Z'
+  if (position <= 5) return 'M14 10 C8 20 10 39 18 47 C21 50 27 50 30 47 C38 39 40 20 34 10 C30 5 18 5 14 10Z'
+  return 'M11 12 C6 22 8 40 18 48 C23 52 29 52 34 48 C44 40 46 22 39 12 C34 5 16 5 11 12Z'
+}
+
 function ToothButton({
   tooth,
   selected,
@@ -49,6 +57,7 @@ function ToothButton({
   onToggle: (n: number) => void
 }) {
   const position = TOOTH_POSITIONS[tooth]
+  const isUpperTooth = tooth < 30
 
   return (
     <button
@@ -56,12 +65,33 @@ function ToothButton({
       onClick={() => onToggle(tooth)}
       aria-label={`FDI tooth ${tooth}${selected ? ', selected' : ''}`}
       aria-pressed={selected}
-      className={`absolute z-10 flex aspect-square w-[7%] min-w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-colors duration-brand focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black ${
-        selected ? 'bg-primary/80 text-white ring-2 ring-primary' : 'text-black/70 hover:bg-primary/25 hover:text-primary'
-      }`}
+      className="absolute z-10 flex aspect-square w-[10%] min-w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[6px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       style={{ left: `${position.left}%`, top: `${position.top}%` }}
     >
-      <span className="text-[9px] font-bold leading-none sm:text-[10px]">{tooth}</span>
+      <svg viewBox="0 0 48 56" className="h-full w-full drop-shadow-sm" aria-hidden>
+        <path
+          d={toothShapePath(tooth)}
+          fill={selected ? '#FED7AA' : '#FFFFFF'}
+          stroke={selected ? '#F47B20' : '#3D414A'}
+          strokeWidth="1.8"
+          className="transition-[fill,stroke] duration-brand"
+        />
+        <path
+          d="M17 19 C21 16 27 16 31 19 M16 29 C21 32 27 32 32 29"
+          fill="none"
+          stroke={selected ? '#D96A10' : '#5F6470'}
+          strokeLinecap="round"
+          strokeWidth="1.2"
+          opacity="0.8"
+        />
+      </svg>
+      <span
+        className={`absolute z-10 rounded-full px-1 py-0.5 text-[9px] font-bold leading-none shadow-sm sm:text-[10px] ${
+          isUpperTooth ? '-bottom-3' : '-top-3'
+        } ${selected ? 'bg-primary text-white' : 'bg-surface text-text'}`}
+      >
+        {tooth}
+      </span>
     </button>
   )
 }
@@ -74,9 +104,8 @@ function DentalChart({
   onToggle: (n: number) => void
 }) {
   return (
-    <div className="mx-auto w-full max-w-[500px] overflow-hidden rounded-card border border-border bg-black shadow-sm">
+    <div className="mx-auto w-full max-w-[500px] rounded-card border border-border bg-bg p-2 shadow-sm">
       <div className="relative aspect-square" role="group" aria-label="FDI adult dental chart">
-        <img src="/tooth-chart.png" alt="Upper and lower dental arches" className="pointer-events-none h-full w-full select-none object-contain" />
         {FDI_TEETH.map((tooth) => (
           <ToothButton key={tooth} tooth={tooth} selected={selected.includes(tooth)} onToggle={onToggle} />
         ))}
