@@ -15,6 +15,7 @@ import { SuccessCard } from '@/components/SuccessCard'
 import { FormFooter } from '@/components/FormFooter'
 import { AuthModal } from '@/components/AuthModal'
 import { SectionCard } from '@/components/ui/SectionCard'
+import type { ClinicOption } from '@/components/OrderInfoSection'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
 
@@ -45,6 +46,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   const [draftSaved, setDraftSaved] = useState(false)
   const [activeStep, setActiveStep] = useState<number | null>(1)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [clinics, setClinics] = useState<ClinicOption[]>([])
 
   const { saveDraft, loadDraft, clearDraft } = useFormDraft()
 
@@ -83,16 +85,20 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   }, [initialValues, loadDraft, reset])
 
   useEffect(() => {
-    if (initialValues) return
-    if (loadDraft()) return
+    const hasDraft = Boolean(loadDraft())
     fetch('/api/portal/profile')
       .then(async (response) => response.ok ? response.json() : null)
       .then((data) => {
         if (!data?.profile) return
+        const profileClinics = (data.profile.clinics ?? []) as ClinicOption[]
+        const defaultClinic = profileClinics.find((clinic) => clinic.name === data.profile.clinicName) ?? profileClinics[0]
+        setClinics(profileClinics)
+        if (initialValues || hasDraft) return
         setValue('dentist', data.profile.fullName ?? '')
-        setValue('clinic', data.profile.clinicName ?? '')
+        setValue('clinic', defaultClinic?.name ?? data.profile.clinicName ?? '')
         setValue('email', data.profile.email ?? '')
-        setValue('address', data.profile.address ?? '')
+        setValue('address', defaultClinic?.address ?? data.profile.address ?? '')
+        setValue('billAddress', defaultClinic?.address ?? data.profile.address ?? '')
       })
       .catch(() => undefined)
   }, [initialValues, loadDraft, setValue])
@@ -248,7 +254,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
                   {step.id === 'case-details' && (
                     <SectionCard title="Case Details" id="case-details" onTitleClick={foldActiveStep}>
                       <div className="space-y-6">
-                        <OrderInfoSection {...formProps} embedded />
+                        <OrderInfoSection {...formProps} clinics={clinics} embedded />
                         <TreatmentTypeSection register={register} watch={watch} setValue={setValue} embedded />
                         <InstructionsSection register={register} watch={watch} embedded />
                       </div>

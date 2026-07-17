@@ -26,6 +26,14 @@ export const adminUsers = pgTable('admin_users', {
   lastLoginAt: timestamp('last_login_at', { withTimezone: true, mode: 'date' }),
 })
 
+export const doctorClinics = pgTable('doctor_clinics', {
+  id: serial('id').primaryKey(),
+  doctorId: integer('doctor_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  address: text('address').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})
+
 export const orders = pgTable('orders', {
   id: serial('id').primaryKey(),
   orderNo: text('order_no').notNull().unique(),
@@ -36,6 +44,7 @@ export const orders = pgTable('orders', {
   altEmail: text('alt_email'),
   phone: text('phone'),
   address: text('address'),
+  billingAddress: text('billing_address'),
   patientName: text('patient_name').notNull(),
   patientDob: date('patient_dob', { mode: 'string' }),
   patientAge: text('patient_age'),
@@ -77,5 +86,6 @@ export const larkNotifications = pgTable('lark_notifications', {
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type AdminUser = typeof adminUsers.$inferSelect
+export type DoctorClinic = typeof doctorClinics.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect
 export type LarkNotification = typeof larkNotifications.$inferSelect

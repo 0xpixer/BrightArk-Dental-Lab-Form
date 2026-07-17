@@ -19,6 +19,7 @@ interface Order {
   altEmail: string | null
   phone: string | null
   address: string | null
+  billingAddress: string | null
   patientName: string
   patientDob: string | null
   patientAge: string | null
@@ -138,6 +139,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                 clinic: order.clinic,
                 email: order.email,
                 address: order.address ?? '',
+                billingAddress: order.billingAddress ?? '',
                 patientName: order.patientName,
                 patientAge: order.patientAge ?? '',
                 patientDob: order.patientDob ?? '',
@@ -150,7 +152,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           >
             {editingSection === 'info' ? (
               <div className="grid grid-cols-2 gap-3">
-                {(['dentist', 'clinic', 'email', 'address', 'patientName', 'patientAge', 'patientDob', 'sex', 'cloudDriveLink'] as const).map((f) => (
+                {(['dentist', 'clinic', 'email', 'address', 'billingAddress', 'patientName', 'patientAge', 'patientDob', 'sex', 'cloudDriveLink'] as const).map((f) => (
                   <label key={f} className="block text-xs">
                     <span className="font-medium capitalize">{f.replace(/([A-Z])/g, ' $1')}</span>
                     <input
@@ -166,7 +168,8 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
                 <Field label="Dentist" value={order.dentist} />
                 <Field label="Clinic" value={order.clinic} />
                 <Field label="Email" value={order.email} />
-                <Field label="Address" value={order.address ?? '—'} />
+                <Field label="Delivery Address" value={order.address ?? '—'} />
+                <Field label="Bill Address" value={order.billingAddress ?? order.address ?? '—'} />
                 <Field label="Patient" value={order.patientName} />
                 <Field label="Age" value={order.patientAge ?? '—'} />
                 {order.patientDob && <Field label="DOB" value={order.patientDob} />}

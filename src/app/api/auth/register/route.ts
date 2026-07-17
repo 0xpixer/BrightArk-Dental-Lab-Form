@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { eq, or } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers } from '@/lib/db/schema'
+import { adminUsers, doctorClinics } from '@/lib/db/schema'
 
 export async function POST(request: Request) {
   try {
@@ -34,17 +34,19 @@ export async function POST(request: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
-    await db.insert(adminUsers).values({
+    const address = typeof body.address === 'string' ? body.address.trim() : ''
+    const [doctor] = await db.insert(adminUsers).values({
       username: email,
       email,
       passwordHash,
       fullName,
       clinicName,
       phone: typeof body.phone === 'string' ? body.phone.trim() || null : null,
-      address: typeof body.address === 'string' ? body.address.trim() || null : null,
+      address: address || null,
       role: 'doctor',
       isActive: true,
-    })
+    }).returning({ id: adminUsers.id })
+    await db.insert(doctorClinics).values({ doctorId: doctor.id, name: clinicName, address })
 
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (error) {

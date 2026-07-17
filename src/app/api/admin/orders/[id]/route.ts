@@ -57,6 +57,7 @@ export async function PATCH(
   if (body.altEmail !== undefined) updateData.altEmail = body.altEmail || null
   if (body.phone !== undefined) updateData.phone = body.phone || null
   if (body.address !== undefined) updateData.address = body.address
+  if (body.billingAddress !== undefined) updateData.billingAddress = body.billingAddress || null
   if (body.patientName !== undefined) updateData.patientName = body.patientName
   if (body.patientDob !== undefined) updateData.patientDob = body.patientDob || null
   if (body.patientAge !== undefined) updateData.patientAge = body.patientAge || null
