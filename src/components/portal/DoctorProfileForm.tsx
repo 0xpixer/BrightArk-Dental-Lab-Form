@@ -13,6 +13,12 @@ type Profile = {
   clinics: Clinic[]
 }
 
+const PROFILE_LABELS = {
+  fullName: 'Full Name',
+  email: 'Email',
+  phone: 'Phone',
+} as const
+
 export function DoctorProfileForm() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [editable, setEditable] = useState(false)
@@ -75,7 +81,7 @@ export function DoctorProfileForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           {(['fullName', 'email', 'phone'] as const).map((key) => (
             <label key={key} className="block text-sm font-medium">
-              <span className="mb-1 block">{key.replace(/([A-Z])/g, ' ')}</span>
+              <span className="mb-1 block">{PROFILE_LABELS[key]}</span>
               <input
                 type={key === 'email' ? 'email' : 'text'}
                 value={profile[key] ?? ''}

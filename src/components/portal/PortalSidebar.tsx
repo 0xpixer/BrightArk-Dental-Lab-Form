@@ -9,7 +9,7 @@ import { ClipboardList, Plus, UserCircle, LogOut } from 'lucide-react'
 export function PortalSidebar({ username, role }: { username: string; role: string }) {
   const pathname = usePathname()
   const links = [
-    { href: '/portal/orders', label: 'My Orders', icon: ClipboardList },
+    { href: '/portal/orders', label: 'Dashboard', icon: ClipboardList },
     { href: '/', label: 'New Order', icon: Plus },
     { href: '/portal/profile', label: 'My Profile', icon: UserCircle },
   ]
