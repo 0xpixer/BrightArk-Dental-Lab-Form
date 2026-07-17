@@ -109,8 +109,8 @@ export function SubmissionsTable() {
       const res = await fetch(`/api/admin/orders/${order.id}`, {
         method: 'DELETE',
       })
-      const data = await res.json()
-      if (!res.ok || data.error) throw new Error(data.error ?? 'Failed to delete order')
+      const data = await res.json().catch(() => null) as { error?: string } | null
+      if (!res.ok || data?.error) throw new Error(data?.error ?? 'Failed to delete order')
 
       setOrders((current) => current.filter((row) => row.id !== order.id))
       if (orders.length === 1 && page > 1) {

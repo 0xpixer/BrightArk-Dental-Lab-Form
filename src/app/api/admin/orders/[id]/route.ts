@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { orders, sharedLinks } from '@/lib/db/schema'
+import { larkNotifications, orders, sharedLinks } from '@/lib/db/schema'
 import { requireAdmin } from '@/lib/admin/session'
 
 const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete'])
@@ -103,17 +103,23 @@ export async function DELETE(
     return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })
   }
 
-  const db = getDb()
-  await db.delete(sharedLinks).where(eq(sharedLinks.orderId, id))
+  try {
+    const db = getDb()
+    await db.delete(sharedLinks).where(eq(sharedLinks.orderId, id))
+    await db.delete(larkNotifications).where(eq(larkNotifications.orderId, id))
 
-  const [deleted] = await db
-    .delete(orders)
-    .where(eq(orders.id, id))
-    .returning({ id: orders.id })
+    const [deleted] = await db
+      .delete(orders)
+      .where(eq(orders.id, id))
+      .returning({ id: orders.id })
 
-  if (!deleted) {
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    if (!deleted) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Order delete failed:', error)
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 })
   }
-
-  return NextResponse.json({ success: true })
 }
