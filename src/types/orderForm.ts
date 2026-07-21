@@ -39,10 +39,10 @@ export const orderFormSchema = z.object({
   repair: z.boolean(),
   redo: z.boolean(),
   urgent: z.boolean(),
-  dentist: z.string().min(1, 'Dentist name is required'),
-  patient: z.string().min(1, 'Patient name is required'),
-  clinic: z.string().min(1, 'Clinic name is required'),
-  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  dentist: z.string(),
+  patient: z.string(),
+  clinic: z.string(),
+  email: z.string().email('Invalid email address').or(z.literal('')),
   address: z.string().optional(),
   billAddress: z.string().optional(),
   billAddressSameAsDelivery: z.boolean(),
@@ -93,42 +93,13 @@ export const orderFormSchema = z.object({
 
   selectedTeeth: z.array(z.number()),
   toothMode: z.enum(['single', 'bridge']),
-  shade: z.string().trim(),
-  stumpShadeIncisal: z.string().trim(),
-  stumpShadeMiddle: z.string().trim(),
-  stumpShadeCervical: z.string().trim(),
+  shade: z.string(),
+  stumpShadeIncisal: z.string(),
+  stumpShadeMiddle: z.string(),
+  stumpShadeCervical: z.string(),
 
   instructions: z.string().optional(),
   cloudDriveLink: z.string().url('Enter a valid download link').or(z.literal('')).optional(),
-}).superRefine((values, ctx) => {
-  const stumpShadeFields = [
-    'stumpShadeIncisal',
-    'stumpShadeMiddle',
-    'stumpShadeCervical',
-  ] as const
-  const hasShade = values.shade.length > 0
-  const hasAnyStumpShade = stumpShadeFields.some((field) => values[field].length > 0)
-  const hasCompleteStumpShade = stumpShadeFields.every((field) => values[field].length > 0)
-
-  if (!hasShade && !hasCompleteStumpShade) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['shade'],
-      message: 'Enter a shade or complete all three stump shade values',
-    })
-  }
-
-  if (hasAnyStumpShade && !hasCompleteStumpShade) {
-    stumpShadeFields.forEach((field) => {
-      if (!values[field]) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: 'Complete all three stump shade values',
-        })
-      }
-    })
-  }
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>

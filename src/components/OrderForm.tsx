@@ -20,12 +20,12 @@ import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
 
 const FORM_STEPS = [
-  { id: 'case-details', label: 'Case Details', step: 1, fields: ['dentist', 'clinic', 'email', 'patient'] },
+  { id: 'case-details', label: 'Case Details', step: 1, fields: ['email'] },
   {
     id: 'tooth-selector',
     label: 'Tooth Selector & Shade',
     step: 2,
-    fields: ['shade', 'stumpShadeIncisal', 'stumpShadeMiddle', 'stumpShadeCervical'],
+    fields: [],
   },
   { id: 'file-upload', label: 'Upload Files', step: 3, fields: ['cloudDriveLink'] },
 ] as const
@@ -150,7 +150,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
       step.fields.some((field) => Boolean(formErrors[field as keyof typeof formErrors])),
     )?.step ?? 1
     setActiveStep(invalidStep)
-    setSubmitError('Please complete all required fields before submitting your order.')
+    setSubmitError('Please correct the highlighted fields before submitting your order.')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   })
 
@@ -235,10 +235,6 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
 
       <main className="mx-auto max-w-form space-y-4 px-4 py-6 md:space-y-6 md:px-6 md:py-8">
         <ProgressBar activeStep={activeStep} />
-
-        <p className="text-xs text-text-muted">
-          <span className="text-red-500">*</span> Required fields
-        </p>
 
         {submitError && (
           <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

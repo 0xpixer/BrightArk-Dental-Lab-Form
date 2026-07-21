@@ -166,7 +166,7 @@ export function ToothSelectorSection({ register, errors, watch, setValue, onTitl
 
         <div className="rounded-card border border-border bg-bg p-4">
           <p className="mb-1 text-sm font-semibold text-secondary">Shade or Stump Shade</p>
-          <p className="mb-4 text-xs text-text-muted">Enter a regular shade, or complete all three stump shade values.</p>
+          <p className="mb-4 text-xs text-text-muted">Add shade details when they are relevant to this case.</p>
           <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-center lg:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_150px]">
             <div className="grid gap-3">
               <FormField label="Shade" htmlFor="shade" error={errors.shade?.message}>

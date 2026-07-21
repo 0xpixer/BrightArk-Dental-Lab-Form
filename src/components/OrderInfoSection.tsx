@@ -38,10 +38,10 @@ export function OrderInfoSection({ register, errors, watch, setValue, onTitleCli
     <SectionCard title="Order Information" id="order-info" onTitleClick={onTitleClick} embedded={embedded}>
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <FormField label="Dentist" htmlFor="dentist" required error={errors.dentist?.message}>
+          <FormField label="Dentist" htmlFor="dentist" error={errors.dentist?.message}>
             <input id="dentist" {...register('dentist')} className={orderInputClassName(!!errors.dentist)} />
           </FormField>
-          <FormField label="Clinic" htmlFor="clinic" required error={errors.clinic?.message}>
+          <FormField label="Clinic" htmlFor="clinic" error={errors.clinic?.message}>
             {clinics.length > 0 ? (
               <select
                 id="clinic"
@@ -57,7 +57,7 @@ export function OrderInfoSection({ register, errors, watch, setValue, onTitleCli
               <input id="clinic" {...register('clinic')} className={orderInputClassName(!!errors.clinic)} />
             )}
           </FormField>
-          <FormField label="Email" htmlFor="email" required error={errors.email?.message}>
+          <FormField label="Email" htmlFor="email" error={errors.email?.message}>
             <input type="email" id="email" {...register('email')} className={orderInputClassName(!!errors.email)} />
           </FormField>
         </div>
@@ -101,7 +101,7 @@ export function OrderInfoSection({ register, errors, watch, setValue, onTitleCli
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
-          <FormField label="Patient Name" htmlFor="patient" required error={errors.patient?.message} className="lg:col-span-5">
+          <FormField label="Patient Name" htmlFor="patient" error={errors.patient?.message} className="lg:col-span-5">
             <input id="patient" {...register('patient')} className={orderInputClassName(!!errors.patient)} />
           </FormField>
           <FormField label="Patient Age" htmlFor="patientAge" error={errors.patientAge?.message} className="lg:col-span-4">
