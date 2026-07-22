@@ -27,22 +27,22 @@ export const FILE_SLOT_GROUPS: FileSlotGroup[] = [
   },
   {
     heading: 'Facial Photos',
-    tooltip: 'JPG/JPEG/PNG only',
+    tooltip: 'JPG/JPEG/PNG/PDF accepted',
     slots: [
-      { id: 'frontal-view', label: 'Frontal View', accept: 'image/jpeg,image/png,image/jpg', icon: 'photo' },
-      { id: 'frontal-smile', label: 'Frontal Smile', accept: 'image/jpeg,image/png,image/jpg', icon: 'photo' },
-      { id: 'profile-view', label: 'Profile View', accept: 'image/jpeg,image/png,image/jpg', icon: 'photo' },
+      { id: 'frontal-view', label: 'Frontal View', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'photo' },
+      { id: 'frontal-smile', label: 'Frontal Smile', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'photo' },
+      { id: 'profile-view', label: 'Profile View', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'photo' },
     ],
   },
   {
     heading: 'Intraoral Photos',
-    tooltip: 'JPG/JPEG/PNG only',
+    tooltip: 'JPG/JPEG/PNG/PDF accepted',
     slots: [
-      { id: 'upper-arch', label: 'Upper Arch', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
-      { id: 'right-occlusal', label: 'Right (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
-      { id: 'central-occlusal', label: 'Central (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
-      { id: 'left-occlusal', label: 'Left (Occlusal)', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
-      { id: 'lower-arch', label: 'Lower Arch', accept: 'image/jpeg,image/png,image/jpg', icon: 'intraoral' },
+      { id: 'upper-arch', label: 'Upper Arch', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'intraoral' },
+      { id: 'right-occlusal', label: 'Right (Occlusal)', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'intraoral' },
+      { id: 'central-occlusal', label: 'Central (Occlusal)', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'intraoral' },
+      { id: 'left-occlusal', label: 'Left (Occlusal)', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'intraoral' },
+      { id: 'lower-arch', label: 'Lower Arch', accept: 'image/jpeg,image/png,image/jpg,application/pdf,.pdf', icon: 'intraoral' },
     ],
   },
 ]
