@@ -35,8 +35,6 @@ export function generateOrderPdfBuffer(order: Order, zipDownloadUrl?: string): P
       `Order No: ${order.orderNo}`,
       `Date Sent: ${order.dateSent ? new Date(order.dateSent).toLocaleString() : '—'}`,
       `Status: ${order.status}`,
-      order.address ? `Delivery Address: ${order.address}` : '',
-      order.billingAddress ? `Bill Address: ${order.billingAddress}` : '',
       `Patient: ${order.patientName}`,
       `Patient Age: ${order.patientAge ?? '—'}`,
       order.patientDob ? `Patient DOB: ${order.patientDob}` : '',
