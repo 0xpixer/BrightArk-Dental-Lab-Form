@@ -35,6 +35,7 @@ interface Order {
   instructions: string | null
   fileUrls: Record<string, string> | null
   cloudDriveLink: string | null
+  cloudDriveLinks: string[] | null
   status: string
   createdAt: string
 }
@@ -87,6 +88,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
   }
 
   const fileUrls = order.fileUrls ?? {}
+  const cloudDriveLinks = Array.from(new Set([...(order.cloudDriveLinks ?? []), order.cloudDriveLink].filter(Boolean))) as string[]
   const treatmentLines = formatDetailLines(order.treatmentData)
   const toothSelectionLines = formatDetailLines(order.toothSelection)
 
@@ -179,7 +181,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
                 <Field label="Age" value={order.patientAge ?? '—'} />
                 {order.patientDob && <Field label="DOB" value={order.patientDob} />}
                 <Field label="Sex" value={order.sex ?? '—'} />
-                <Field label="Cloud Drive Link" value={order.cloudDriveLink ?? '—'} />
+                {cloudDriveLinks.length > 0 && <Field label="Cloud Drive Links" value={`${cloudDriveLinks.length} link${cloudDriveLinks.length === 1 ? '' : 's'}`} />}
               </dl>
             )}
           </SectionCard>
@@ -225,17 +227,10 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
 
         <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-secondary">Uploaded Files</h2>
-          {order.cloudDriveLink && (
+          {cloudDriveLinks.length > 0 && (
             <div className="mb-4 rounded border border-primary/20 bg-primary/5 p-3">
-              <p className="text-xs font-semibold text-secondary">Cloud Drive Link</p>
-              <a
-                href={order.cloudDriveLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 block break-all text-xs text-primary underline"
-              >
-                {order.cloudDriveLink}
-              </a>
+              <p className="text-xs font-semibold text-secondary">Cloud Drive Links</p>
+              {cloudDriveLinks.map((link) => <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-xs text-primary underline">{link}</a>)}
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
@@ -258,7 +253,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
                 </div>
               )
             })}
-            {Object.keys(fileUrls).length === 0 && !order.cloudDriveLink && (
+            {Object.keys(fileUrls).length === 0 && cloudDriveLinks.length === 0 && (
               <p className="text-sm text-text-muted">No files uploaded or linked</p>
             )}
           </div>

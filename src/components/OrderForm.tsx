@@ -28,7 +28,7 @@ const FORM_STEPS = [
     step: 2,
     fields: [],
   },
-  { id: 'file-upload', label: 'Upload Files', step: 3, fields: ['cloudDriveLink'] },
+  { id: 'file-upload', label: 'Upload Files', step: 3, fields: [] },
 ] as const
 
 interface OrderFormProps {
@@ -371,7 +371,9 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
                       files={files}
                       onFilesChange={handleFilesChange}
                       register={register}
-                      error={errors.cloudDriveLink?.message}
+                      watch={watch}
+                      setValue={setFormValue}
+                      error={errors.cloudDriveLinks?.message}
                       onTitleClick={foldActiveStep}
                     />
                   )}

@@ -60,6 +60,7 @@ export const orders = pgTable('orders', {
   instructions: text('instructions'),
   fileUrls: jsonb('file_urls'),
   cloudDriveLink: text('cloud_drive_link'),
+  cloudDriveLinks: jsonb('cloud_drive_links'),
   submittedBy: integer('submitted_by').references(() => adminUsers.id),
   status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),

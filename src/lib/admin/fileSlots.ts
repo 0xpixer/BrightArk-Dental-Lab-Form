@@ -13,6 +13,7 @@ export const SLOT_FOLDER_MAP: Record<string, { folder: string; filename: string 
   'central-occlusal': { folder: 'intraoral', filename: 'central_occlusal' },
   'left-occlusal': { folder: 'intraoral', filename: 'left_occlusal' },
   'lower-arch': { folder: 'intraoral', filename: 'lower_arch' },
+  'case-package': { folder: 'case_package', filename: 'all_case_files' },
 }
 
 export function getExtensionFromUrl(url: string): string {

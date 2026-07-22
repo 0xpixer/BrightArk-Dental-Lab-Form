@@ -138,7 +138,8 @@ export function mapPayloadToOrderInsert(payload: OrderApiPayload) {
     toothSelection: buildToothSelection(payload),
     instructions: payload.instructions || null,
     fileUrls: payload.file_urls ?? {},
-    cloudDriveLink: payload.cloudDriveLink || null,
+    cloudDriveLink: payload.cloudDriveLinks?.find(Boolean) || payload.cloudDriveLink || null,
+    cloudDriveLinks: payload.cloudDriveLinks?.filter(Boolean) ?? [],
     status: 'pending' as const,
   }
 }
@@ -160,6 +161,7 @@ export function mapFormValuesToOrderUpdate(values: OrderFormValues, fileUrls?: R
     toothSelection: buildToothSelection(values),
     instructions: values.instructions || null,
     fileUrls: fileUrls ?? {},
-    cloudDriveLink: values.cloudDriveLink || null,
+    cloudDriveLink: values.cloudDriveLinks?.find(Boolean) || values.cloudDriveLink || null,
+    cloudDriveLinks: values.cloudDriveLinks?.filter(Boolean) ?? [],
   }
 }

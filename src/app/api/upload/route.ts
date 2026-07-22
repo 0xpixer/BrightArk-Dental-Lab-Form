@@ -23,13 +23,21 @@ export async function POST(request: Request): Promise<NextResponse> {
         // No auth check needed here — the form is public-facing.
         // Add session validation here in the future if required.
         return {
-          // Accept photos, PDFs, and binary scan files (STL/OBJ/PLY).
+          // Accept photos, PDFs, compressed case packages, and binary scan files.
           allowedContentTypes: [
             'image/jpeg',
             'image/jpg',
             'image/png',
             'image/webp',
             'application/pdf',
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/x-rar-compressed',
+            'application/vnd.rar',
+            'application/x-7z-compressed',
+            'application/gzip',
+            'application/x-gzip',
+            'application/x-tar',
             'application/octet-stream', // .stl .obj .ply
             'model/stl',
             'application/sla',

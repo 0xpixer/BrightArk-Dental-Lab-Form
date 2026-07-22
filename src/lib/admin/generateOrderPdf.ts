@@ -61,10 +61,14 @@ export function generateOrderPdfBuffer(order: Order, zipDownloadUrl?: string): P
       addSection(doc, 'Instructions', [order.instructions])
     }
 
-    if (order.cloudDriveLink) {
+    const cloudDriveLinks = Array.from(new Set([
+      ...((order.cloudDriveLinks as string[] | null) ?? []),
+      order.cloudDriveLink ?? '',
+    ].filter(Boolean)))
+    if (cloudDriveLinks.length > 0) {
       doc.fontSize(12).fillColor('#1E6DBF').text('Cloud Drive Files', { underline: true })
       doc.moveDown(0.3)
-      addDownloadLink(doc, 'Cloud Drive', order.cloudDriveLink)
+      cloudDriveLinks.forEach((link, index) => addDownloadLink(doc, index === 0 ? 'Cloud Drive' : `Cloud Drive ${index + 1}`, link))
       doc.moveDown(0.8)
     }
 

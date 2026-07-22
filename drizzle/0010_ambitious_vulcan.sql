@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "cloud_drive_links" jsonb;

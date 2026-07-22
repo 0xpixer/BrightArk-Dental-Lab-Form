@@ -80,6 +80,7 @@ export async function PATCH(
   if (body.instructions !== undefined) updateData.instructions = body.instructions
   if (body.fileUrls !== undefined) updateData.fileUrls = body.fileUrls
   if (body.cloudDriveLink !== undefined) updateData.cloudDriveLink = body.cloudDriveLink || null
+  if (body.cloudDriveLinks !== undefined) updateData.cloudDriveLinks = body.cloudDriveLinks
 
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })

@@ -21,6 +21,7 @@ export const FILE_SLOT_IDS = [
   'central-occlusal',
   'left-occlusal',
   'lower-arch',
+  'case-package',
 ] as const
 
 export type FileSlotId = (typeof FILE_SLOT_IDS)[number]
@@ -100,6 +101,7 @@ export const orderFormSchema = z.object({
 
   instructions: z.string().optional(),
   cloudDriveLink: z.string().url('Enter a valid download link').or(z.literal('')).optional(),
+  cloudDriveLinks: z.array(z.string().url('Enter a valid download link').or(z.literal(''))).optional(),
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
@@ -170,6 +172,7 @@ export const defaultFormValues: OrderFormValues = {
 
   instructions: '',
   cloudDriveLink: '',
+  cloudDriveLinks: [''],
 }
 
 export const DRAFT_STORAGE_KEY = 'brightark-dental-lab-order-draft'
