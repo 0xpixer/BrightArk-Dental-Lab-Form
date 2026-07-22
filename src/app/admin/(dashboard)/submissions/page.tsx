@@ -3,5 +3,6 @@ import { auth } from '@/auth'
 
 export default async function SubmissionsPage() {
   const session = await auth()
-  return <SubmissionsTable canModify={session?.user.role === 'superadmin'} />
+  const role = session?.user.role
+  return <SubmissionsTable canUpdateStatus={role === 'admin' || role === 'superadmin'} canDelete={role === 'superadmin'} />
 }

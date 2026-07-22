@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { larkNotifications, orders, sharedLinks } from '@/lib/db/schema'
 import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
+import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 
 const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete'])
 
@@ -10,7 +11,7 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { error } = await requireAdmin()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -25,14 +26,16 @@ export async function GET(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ order })
+  return NextResponse.json({
+    order: session!.user.role === 'admin' ? redactOrderForLabAdmin(order) : order,
+  })
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { error } = await requireSuperadmin()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -41,6 +44,10 @@ export async function PATCH(
   }
 
   const body = await request.json()
+  const isSuperadmin = session!.user.role === 'superadmin'
+  if (!isSuperadmin && (Object.keys(body).length !== 1 || body.status === undefined)) {
+    return NextResponse.json({ error: 'Lab Admins can only update order status' }, { status: 403 })
+  }
   const db = getDb()
 
   const updateData: Record<string, unknown> = {}

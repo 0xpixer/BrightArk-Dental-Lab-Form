@@ -14,8 +14,8 @@ interface Order {
   orderNo: string
   dateSent: string
   dentist: string
-  clinic: string
-  email: string
+  clinic: string | null
+  email: string | null
   altEmail: string | null
   phone: string | null
   address: string | null
@@ -39,7 +39,7 @@ interface Order {
   createdAt: string
 }
 
-export function OrderDetailView({ orderId, canModify }: { orderId: string; canModify: boolean }) {
+export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId: string; canUpdateStatus: boolean; canEdit: boolean }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
@@ -59,7 +59,7 @@ export function OrderDetailView({ orderId, canModify }: { orderId: string; canMo
   }, [fetchOrder])
 
   const updateStatus = async (status: string) => {
-    if (!canModify) return
+    if (!canUpdateStatus) return
     await fetch(`/api/admin/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -70,7 +70,7 @@ export function OrderDetailView({ orderId, canModify }: { orderId: string; canMo
   }
 
   const saveSection = async (section: string) => {
-    if (!canModify) return
+    if (!canEdit) return
     await fetch(`/api/admin/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -103,7 +103,7 @@ export function OrderDetailView({ orderId, canModify }: { orderId: string; canMo
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {canModify && (
+          {canUpdateStatus && (
             <select
               value={order.status}
               onChange={(e) => updateStatus(e.target.value)}
@@ -136,7 +136,7 @@ export function OrderDetailView({ orderId, canModify }: { orderId: string; canMo
           <SectionCard
             title="Order Information"
             editing={editingSection === 'info'}
-            hideEdit={!canModify}
+            hideEdit={!canEdit}
             onEdit={() => {
               setEditingSection('info')
               setDraft({
@@ -171,10 +171,10 @@ export function OrderDetailView({ orderId, canModify }: { orderId: string; canMo
             ) : (
               <dl className="grid grid-cols-2 gap-2 text-sm">
                 <Field label="Dentist" value={order.dentist} />
-                <Field label="Clinic" value={order.clinic} />
-                <Field label="Email" value={order.email} />
-                <Field label="Delivery Address" value={order.address ?? '—'} />
-                <Field label="Bill Address" value={order.billingAddress ?? order.address ?? '—'} />
+                {order.clinic && <Field label="Clinic" value={order.clinic} />}
+                {order.email && <Field label="Email" value={order.email} />}
+                {order.address && <Field label="Delivery Address" value={order.address} />}
+                {order.billingAddress && <Field label="Bill Address" value={order.billingAddress} />}
                 <Field label="Patient" value={order.patientName} />
                 <Field label="Age" value={order.patientAge ?? '—'} />
                 {order.patientDob && <Field label="DOB" value={order.patientDob} />}
@@ -201,7 +201,7 @@ export function OrderDetailView({ orderId, canModify }: { orderId: string; canMo
             <SectionCard
               title="Instructions"
               editing={editingSection === 'instructions'}
-              hideEdit={!canModify}
+              hideEdit={!canEdit}
               onEdit={() => {
                 setEditingSection('instructions')
                 setDraft({ instructions: order.instructions ?? '' })

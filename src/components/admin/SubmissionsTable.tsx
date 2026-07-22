@@ -26,7 +26,7 @@ const STATUS_SELECT_CLASS: Record<string, string> = {
   complete: 'border-green-200 bg-green-100 text-green-800',
 }
 
-export function SubmissionsTable({ canModify }: { canModify: boolean }) {
+export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStatus: boolean; canDelete: boolean }) {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
@@ -74,7 +74,7 @@ export function SubmissionsTable({ canModify }: { canModify: boolean }) {
   }
 
   const updateOrderStatus = async (orderId: number, nextStatus: string) => {
-    if (!canModify) return
+    if (!canUpdateStatus) return
     const previousOrders = orders
     setActionError(null)
     setUpdatingOrderId(orderId)
@@ -101,7 +101,7 @@ export function SubmissionsTable({ canModify }: { canModify: boolean }) {
   }
 
   const deleteOrder = async (order: OrderRow) => {
-    if (!canModify) return
+    if (!canDelete) return
     if (!confirm(`Delete order ${order.orderNo}? This cannot be undone.`)) return
 
     setActionError(null)
@@ -214,7 +214,7 @@ export function SubmissionsTable({ canModify }: { canModify: boolean }) {
                     <td className="px-4 py-3 text-sm text-text">{order.dentist}</td>
                     <td className="px-4 py-3 text-sm text-text">{order.patientName}</td>
                     <td className="px-4 py-3">
-                      {canModify ? (
+                      {canUpdateStatus ? (
                         <select
                           value={order.status}
                           disabled={updatingOrderId === order.id}
@@ -269,7 +269,7 @@ export function SubmissionsTable({ canModify }: { canModify: boolean }) {
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </Link>
-                        {canModify && (
+                        {canDelete && (
                           <button
                             type="button"
                             onClick={() => deleteOrder(order)}

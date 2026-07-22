@@ -3,9 +3,10 @@ import { desc, eq, or, ilike, and, count } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { requireAdmin } from '@/lib/admin/session'
+import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 
 export async function GET(request: Request) {
-  const { error } = await requireAdmin()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const { searchParams } = new URL(request.url)
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
   const total = totalResult[0]?.count ?? 0
 
   return NextResponse.json({
-    orders: rows,
+    orders: session!.user.role === 'admin' ? rows.map(redactOrderForLabAdmin) : rows,
     pagination: {
       page,
       limit,
