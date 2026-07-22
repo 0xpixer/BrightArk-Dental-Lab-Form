@@ -65,6 +65,15 @@ export const orders = pgTable('orders', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const orderDrafts = pgTable('order_drafts', {
+  id: serial('id').primaryKey(),
+  ownerId: integer('owner_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  formData: jsonb('form_data').notNull(),
+  fileUrls: jsonb('file_urls').notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})
+
 export const sharedLinks = pgTable('shared_links', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id')
@@ -85,6 +94,7 @@ export const larkNotifications = pgTable('lark_notifications', {
 
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
+export type OrderDraft = typeof orderDrafts.$inferSelect
 export type AdminUser = typeof adminUsers.$inferSelect
 export type DoctorClinic = typeof doctorClinics.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect

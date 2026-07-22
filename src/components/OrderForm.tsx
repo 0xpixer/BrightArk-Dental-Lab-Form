@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useForm, type UseFormSetValue } from 'react-hook-form'
+import type { Dispatch, SetStateAction } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormHeader } from '@/components/FormHeader'
 import { ProgressBar } from '@/components/ProgressBar'
@@ -32,11 +33,12 @@ const FORM_STEPS = [
 
 interface OrderFormProps {
   orderId?: string
+  draftId?: string
   initialValues?: OrderFormValues
   initialFileUrls?: Record<string, string>
 }
 
-export default function OrderForm({ orderId, initialValues, initialFileUrls = {} }: OrderFormProps) {
+export default function OrderForm({ orderId, draftId, initialValues, initialFileUrls = {} }: OrderFormProps) {
   const [uploadFolderId] = useState(() => generateUploadFolderId())
   const [files, setFiles] = useState<FilesState>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -47,6 +49,22 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   const [activeStep, setActiveStep] = useState<number | null>(1)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [clinics, setClinics] = useState<ClinicOption[]>([])
+  const [serverDraftId, setServerDraftId] = useState<number | null>(() => {
+    const id = Number(draftId)
+    return Number.isInteger(id) && id > 0 ? id : null
+  })
+  const [canAutosaveToDashboard, setCanAutosaveToDashboard] = useState(false)
+  const [hasAutosaveContent, setHasAutosaveContent] = useState(false)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const [autosaveWake, setAutosaveWake] = useState(0)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSavedPayload = useRef<string | null>(null)
+  const autosaveInProgress = useRef(false)
+  const serverDraftIdRef = useRef<number | null>(serverDraftId)
+
+  useEffect(() => {
+    serverDraftIdRef.current = serverDraftId
+  }, [serverDraftId])
 
   const { saveDraft, loadDraft, clearDraft } = useFormDraft()
 
@@ -58,7 +76,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
     setValue,
     reset,
     trigger,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: defaultFormValues,
@@ -81,6 +99,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
         ...draft,
         treatmentCategory,
       })
+      setHasAutosaveContent(true)
     }
   }, [initialValues, loadDraft, reset])
 
@@ -89,7 +108,11 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
     fetch('/api/portal/profile')
       .then(async (response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (!data?.profile) return
+        if (!data?.profile) {
+          setCanAutosaveToDashboard(false)
+          return
+        }
+        setCanAutosaveToDashboard(true)
         const profileClinics = (data.profile.clinics ?? []) as ClinicOption[]
         const defaultClinic = profileClinics.find((clinic) => clinic.name === data.profile.clinicName) ?? profileClinics[0]
         setClinics(profileClinics)
@@ -100,17 +123,78 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
         setValue('address', defaultClinic?.address ?? data.profile.address ?? '')
         setValue('billAddress', defaultClinic?.address ?? data.profile.address ?? '')
       })
-      .catch(() => undefined)
+      .catch(() => setCanAutosaveToDashboard(false))
   }, [initialValues, loadDraft, setValue])
 
-  const onSubmit = handleSubmit(async (values) => {
-    setSubmitError(null)
+  const setFormValue = useCallback<UseFormSetValue<OrderFormValues>>((name, value, options) => {
+    setValue(name, value, { ...options, shouldDirty: options?.shouldDirty ?? true })
+    setHasAutosaveContent(true)
+  }, [setValue])
 
-    const file_urls = Object.fromEntries(
+  const handleFilesChange = useCallback<Dispatch<SetStateAction<FilesState>>>((nextFiles) => {
+    setFiles(nextFiles)
+    setHasAutosaveContent(true)
+  }, [])
+
+  const watchedValues = watch()
+  const uploadedFileUrls = useMemo(
+    () => Object.fromEntries(
       Object.entries(files)
         .filter(([, data]) => data?.blobUrl)
         .map(([slotId, data]) => [slotId, data!.blobUrl!]),
-    )
+    ),
+    [files],
+  )
+  const autosavePayload = useMemo(
+    () => JSON.stringify({ values: watchedValues, fileUrls: { ...initialFileUrls, ...uploadedFileUrls } }),
+    [initialFileUrls, uploadedFileUrls, watchedValues],
+  )
+
+  useEffect(() => {
+    if (orderId || submitted || (!isDirty && !hasAutosaveContent && Object.keys(files).length === 0)) return
+    if (autosavePayload === lastSavedPayload.current) return
+
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = setTimeout(async () => {
+      const payload = JSON.parse(autosavePayload) as { values: OrderFormValues; fileUrls: Record<string, string> }
+      saveDraft(payload.values)
+
+      if (!canAutosaveToDashboard) return
+      if (autosaveInProgress.current) return
+
+      autosaveInProgress.current = true
+      setIsAutoSaving(true)
+      try {
+        const response = await fetch('/api/portal/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: serverDraftIdRef.current ?? undefined, ...payload }),
+        })
+        if (response.status === 401) {
+          setCanAutosaveToDashboard(false)
+          return
+        }
+        if (!response.ok) return
+
+        const result = await response.json() as { draft?: { id: number } }
+        if (result.draft?.id) setServerDraftId(result.draft.id)
+        lastSavedPayload.current = autosavePayload
+      } catch {
+        // The local draft remains available when the network is unavailable.
+      } finally {
+        autosaveInProgress.current = false
+        setIsAutoSaving(false)
+        setAutosaveWake((value) => value + 1)
+      }
+    }, 850)
+
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    }
+  }, [autosavePayload, autosaveWake, canAutosaveToDashboard, files, hasAutosaveContent, isDirty, orderId, saveDraft, submitted])
+
+  const onSubmit = handleSubmit(async (values) => {
+    setSubmitError(null)
 
     setIsSubmitting(true)
 
@@ -120,7 +204,7 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
-          file_urls: { ...initialFileUrls, ...file_urls },
+          file_urls: { ...initialFileUrls, ...uploadedFileUrls },
         }),
       })
 
@@ -138,7 +222,12 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
 
       setSubmittedOrderNo(data.orderNo ?? '')
       setSubmitted(true)
-      if (!orderId) clearDraft()
+      if (!orderId) {
+        clearDraft()
+        if (serverDraftIdRef.current) {
+          fetch(`/api/portal/drafts/${serverDraftIdRef.current}`, { method: 'DELETE' }).catch(() => undefined)
+        }
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to submit order')
@@ -157,18 +246,27 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   const handleSaveDraft = useCallback(() => {
     const values = watch()
     saveDraft(values)
+    setHasAutosaveContent(true)
+    lastSavedPayload.current = null
     setDraftSaved(true)
     setTimeout(() => setDraftSaved(false), 2500)
   }, [watch, saveDraft])
 
   const handleReset = useCallback(() => {
     if (!confirm('Reset the entire form? This cannot be undone.')) return
+    const currentDraftId = serverDraftIdRef.current
     reset(defaultFormValues)
     setFiles({})
     setActiveStep(1)
     setSubmitted(false)
     setSubmitError(null)
+    setHasAutosaveContent(false)
+    setServerDraftId(null)
+    lastSavedPayload.current = null
     clearDraft()
+    if (currentDraftId) {
+      fetch(`/api/portal/drafts/${currentDraftId}`, { method: 'DELETE' }).catch(() => undefined)
+    }
   }, [reset, clearDraft])
 
   const currentStep = activeStep ? FORM_STEPS[activeStep - 1] : null
@@ -193,8 +291,8 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
   }, [activeStep, currentStep, goToStep, trigger])
 
   const formProps = useMemo(
-    () => ({ register, control, errors, watch, setValue }),
-    [register, control, errors, watch, setValue],
+    () => ({ register, control, errors, watch, setValue: setFormValue }),
+    [register, control, errors, watch, setFormValue],
   )
 
   if (submitted) {
@@ -229,8 +327,18 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
       {authModalOpen && (
         <AuthModal
           onClose={() => setAuthModalOpen(false)}
-          onSignedIn={() => setAuthModalOpen(false)}
+          onSignedIn={() => {
+            setCanAutosaveToDashboard(true)
+            lastSavedPayload.current = null
+            setAuthModalOpen(false)
+          }}
         />
+      )}
+
+      {isAutoSaving && (
+        <div role="status" className="fixed right-4 top-4 z-50 rounded-full bg-pink-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
+          Auto saving
+        </div>
       )}
 
       <main className="mx-auto max-w-form space-y-4 px-4 py-6 md:space-y-6 md:px-6 md:py-8">
@@ -251,17 +359,17 @@ export default function OrderForm({ orderId, initialValues, initialFileUrls = {}
                     <SectionCard title="Case Details" id="case-details" onTitleClick={foldActiveStep}>
                       <div className="space-y-6">
                         <OrderInfoSection {...formProps} clinics={clinics} embedded />
-                        <TreatmentTypeSection register={register} watch={watch} setValue={setValue} embedded />
+                        <TreatmentTypeSection register={register} watch={watch} setValue={setFormValue} embedded />
                         <InstructionsSection register={register} watch={watch} embedded />
                       </div>
                     </SectionCard>
                   )}
-                  {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setValue} onTitleClick={foldActiveStep} />}
+                  {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setFormValue} onTitleClick={foldActiveStep} />}
                   {step.id === 'file-upload' && (
                     <FileUploadSection
                       orderNo={uploadFolderId}
                       files={files}
-                      onFilesChange={setFiles}
+                      onFilesChange={handleFilesChange}
                       register={register}
                       error={errors.cloudDriveLink?.message}
                       onTitleClick={foldActiveStep}
