@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { ClipboardList, Users, UserCircle, LogOut } from 'lucide-react'
+import { formatAdminRole } from '@/lib/admin/roles'
 
 interface AdminSidebarProps {
   username: string
@@ -56,7 +57,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
         <div className="mb-3">
           <p className="text-sm font-medium text-text">{username}</p>
           <span className="mt-1 inline-block rounded bg-secondary/10 px-2 py-0.5 text-[10px] font-semibold capitalize text-secondary">
-            {role}
+            {formatAdminRole(role)}
           </span>
         </div>
         <button

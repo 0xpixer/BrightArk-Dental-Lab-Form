@@ -20,7 +20,8 @@ export function isAccountRole(value: unknown): value is AccountRole {
 
 export function formatAdminRole(role: string): string {
   if (role === 'superadmin') return 'Superadmin'
+  if (role === 'admin') return 'Lab Admin'
   if (role === 'clinic_staff') return 'Clinic Staff'
   if (role === 'doctor') return 'Doctor'
-  return 'Admin'
+  return role
 }

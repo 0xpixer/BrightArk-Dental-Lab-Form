@@ -26,7 +26,7 @@ const STATUS_SELECT_CLASS: Record<string, string> = {
   complete: 'border-green-200 bg-green-100 text-green-800',
 }
 
-export function SubmissionsTable() {
+export function SubmissionsTable({ canModify }: { canModify: boolean }) {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
@@ -74,6 +74,7 @@ export function SubmissionsTable() {
   }
 
   const updateOrderStatus = async (orderId: number, nextStatus: string) => {
+    if (!canModify) return
     const previousOrders = orders
     setActionError(null)
     setUpdatingOrderId(orderId)
@@ -100,6 +101,7 @@ export function SubmissionsTable() {
   }
 
   const deleteOrder = async (order: OrderRow) => {
+    if (!canModify) return
     if (!confirm(`Delete order ${order.orderNo}? This cannot be undone.`)) return
 
     setActionError(null)
@@ -212,22 +214,28 @@ export function SubmissionsTable() {
                     <td className="px-4 py-3 text-sm text-text">{order.dentist}</td>
                     <td className="px-4 py-3 text-sm text-text">{order.patientName}</td>
                     <td className="px-4 py-3">
-                      <select
-                        value={order.status}
-                        disabled={updatingOrderId === order.id}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className={`rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-opacity focus:ring-2 focus:ring-primary/20 disabled:cursor-wait disabled:opacity-60 ${
-                          STATUS_SELECT_CLASS[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'
-                        }`}
-                        aria-label={`Update status for order ${order.orderNo}`}
-                        title="Click to update status"
-                      >
-                        {STATUS_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      {canModify ? (
+                        <select
+                          value={order.status}
+                          disabled={updatingOrderId === order.id}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-opacity focus:ring-2 focus:ring-primary/20 disabled:cursor-wait disabled:opacity-60 ${
+                            STATUS_SELECT_CLASS[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'
+                          }`}
+                          aria-label={`Update status for order ${order.orderNo}`}
+                          title="Click to update status"
+                        >
+                          {STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_SELECT_CLASS[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'}`}>
+                          {STATUS_OPTIONS.find((option) => option.value === order.status)?.label ?? order.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.createdAt)}</td>
                     <td className="px-4 py-3">
@@ -261,16 +269,18 @@ export function SubmissionsTable() {
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => deleteOrder(order)}
-                          disabled={deletingOrderId === order.id}
-                          className="inline-flex items-center gap-1 rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
-                          title="Delete order"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </button>
+                        {canModify && (
+                          <button
+                            type="button"
+                            onClick={() => deleteOrder(order)}
+                            disabled={deletingOrderId === order.id}
+                            className="inline-flex items-center gap-1 rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
+                            title="Delete order"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

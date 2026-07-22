@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Toast } from '@/components/admin/Toast'
+import { formatAdminRole } from '@/lib/admin/roles'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<{ username: string; role: string } | null>(null)
@@ -60,7 +61,7 @@ export default function ProfilePage() {
             <dt className="text-text-muted">Role</dt>
             <dd>
               <span className="rounded bg-secondary/10 px-2 py-0.5 text-xs font-semibold capitalize text-secondary">
-                {profile?.role ?? '—'}
+                {profile ? formatAdminRole(profile.role) : '—'}
               </span>
             </dd>
           </div>

@@ -39,7 +39,7 @@ interface Order {
   createdAt: string
 }
 
-export function OrderDetailView({ orderId }: { orderId: string }) {
+export function OrderDetailView({ orderId, canModify }: { orderId: string; canModify: boolean }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
@@ -59,6 +59,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
   }, [fetchOrder])
 
   const updateStatus = async (status: string) => {
+    if (!canModify) return
     await fetch(`/api/admin/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -69,6 +70,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
   }
 
   const saveSection = async (section: string) => {
+    if (!canModify) return
     await fetch(`/api/admin/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -101,15 +103,17 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={order.status}
-            onChange={(e) => updateStatus(e.target.value)}
-            className="rounded-card border border-border bg-surface px-3 py-2 text-sm"
-          >
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="complete">Complete</option>
-          </select>
+          {canModify && (
+            <select
+              value={order.status}
+              onChange={(e) => updateStatus(e.target.value)}
+              className="rounded-card border border-border bg-surface px-3 py-2 text-sm"
+            >
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+            </select>
+          )}
           <button
             type="button"
             onClick={() => { window.location.href = `/api/admin/orders/${orderId}/download` }}
@@ -132,6 +136,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
           <SectionCard
             title="Order Information"
             editing={editingSection === 'info'}
+            hideEdit={!canModify}
             onEdit={() => {
               setEditingSection('info')
               setDraft({
@@ -196,6 +201,7 @@ export function OrderDetailView({ orderId }: { orderId: string }) {
             <SectionCard
               title="Instructions"
               editing={editingSection === 'instructions'}
+              hideEdit={!canModify}
               onEdit={() => {
                 setEditingSection('instructions')
                 setDraft({ instructions: order.instructions ?? '' })
