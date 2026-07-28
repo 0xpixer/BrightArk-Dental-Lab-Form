@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { upload } from '@vercel/blob/client'
 import { FileArchive, Image, Info, Link2, Plus, X } from 'lucide-react'
 import type { FieldError, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
-import type { FileSlotId, OrderFormValues } from '@/types/orderForm'
+import { EXTRA_STL_FILE_SLOT_IDS, type FileSlotId, type OrderFormValues } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
 import { inputClassName } from './ui/FormField'
 import { FILE_SLOT_GROUPS, type FileSlotConfig } from './fileUpload/slotConfig'
@@ -32,6 +32,16 @@ const CASE_PACKAGE_SLOT: FileSlotConfig = {
   formatBadge: 'ZIP / RAR / 7Z',
 }
 
+function extraStlSlot(slotId: FileSlotId, index: number): FileSlotConfig {
+  return {
+    id: slotId,
+    label: `Additional STL ${index + 1}`,
+    accept: '.stl,model/stl,application/sla,application/vnd.ms-pki.stl,application/octet-stream',
+    icon: 'scan',
+    formatBadge: 'STL',
+  }
+}
+
 function Tooltip({ text }: { text: string }) {
   return <button type="button" className="text-secondary" title={text}><Info className="h-3.5 w-3.5" aria-hidden /><span className="sr-only">{text}</span></button>
 }
@@ -44,6 +54,7 @@ function slotGridClass(heading: string, slotCount: number): string {
 
 export function FileUploadSection({ orderNo, files, onFilesChange, register, watch, setValue, error, onTitleClick }: FileUploadSectionProps) {
   const [activeTab, setActiveTab] = useState<'photos' | 'package' | 'links'>('photos')
+  const [extraStlSlots, setExtraStlSlots] = useState<FileSlotId[]>([])
   const cloudLinks = watch('cloudDriveLinks') ?? ['']
 
   const uploadFile = useCallback(async (slotId: FileSlotId, file: File) => {
@@ -100,6 +111,16 @@ export function FileUploadSection({ orderNo, files, onFilesChange, register, wat
     setValue('cloudDriveLinks', next, { shouldDirty: true, shouldValidate: true })
   }
 
+  const addExtraStlSlot = () => {
+    const nextSlot = EXTRA_STL_FILE_SLOT_IDS.find((slotId) => !extraStlSlots.includes(slotId))
+    if (nextSlot) setExtraStlSlots((current) => [...current, nextSlot])
+  }
+
+  const removeExtraStlSlot = (slotId: FileSlotId) => {
+    removeFile(slotId)
+    setExtraStlSlots((current) => current.filter((id) => id !== slotId))
+  }
+
   return (
     <SectionCard title="Upload Files" id="file-upload" className="!border-primary/20" onTitleClick={onTitleClick}>
       <div className="space-y-5">
@@ -122,6 +143,10 @@ export function FileUploadSection({ orderNo, files, onFilesChange, register, wat
             <div className={`grid gap-3 ${slotGridClass(group.heading, group.slots.length)}`}>
               {group.slots.map((slot) => <UploadSlotCard key={slot.id} slot={slot} slotFile={files[slot.id]} onSelect={(file) => uploadFile(slot.id, file)} onRemove={() => removeFile(slot.id)} onRetry={() => { const current = files[slot.id]; if (current?.file) uploadFile(slot.id, current.file) }} />)}
             </div>
+            {group.heading === 'Oral Scans' && <div className="mt-4 border-t border-border pt-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold text-secondary">Additional STL Files</h4><p className="mt-0.5 text-xs text-text-muted">Add up to 10 individual STL files when the case needs more scans.</p></div><button type="button" onClick={addExtraStlSlot} disabled={extraStlSlots.length >= EXTRA_STL_FILE_SLOT_IDS.length} className="inline-flex items-center gap-1.5 rounded-card border border-primary px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-3.5 w-3.5" />Add STL file</button></div>
+              {extraStlSlots.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{extraStlSlots.map((slotId) => { const index = EXTRA_STL_FILE_SLOT_IDS.indexOf(slotId as typeof EXTRA_STL_FILE_SLOT_IDS[number]); const slot = extraStlSlot(slotId, index); return <UploadSlotCard key={slotId} slot={slot} slotFile={files[slotId]} onSelect={(file) => uploadFile(slotId, file)} onRemove={() => removeExtraStlSlot(slotId)} onRetry={() => { const current = files[slotId]; if (current?.file) uploadFile(slotId, current.file) }} /> })}</div>}
+            </div>}
           </div>)}
         </div>}
 

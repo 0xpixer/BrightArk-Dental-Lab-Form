@@ -10,6 +10,19 @@ export const TREATMENT_CATEGORIES = [
 
 export type TreatmentCategory = (typeof TREATMENT_CATEGORIES)[number]
 
+export const EXTRA_STL_FILE_SLOT_IDS = [
+  'extra-stl-1',
+  'extra-stl-2',
+  'extra-stl-3',
+  'extra-stl-4',
+  'extra-stl-5',
+  'extra-stl-6',
+  'extra-stl-7',
+  'extra-stl-8',
+  'extra-stl-9',
+  'extra-stl-10',
+] as const
+
 export const FILE_SLOT_IDS = [
   'upper-model',
   'lower-model',
@@ -22,6 +35,7 @@ export const FILE_SLOT_IDS = [
   'left-occlusal',
   'lower-arch',
   'case-package',
+  ...EXTRA_STL_FILE_SLOT_IDS,
 ] as const
 
 export type FileSlotId = (typeof FILE_SLOT_IDS)[number]

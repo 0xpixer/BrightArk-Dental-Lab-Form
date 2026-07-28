@@ -17,7 +17,9 @@ export async function buildOrderZip(order: Order, zipDownloadUrl?: string): Prom
         const res = await fetch(url)
         if (!res.ok) return
         const buffer = Buffer.from(await res.arrayBuffer())
-        const mapping = SLOT_FOLDER_MAP[slotId]
+        const mapping = SLOT_FOLDER_MAP[slotId] ?? (slotId.startsWith('extra-stl-')
+          ? { folder: 'oral_scans', filename: slotId }
+          : undefined)
         const ext = getExtensionFromUrl(url)
         const path = mapping
           ? `${mapping.folder}/${mapping.filename}.${ext}`
