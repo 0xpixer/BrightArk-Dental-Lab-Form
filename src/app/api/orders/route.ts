@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { eq, desc, sql } from 'drizzle-orm'
+import { and, eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { orders } from '@/lib/db/schema'
+import { adminUsers, orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert, type OrderApiPayload } from '@/lib/transformOrder'
-import { requireAdmin, requirePortalUser } from '@/lib/admin/session'
+import { requireAdmin, requireSession } from '@/lib/admin/session'
+import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { orderFormSchema } from '@/types/orderForm'
 
@@ -43,12 +44,8 @@ async function generateDailyOrderNo(db: ReturnType<typeof getDb>): Promise<strin
 
 export async function POST(request: Request) {
   try {
-    const { session, error } = await requirePortalUser()
+    const { session, error } = await requireSession()
     if (error) return error
-    const ownerId = await getOrderOwnerId(parseInt(session!.user.id, 10), session!.user.role)
-    if (!ownerId) {
-      return NextResponse.json({ success: false, error: 'Clinic staff must be linked to a doctor before submitting orders' }, { status: 403 })
-    }
     const body = (await request.json()) as OrderApiPayload
 
     const parsed = orderFormSchema.safeParse(body)
@@ -60,6 +57,30 @@ export async function POST(request: Request) {
     }
 
     const db = getDb()
+    let ownerId: number | null = null
+    if (isPortalRole(session!.user.role)) {
+      ownerId = await getOrderOwnerId(parseInt(session!.user.id, 10), session!.user.role)
+      if (!ownerId) {
+        return NextResponse.json({ success: false, error: 'Clinic staff must be linked to a doctor before submitting orders' }, { status: 403 })
+      }
+    } else if (isAdminRole(session!.user.role)) {
+      const doctorId = Number(parsed.data.submittedForDoctorId)
+      if (!Number.isInteger(doctorId) || doctorId <= 0) {
+        return NextResponse.json({ success: false, error: 'Select the doctor this case is for' }, { status: 400 })
+      }
+      const [doctor] = await db
+        .select({ id: adminUsers.id })
+        .from(adminUsers)
+        .where(and(eq(adminUsers.id, doctorId), eq(adminUsers.role, 'doctor'), eq(adminUsers.isActive, true)))
+        .limit(1)
+      if (!doctor) {
+        return NextResponse.json({ success: false, error: 'Selected doctor is unavailable' }, { status: 400 })
+      }
+      ownerId = doctor.id
+    } else {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
     const orderNo = await generateDailyOrderNo(db)
     const orderData = mapPayloadToOrderInsert({ ...parsed.data, orderNo })
     const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({

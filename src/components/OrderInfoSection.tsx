@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { Control, FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import type { OrderFormValues } from '../types/orderForm'
 import { FormField, orderInputClassName } from './ui/FormField'
@@ -9,6 +10,15 @@ export interface ClinicOption {
   address: string
 }
 
+export interface DoctorOption {
+  id: number
+  fullName: string | null
+  email: string | null
+  clinicName: string | null
+  address: string | null
+  clinics: ClinicOption[]
+}
+
 interface Props {
   register: UseFormRegister<OrderFormValues>
   control: Control<OrderFormValues>
@@ -18,14 +28,22 @@ interface Props {
   onTitleClick?: () => void
   embedded?: boolean
   clinics?: ClinicOption[]
+  doctors?: DoctorOption[]
+  isAdminSubmitting?: boolean
 }
 
-export function OrderInfoSection({ register, errors, watch, setValue, onTitleClick, embedded, clinics = [] }: Props) {
+export function OrderInfoSection({ register, errors, watch, setValue, onTitleClick, embedded, clinics = [], doctors = [], isAdminSubmitting = false }: Props) {
   const deliveryAddress = watch('address') ?? ''
   const billAddressSameAsDelivery = watch('billAddressSameAsDelivery')
+  const [selectedDoctorClinics, setSelectedDoctorClinics] = useState<ClinicOption[]>([])
+  const activeClinics = isAdminSubmitting ? selectedDoctorClinics : clinics
+
+  useEffect(() => {
+    if (!isAdminSubmitting) setSelectedDoctorClinics([])
+  }, [isAdminSubmitting])
 
   const selectClinic = (clinicName: string) => {
-    const selectedClinic = clinics.find((clinic) => clinic.name === clinicName)
+    const selectedClinic = activeClinics.find((clinic) => clinic.name === clinicName)
     if (!selectedClinic) return
 
     setValue('address', selectedClinic.address, { shouldDirty: true })
@@ -34,22 +52,51 @@ export function OrderInfoSection({ register, errors, watch, setValue, onTitleCli
     }
   }
 
+  const selectDoctor = (doctorName: string) => {
+    if (!isAdminSubmitting) return
+    const doctor = doctors.find((option) => (option.fullName ?? option.email) === doctorName)
+    if (!doctor) {
+      setValue('submittedForDoctorId', '', { shouldDirty: true })
+      setSelectedDoctorClinics([])
+      return
+    }
+
+    const doctorClinics = doctor.clinics.length > 0
+      ? doctor.clinics
+      : doctor.clinicName && doctor.address
+        ? [{ id: doctor.id, name: doctor.clinicName, address: doctor.address }]
+        : []
+    const primaryClinic = doctorClinics[0]
+    setSelectedDoctorClinics(doctorClinics)
+    setValue('submittedForDoctorId', String(doctor.id), { shouldDirty: true })
+    setValue('dentist', doctor.fullName ?? doctor.email ?? '', { shouldDirty: true })
+    setValue('email', doctor.email ?? '', { shouldDirty: true })
+    setValue('clinic', primaryClinic?.name ?? doctor.clinicName ?? '', { shouldDirty: true })
+    setValue('address', primaryClinic?.address ?? doctor.address ?? '', { shouldDirty: true })
+    if (billAddressSameAsDelivery) {
+      setValue('billAddress', primaryClinic?.address ?? doctor.address ?? '', { shouldDirty: true })
+    }
+  }
+
   return (
     <SectionCard title="Order Information" id="order-info" onTitleClick={onTitleClick} embedded={embedded}>
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <FormField label="Dentist" htmlFor="dentist" error={errors.dentist?.message}>
-            <input id="dentist" {...register('dentist')} className={orderInputClassName(!!errors.dentist)} />
+            <>
+              <input id="dentist" list={isAdminSubmitting ? 'doctor-options' : undefined} {...register('dentist', { onChange: (event) => selectDoctor(event.target.value) })} className={orderInputClassName(!!errors.dentist)} />
+              {isAdminSubmitting && <datalist id="doctor-options">{doctors.map((doctor) => <option key={doctor.id} value={doctor.fullName ?? doctor.email ?? ''}>{doctor.email ?? ''}</option>)}</datalist>}
+            </>
           </FormField>
           <FormField label="Clinic" htmlFor="clinic" error={errors.clinic?.message}>
-            {clinics.length > 0 ? (
+            {activeClinics.length > 0 ? (
               <select
                 id="clinic"
                 {...register('clinic', { onChange: (event) => selectClinic(event.target.value) })}
                 className={orderInputClassName(!!errors.clinic)}
               >
                 <option value="">Select clinic</option>
-                {clinics.map((clinic) => (
+                {activeClinics.map((clinic) => (
                   <option key={clinic.id} value={clinic.name}>{clinic.name}</option>
                 ))}
               </select>

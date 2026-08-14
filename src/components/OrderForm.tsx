@@ -16,7 +16,7 @@ import { SuccessCard } from '@/components/SuccessCard'
 import { FormFooter } from '@/components/FormFooter'
 import { AuthModal } from '@/components/AuthModal'
 import { SectionCard } from '@/components/ui/SectionCard'
-import type { ClinicOption } from '@/components/OrderInfoSection'
+import type { ClinicOption, DoctorOption } from '@/components/OrderInfoSection'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
 
@@ -49,6 +49,8 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
   const [activeStep, setActiveStep] = useState<number | null>(1)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [clinics, setClinics] = useState<ClinicOption[]>([])
+  const [doctors, setDoctors] = useState<DoctorOption[]>([])
+  const [isAdminSubmitting, setIsAdminSubmitting] = useState(false)
   const [serverDraftId, setServerDraftId] = useState<number | null>(() => {
     const id = Number(draftId)
     return Number.isInteger(id) && id > 0 ? id : null
@@ -105,14 +107,12 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
 
   useEffect(() => {
     const hasDraft = Boolean(loadDraft())
-    fetch('/api/portal/profile')
-      .then(async (response) => response.ok ? response.json() : null)
-      .then((data) => {
-        if (!data?.profile) {
-          setCanAutosaveToDashboard(false)
-          return
-        }
+    const loadAccountContext = async () => {
+      const profileResponse = await fetch('/api/portal/profile')
+      if (profileResponse.ok) {
+        const data = await profileResponse.json()
         setCanAutosaveToDashboard(true)
+        setIsAdminSubmitting(false)
         const profileClinics = (data.profile.clinics ?? []) as ClinicOption[]
         const defaultClinic = profileClinics.find((clinic) => clinic.name === data.profile.clinicName) ?? profileClinics[0]
         setClinics(profileClinics)
@@ -122,8 +122,24 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
         setValue('email', data.profile.email ?? '')
         setValue('address', defaultClinic?.address ?? data.profile.address ?? '')
         setValue('billAddress', defaultClinic?.address ?? data.profile.address ?? '')
-      })
-      .catch(() => setCanAutosaveToDashboard(false))
+        return
+      }
+
+      const doctorsResponse = await fetch('/api/admin/doctors')
+      if (doctorsResponse.ok) {
+        const data = await doctorsResponse.json()
+        setDoctors((data.doctors ?? []) as DoctorOption[])
+        setIsAdminSubmitting(true)
+      } else {
+        setIsAdminSubmitting(false)
+      }
+      setCanAutosaveToDashboard(false)
+    }
+
+    loadAccountContext().catch(() => {
+      setCanAutosaveToDashboard(false)
+      setIsAdminSubmitting(false)
+    })
   }, [initialValues, loadDraft, setValue])
 
   const setFormValue = useCallback<UseFormSetValue<OrderFormValues>>((name, value, options) => {
@@ -358,7 +374,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
                   {step.id === 'case-details' && (
                     <SectionCard title="Case Details" id="case-details" onTitleClick={foldActiveStep}>
                       <div className="space-y-6">
-                        <OrderInfoSection {...formProps} clinics={clinics} embedded />
+                        <OrderInfoSection {...formProps} clinics={clinics} doctors={doctors} isAdminSubmitting={isAdminSubmitting} embedded />
                         <TreatmentTypeSection register={register} watch={watch} setValue={setFormValue} embedded />
                         <InstructionsSection register={register} watch={watch} embedded />
                       </div>
