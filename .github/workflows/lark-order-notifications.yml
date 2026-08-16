@@ -11,9 +11,8 @@ jobs:
     steps:
       - name: Notify Lark about newly submitted orders
         env:
-          APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           curl --fail-with-body --silent --show-error \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            "${APP_URL}/api/cron/lark-orders"
+            "https://bright-ark-dental-lab-form.vercel.app/api/cron/lark-orders"

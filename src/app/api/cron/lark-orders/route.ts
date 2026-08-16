@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { eq, isNull } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { larkNotifications, orders } from '@/lib/db/schema'
+import { getLarkWebhookError } from '@/lib/lark'
 
 const MAX_ORDERS_PER_RUN = 50
 
@@ -66,7 +67,20 @@ export async function GET(request: NextRequest) {
           content: { text: buildLarkMessage(order, appUrl) },
         }),
       })
-      if (!response.ok) throw new Error(`Lark webhook returned ${response.status}`)
+      const responseText = await response.text()
+      if (!response.ok) {
+        throw new Error(`Lark webhook returned HTTP ${response.status}: ${responseText}`)
+      }
+
+      let responseBody: unknown
+      try {
+        responseBody = JSON.parse(responseText)
+      } catch {
+        throw new Error(`Lark webhook returned invalid JSON: ${responseText}`)
+      }
+
+      const larkError = getLarkWebhookError(responseBody)
+      if (larkError) throw new Error(larkError)
 
       await db.insert(larkNotifications).values({ orderId: order.id }).onConflictDoNothing()
       sent += 1
@@ -76,5 +90,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: failures.length === 0, sent, failures })
+  return NextResponse.json(
+    { success: failures.length === 0, sent, failures },
+    { status: failures.length === 0 ? 200 : 502 },
+  )
 }
