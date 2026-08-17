@@ -2,13 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { upload } from '@vercel/blob/client'
-import { Check, FileArchive, FileIcon, Image, Link2, Plus, RotateCcw, UploadCloud, X } from 'lucide-react'
+import { Check, FileIcon, Link2, Plus, RotateCcw, UploadCloud, X } from 'lucide-react'
 import type { FieldError, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 import { type FileSlotId, type OrderFormValues } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
 import { inputClassName } from './ui/FormField'
-import type { FileSlotConfig } from './fileUpload/slotConfig'
-import { UploadSlotCard, type SlotFile } from './fileUpload/UploadSlotCard'
+import type { SlotFile } from './fileUpload/UploadSlotCard'
 import type { Dispatch, SetStateAction } from 'react'
 
 export type FilesState = Partial<Record<FileSlotId, SlotFile>>
@@ -25,16 +24,8 @@ interface FileUploadSectionProps {
   onTitleClick?: () => void
 }
 
-const CASE_PACKAGE_SLOT: FileSlotConfig = {
-  id: 'case-package',
-  label: 'Compressed Case Package',
-  accept: '.zip,.rar,.7z,.tar,.gz,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/x-7z-compressed,application/gzip',
-  icon: 'scan',
-  formatBadge: 'ZIP / RAR / 7Z',
-}
-
-const BULK_FILE_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf,.stl,.obj,.ply,image/jpeg,image/png,image/webp,application/pdf,model/stl,model/obj,model/ply,application/octet-stream'
-const SUPPORTED_BULK_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf', 'stl', 'obj', 'ply'])
+const BULK_FILE_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf,.stl,.obj,.ply,.zip,.rar,.7z,.tar,.gz,.gzip,.tgz,image/jpeg,image/png,image/webp,application/pdf,model/stl,model/obj,model/ply,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/vnd.rar,application/x-7z-compressed,application/gzip,application/x-gzip,application/x-tar,application/octet-stream'
+const SUPPORTED_BULK_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf', 'stl', 'obj', 'ply', 'zip', 'rar', '7z', 'tar', 'gz', 'gzip', 'tgz'])
 
 function isSupportedBulkFile(file: File) {
   const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
@@ -42,7 +33,7 @@ function isSupportedBulkFile(file: File) {
 }
 
 export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFilesChange, register, watch, setValue, error, onTitleClick }: FileUploadSectionProps) {
-  const [activeTab, setActiveTab] = useState<'photos' | 'package' | 'links'>('photos')
+  const [activeTab, setActiveTab] = useState<'files' | 'links'>('files')
   const [isDragging, setIsDragging] = useState(false)
   const [bulkUploadError, setBulkUploadError] = useState<string | null>(null)
   const bulkInputRef = useRef<HTMLInputElement>(null)
@@ -106,7 +97,7 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
     const supportedFiles = selectedFiles.filter(isSupportedBulkFile)
     const rejectedCount = selectedFiles.length - supportedFiles.length
     setBulkUploadError(rejectedCount > 0
-      ? `${rejectedCount} unsupported file${rejectedCount === 1 ? '' : 's'} skipped. Use JPG, PNG, WEBP, PDF, STL, OBJ, or PLY.`
+      ? `${rejectedCount} unsupported file${rejectedCount === 1 ? '' : 's'} skipped. Upload an image, PDF, dental scan, or compressed package.`
       : null)
 
     const occupiedSlots = new Set([...reservedSlotIds, ...Object.keys(files)])
@@ -120,17 +111,16 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
     })
   }
 
-  const photoFiles = Object.entries(files)
-    .filter(([slotId, slotFile]) => slotId !== 'case-package' && Boolean(slotFile)) as Array<[FileSlotId, SlotFile]>
-  const completedPhotoFiles = photoFiles.filter(([, slotFile]) => slotFile.status === 'success').length
+  const uploadedFiles = Object.entries(files)
+    .filter(([, slotFile]) => Boolean(slotFile)) as Array<[FileSlotId, SlotFile]>
+  const completedFiles = uploadedFiles.filter(([, slotFile]) => slotFile.status === 'success').length
 
   return (
     <SectionCard title="Upload Files" id="file-upload" className="!border-primary/20" onTitleClick={onTitleClick}>
       <div className="space-y-5">
-        <div className="grid grid-cols-3 border-b border-border" role="tablist" aria-label="File upload options">
+        <div className="grid grid-cols-2 border-b border-border" role="tablist" aria-label="File upload options">
           {[
-            { id: 'photos', label: 'Photos', icon: Image },
-            { id: 'package', label: 'Case Package', icon: FileArchive },
+            { id: 'files', label: 'Files', icon: FileIcon },
             { id: 'links', label: 'Cloud Links', icon: Link2 },
           ].map((tab) => {
             const Icon = tab.icon
@@ -139,7 +129,7 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
           })}
         </div>
 
-        {activeTab === 'photos' && <div className="space-y-4">
+        {activeTab === 'files' && <div className="space-y-4">
           <input
             ref={bulkInputRef}
             type="file"
@@ -172,24 +162,24 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
               setIsDragging(false)
               addBulkFiles(Array.from(event.dataTransfer.files))
             }}
-            aria-label="Upload case photos and scan files"
+            aria-label="Upload case files"
             className={`flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed px-5 py-8 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-bg hover:border-primary hover:bg-primary/[0.03]'}`}
           >
             <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary"><UploadCloud className="h-6 w-6" aria-hidden /></span>
             <p className="text-sm font-semibold text-text">Drop all case files here</p>
             <p className="mt-1 text-xs text-text-muted">or click to select multiple files at once</p>
-            <p className="mt-3 text-[11px] text-text-muted">JPG, PNG, WEBP, PDF, STL, OBJ, and PLY</p>
+            <p className="mt-3 max-w-lg text-[11px] text-text-muted">Images, PDFs, STL/OBJ/PLY scans, and ZIP/RAR/7Z/TAR/GZ packages</p>
           </div>
 
           {bulkUploadError && <p role="alert" className="text-xs text-red-600">{bulkUploadError}</p>}
 
-          {photoFiles.length > 0 && <div className="overflow-hidden rounded-card border border-border">
+          {uploadedFiles.length > 0 && <div className="overflow-hidden rounded-card border border-border">
             <div className="flex items-center justify-between border-b border-border bg-bg px-3 py-2">
-              <p className="text-xs font-semibold text-secondary">{photoFiles.length} file{photoFiles.length === 1 ? '' : 's'}</p>
-              <p className="text-[11px] text-text-muted">{completedPhotoFiles} uploaded</p>
+              <p className="text-xs font-semibold text-secondary">{uploadedFiles.length} file{uploadedFiles.length === 1 ? '' : 's'}</p>
+              <p className="text-[11px] text-text-muted">{completedFiles} uploaded</p>
             </div>
             <div className="divide-y divide-border">
-              {photoFiles.map(([slotId, slotFile]) => {
+              {uploadedFiles.map(([slotId, slotFile]) => {
                 const isUploading = slotFile.status === 'uploading'
                 const isSuccess = slotFile.status === 'success'
                 return <div key={slotId} className="flex min-w-0 items-center gap-3 px-3 py-2.5">
@@ -205,11 +195,6 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
               })}
             </div>
           </div>}
-        </div>}
-
-        {activeTab === 'package' && <div className="space-y-3">
-          <p className="text-sm text-text-muted">Upload one compressed folder containing all STL, scan, and supporting case files.</p>
-          <div className="max-w-sm"><UploadSlotCard slot={CASE_PACKAGE_SLOT} slotFile={files['case-package']} onSelect={(file) => uploadFile('case-package', file)} onRemove={() => removeFile('case-package')} onRetry={() => { const current = files['case-package']; if (current?.file) uploadFile('case-package', current.file) }} /></div>
         </div>}
 
         {activeTab === 'links' && <div className="space-y-3">
