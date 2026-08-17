@@ -19,9 +19,20 @@ interface AddOrderFilesProps {
   orderNo: string
   existingSlotIds: string[]
   onFilesAdded: () => void | Promise<void>
+  endpoint?: string
+  slotPrefix?: 'bulk-file' | 'production-file'
+  label?: string
 }
 
-export function AddOrderFiles({ orderId, orderNo, existingSlotIds, onFilesAdded }: AddOrderFilesProps) {
+export function AddOrderFiles({
+  orderId,
+  orderNo,
+  existingSlotIds,
+  onFilesAdded,
+  endpoint = `/api/orders/${orderId}/files`,
+  slotPrefix = 'bulk-file',
+  label = 'Add files',
+}: AddOrderFilesProps) {
   const [queue, setQueue] = useState<QueueFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -61,7 +72,7 @@ export function AddOrderFiles({ orderId, orderNo, existingSlotIds, onFilesAdded 
     const completed = uploaded.filter((entry): entry is { slotId: string; url: string } => Boolean(entry))
     if (completed.length === 0) return
 
-    const response = await fetch(`/api/orders/${orderId}/files`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fileUrls: Object.fromEntries(completed.map((entry) => [entry.slotId, entry.url])) }),
@@ -90,8 +101,8 @@ export function AddOrderFiles({ orderId, orderNo, existingSlotIds, onFilesAdded 
     const reserved = new Set([...existingSlotIds, ...queue.map((entry) => entry.slotId)])
     let seed = Date.now()
     const entries = supportedFiles.map((file) => {
-      while (reserved.has(`bulk-file-${seed}`)) seed += 1
-      const entry: QueueFile = { slotId: `bulk-file-${seed}`, file, progress: 0, status: 'uploading' }
+      while (reserved.has(`${slotPrefix}-${seed}`)) seed += 1
+      const entry: QueueFile = { slotId: `${slotPrefix}-${seed}`, file, progress: 0, status: 'uploading' }
       reserved.add(entry.slotId)
       seed += 1
       return entry
@@ -116,7 +127,7 @@ export function AddOrderFiles({ orderId, orderNo, existingSlotIds, onFilesAdded 
       <div
         role="button"
         tabIndex={0}
-        aria-label="Add files to order"
+        aria-label={label}
         onClick={() => { if (!isUploading) inputRef.current?.click() }}
         onKeyDown={(event) => {
           if (!isUploading && (event.key === 'Enter' || event.key === ' ')) {
@@ -138,7 +149,7 @@ export function AddOrderFiles({ orderId, orderNo, existingSlotIds, onFilesAdded 
         className={`flex min-h-28 flex-col items-center justify-center rounded-card border-2 border-dashed px-3 py-4 text-center focus:outline-none focus:ring-2 focus:ring-primary/30 ${isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'} ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-bg hover:border-primary'}`}
       >
         <UploadCloud className="h-5 w-5 text-primary" aria-hidden />
-        <p className="mt-1.5 text-xs font-semibold text-text">Add files</p>
+        <p className="mt-1.5 text-xs font-semibold text-text">{label}</p>
         <p className="mt-0.5 text-[10px] text-text-muted">Drop files here or browse</p>
         <p className="mt-1.5 text-[9px] leading-4 text-text-muted">{CASE_FILE_FORMAT_DESCRIPTION}</p>
       </div>

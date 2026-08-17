@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "production_file_urls" jsonb;

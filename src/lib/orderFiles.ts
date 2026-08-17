@@ -1,14 +1,15 @@
 const BULK_FILE_KEY = /^bulk-file-\d+$/
+const PRODUCTION_FILE_KEY = /^production-file-\d+$/
 const MAX_FILES_PER_REQUEST = 50
 
-export function parseNewOrderFileUrls(value: unknown): Record<string, string> | null {
+function parseFileUrls(value: unknown, keyPattern: RegExp): Record<string, string> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const entries = Object.entries(value)
   if (entries.length === 0 || entries.length > MAX_FILES_PER_REQUEST) return null
 
   const parsed: Record<string, string> = {}
   for (const [slotId, url] of entries) {
-    if (!BULK_FILE_KEY.test(slotId) || typeof url !== 'string') return null
+    if (!keyPattern.test(slotId) || typeof url !== 'string') return null
     try {
       const parsedUrl = new URL(url)
       if (parsedUrl.protocol !== 'https:') return null
@@ -18,4 +19,12 @@ export function parseNewOrderFileUrls(value: unknown): Record<string, string> | 
     parsed[slotId] = url
   }
   return parsed
+}
+
+export function parseNewOrderFileUrls(value: unknown): Record<string, string> | null {
+  return parseFileUrls(value, BULK_FILE_KEY)
+}
+
+export function parseProductionFileUrls(value: unknown): Record<string, string> | null {
+  return parseFileUrls(value, PRODUCTION_FILE_KEY)
 }

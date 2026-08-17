@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, Link2, Pencil, Save, X } from 'lucide-react'
+import { ArrowLeft, Download, FileIcon, Link2, Pencil, Save, X } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
 import { getFilenameFromUrl, SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
 import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
 import { AddOrderFiles } from '@/components/orderDetails/AddOrderFiles'
+import { FinalProductionFiles } from '@/components/orderDetails/FinalProductionFiles'
 
 interface Order {
   id: number
@@ -35,6 +36,7 @@ interface Order {
   toothSelection: Record<string, unknown> | null
   instructions: string | null
   fileUrls: Record<string, string> | null
+  productionFileUrls: Record<string, string> | null
   cloudDriveLink: string | null
   cloudDriveLinks: string[] | null
   status: string
@@ -89,6 +91,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
   }
 
   const fileUrls = order.fileUrls ?? {}
+  const productionFileUrls = order.productionFileUrls ?? {}
   const cloudDriveLinks = Array.from(new Set([...(order.cloudDriveLinks ?? []), order.cloudDriveLink].filter(Boolean))) as string[]
   const treatmentLines = formatDetailLines(order.treatmentData)
   const toothSelectionLines = formatDetailLines(order.toothSelection)
@@ -226,44 +229,44 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
           )}
         </div>
 
-        <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-secondary">Uploaded Files</h2>
-          {cloudDriveLinks.length > 0 && (
-            <div className="mb-4 rounded border border-primary/20 bg-primary/5 p-3">
-              <p className="text-xs font-semibold text-secondary">Cloud Drive Links</p>
-              {cloudDriveLinks.map((link) => <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-xs text-primary underline">{link}</a>)}
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            {Object.entries(fileUrls).map(([slotId, url]) => {
-              const label = SLOT_FOLDER_MAP[slotId]?.filename
-                ?? (slotId.startsWith('bulk-file-') ? getFilenameFromUrl(url) : null)
-                ?? slotId
-              const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(url)
-              return (
-                <div key={slotId} className="rounded border border-border p-2">
-                  {isImage ? (
-                    <img src={url} alt={label} className="mb-2 h-20 w-full rounded object-cover" />
-                  ) : (
-                    <div className="mb-2 flex h-20 items-center justify-center rounded bg-bg text-xs text-text-muted">
-                      STL / File
-                    </div>
-                  )}
-                  <p className="truncate text-xs font-medium">{label}</p>
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary underline">
-                    Download
-                  </a>
-                </div>
-              )
-            })}
-            {Object.keys(fileUrls).length === 0 && cloudDriveLinks.length === 0 && (
-              <p className="text-sm text-text-muted">No files uploaded or linked</p>
+        <div className="space-y-4">
+          <section className="rounded-card border border-border bg-surface p-4 shadow-sm">
+            <h2 className="mb-4 text-sm font-semibold text-secondary">Uploaded Files</h2>
+            {cloudDriveLinks.length > 0 && (
+              <div className="mb-4 rounded border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs font-semibold text-secondary">Cloud Drive Links</p>
+                {cloudDriveLinks.map((link, index) => <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs text-primary underline">Cloud drive link {index + 1}</a>)}
+              </div>
             )}
-          </div>
-          <AddOrderFiles
+            <div className="space-y-2">
+              {Object.entries(fileUrls).map(([slotId, url]) => {
+                const label = getFilenameFromUrl(url)
+                  ?? SLOT_FOLDER_MAP[slotId]?.filename
+                  ?? slotId
+                return (
+                  <a key={slotId} href={url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-2 rounded border border-border px-3 py-2 text-sm text-primary hover:bg-bg">
+                    <FileIcon className="h-4 w-4 shrink-0" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate">{label}</span>
+                    <Download className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  </a>
+                )
+              })}
+              {Object.keys(fileUrls).length === 0 && cloudDriveLinks.length === 0 && (
+                <p className="text-sm text-text-muted">No files uploaded or linked</p>
+              )}
+            </div>
+            <AddOrderFiles
+              orderId={order.id}
+              orderNo={order.orderNo}
+              existingSlotIds={Object.keys(fileUrls)}
+              onFilesAdded={fetchOrder}
+            />
+          </section>
+          <FinalProductionFiles
             orderId={order.id}
             orderNo={order.orderNo}
-            existingSlotIds={Object.keys(fileUrls)}
+            files={productionFileUrls}
+            canUpload
             onFilesAdded={fetchOrder}
           />
         </div>

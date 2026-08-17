@@ -59,6 +59,7 @@ export const orders = pgTable('orders', {
   toothSelection: jsonb('tooth_selection'),
   instructions: text('instructions'),
   fileUrls: jsonb('file_urls'),
+  productionFileUrls: jsonb('production_file_urls'),
   cloudDriveLink: text('cloud_drive_link'),
   cloudDriveLinks: jsonb('cloud_drive_links'),
   submittedBy: integer('submitted_by').references(() => adminUsers.id),

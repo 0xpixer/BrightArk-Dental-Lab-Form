@@ -78,6 +78,13 @@
       "when": 1784732267815,
       "tag": "0010_ambitious_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786950774574,
+      "tag": "0011_dry_silverclaw",
+      "breakpoints": true
     }
   ]
 }

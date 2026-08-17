@@ -34,5 +34,21 @@ export async function buildOrderZip(order: Order, zipDownloadUrl?: string): Prom
     }),
   )
 
+  const productionFileUrls = (order.productionFileUrls as Record<string, string> | null) ?? {}
+  await Promise.all(
+    Object.entries(productionFileUrls).map(async ([slotId, url]) => {
+      if (!url) return
+      try {
+        const res = await fetch(url)
+        if (!res.ok) return
+        const buffer = Buffer.from(await res.arrayBuffer())
+        const filename = getFilenameFromUrl(url) ?? `${slotId}.${getExtensionFromUrl(url)}`
+        zip.file(`final_production_files/${slotId.replace('production-file-', '').padStart(2, '0')}_${filename}`, buffer)
+      } catch (err) {
+        console.error(`Failed to fetch final production file ${slotId}:`, err)
+      }
+    }),
+  )
+
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
 }
