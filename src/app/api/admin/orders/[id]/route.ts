@@ -5,7 +5,7 @@ import { larkNotifications, orders, sharedLinks } from '@/lib/db/schema'
 import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 
-const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete'])
+const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete', 'delivered'])
 
 export async function GET(
   _request: Request,

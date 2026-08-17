@@ -18,12 +18,14 @@ const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'complete', label: 'Complete' },
+  { value: 'delivered', label: 'Delivered' },
 ] as const
 
 const STATUS_SELECT_CLASS: Record<string, string> = {
   pending: 'border-yellow-200 bg-yellow-100 text-yellow-800',
   in_progress: 'border-blue-200 bg-blue-100 text-blue-800',
   complete: 'border-green-200 bg-green-100 text-green-800',
+  delivered: 'border-pink-200 bg-pink-100 text-pink-800',
 }
 
 export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStatus: boolean; canDelete: boolean }) {
@@ -170,6 +172,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
             <option value="pending">Pending</option>
             <option value="in_progress">In Progress</option>
             <option value="complete">Complete</option>
+            <option value="delivered">Delivered</option>
           </select>
         </div>
       </div>

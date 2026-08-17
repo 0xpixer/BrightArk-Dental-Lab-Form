@@ -118,6 +118,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
               <option value="complete">Complete</option>
+              <option value="delivered">Delivered</option>
             </select>
           )}
           <button
