@@ -1,7 +1,7 @@
 import JSZip from 'jszip'
 import type { Order } from '@/lib/db/schema'
 import { generateOrderPdfBuffer } from './generateOrderPdf'
-import { SLOT_FOLDER_MAP, getExtensionFromUrl } from './fileSlots'
+import { SLOT_FOLDER_MAP, getExtensionFromUrl, getFilenameFromUrl } from './fileSlots'
 
 export async function buildOrderZip(order: Order, zipDownloadUrl?: string): Promise<Buffer> {
   const zip = new JSZip()
@@ -17,11 +17,14 @@ export async function buildOrderZip(order: Order, zipDownloadUrl?: string): Prom
         const res = await fetch(url)
         if (!res.ok) return
         const buffer = Buffer.from(await res.arrayBuffer())
+        const bulkFilename = slotId.startsWith('bulk-file-') ? getFilenameFromUrl(url) : null
         const mapping = SLOT_FOLDER_MAP[slotId] ?? (slotId.startsWith('extra-stl-')
           ? { folder: 'oral_scans', filename: slotId }
           : undefined)
         const ext = getExtensionFromUrl(url)
-        const path = mapping
+        const path = bulkFilename
+          ? `uploads/${slotId.replace('bulk-file-', '').padStart(2, '0')}_${bulkFilename}`
+          : mapping
           ? `${mapping.folder}/${mapping.filename}.${ext}`
           : `other/${slotId}.${ext}`
         zip.file(path, buffer)

@@ -6,7 +6,7 @@ import { ArrowLeft, Download, Link2, Pencil, Save, X } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
-import { SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
+import { getFilenameFromUrl, SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
 import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
 
 interface Order {
@@ -235,7 +235,9 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
           )}
           <div className="grid grid-cols-2 gap-3">
             {Object.entries(fileUrls).map(([slotId, url]) => {
-              const label = SLOT_FOLDER_MAP[slotId]?.filename ?? slotId
+              const label = SLOT_FOLDER_MAP[slotId]?.filename
+                ?? (slotId.startsWith('bulk-file-') ? getFilenameFromUrl(url) : null)
+                ?? slotId
               const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(url)
               return (
                 <div key={slotId} className="rounded border border-border p-2">

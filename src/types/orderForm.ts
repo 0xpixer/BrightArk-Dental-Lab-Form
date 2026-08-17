@@ -39,6 +39,7 @@ export const FILE_SLOT_IDS = [
 ] as const
 
 export type FileSlotId = (typeof FILE_SLOT_IDS)[number]
+  | `bulk-file-${number}`
 
 export interface UploadedFileMeta {
   slotId: FileSlotId | 'unassigned'

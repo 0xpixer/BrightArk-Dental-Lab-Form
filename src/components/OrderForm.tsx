@@ -385,6 +385,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
                     <FileUploadSection
                       orderNo={uploadFolderId}
                       files={files}
+                      reservedSlotIds={Object.keys(initialFileUrls)}
                       onFilesChange={handleFilesChange}
                       register={register}
                       watch={watch}

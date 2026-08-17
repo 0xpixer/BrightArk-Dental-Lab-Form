@@ -40,6 +40,10 @@ export async function POST(request: Request): Promise<NextResponse> {
             'application/x-tar',
             'application/octet-stream', // .stl .obj .ply
             'model/stl',
+            'model/obj',
+            'model/ply',
+            'application/ply',
+            'application/x-tgif',
             'application/sla',
             'application/vnd.ms-pki.stl',
           ],

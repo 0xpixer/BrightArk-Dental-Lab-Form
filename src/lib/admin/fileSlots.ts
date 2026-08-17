@@ -26,3 +26,13 @@ export function getExtensionFromUrl(url: string): string {
   }
   return 'bin'
 }
+
+export function getFilenameFromUrl(url: string): string | null {
+  try {
+    const decoded = decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '')
+    const filename = decoded.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^\.+/, '')
+    return filename || null
+  } catch {
+    return null
+  }
+}
