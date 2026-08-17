@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, FileIcon, Link2, Pencil, Save, X } from 'lucide-react'
+import { ArrowLeft, Download, FileIcon, Link2, MessageCircle, Pencil, Save, X } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
@@ -10,6 +10,7 @@ import { getFilenameFromUrl, SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
 import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
 import { AddOrderFiles } from '@/components/orderDetails/AddOrderFiles'
 import { FinalProductionFiles } from '@/components/orderDetails/FinalProductionFiles'
+import { OrderMessagesModal } from '@/components/orderDetails/OrderMessagesModal'
 
 interface Order {
   id: number
@@ -48,6 +49,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [messagesOpen, setMessagesOpen] = useState(false)
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [draft, setDraft] = useState<Partial<Order>>({})
 
@@ -127,6 +129,13 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
             className="inline-flex items-center gap-1 rounded-card border border-border px-3 py-2 text-sm hover:border-primary"
           >
             <Download className="h-4 w-4" /> ZIP
+          </button>
+          <button
+            type="button"
+            onClick={() => setMessagesOpen(true)}
+            className="inline-flex items-center gap-1 rounded-card bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            <MessageCircle className="h-4 w-4" /> Message
           </button>
           <button
             type="button"
@@ -274,6 +283,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
       </div>
 
       {shareOpen && <ShareLinkModal orderId={order.id} onClose={() => setShareOpen(false)} />}
+      {messagesOpen && <OrderMessagesModal orderId={order.id} orderNo={order.orderNo} onClose={() => setMessagesOpen(false)} />}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </>
   )
