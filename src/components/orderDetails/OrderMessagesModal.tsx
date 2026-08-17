@@ -1,16 +1,27 @@
 'use client'
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { MessageCircle, Send, X } from 'lucide-react'
+import { upload } from '@vercel/blob/client'
+import { ImagePlus, LoaderCircle, MessageCircle, Send, X } from 'lucide-react'
 import type { MessageAuthor } from '@/lib/orderMessages'
 
 interface MessageItem {
   id: number
   author: MessageAuthor
-  message: string
+  message: string | null
+  imageUrl: string | null
+  imageName: string | null
   createdAt: string
   isOwn: boolean
 }
+
+interface PendingImage {
+  file: File
+  previewUrl: string
+}
+
+const MAX_CHAT_IMAGE_SIZE = 15 * 1024 * 1024
+const CHAT_IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
 
 const BUBBLE_STYLES: Record<MessageAuthor, string> = {
   Doctor: 'border-green-200 bg-green-100 text-green-950',
@@ -23,9 +34,13 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const loadMessages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -45,16 +60,24 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
   useEffect(() => {
     void loadMessages()
     const interval = window.setInterval(() => void loadMessages(true), 15000)
+    return () => window.clearInterval(interval)
+  }, [loadMessages])
+
+  useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Escape') return
+      if (previewImage) setPreviewImage(null)
+      else onClose()
     }
     window.addEventListener('keydown', closeOnEscape)
     window.setTimeout(() => inputRef.current?.focus(), 0)
-    return () => {
-      window.clearInterval(interval)
-      window.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [loadMessages, onClose])
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onClose, previewImage])
+
+  useEffect(() => {
+    if (!pendingImage) return
+    return () => URL.revokeObjectURL(pendingImage.previewUrl)
+  }, [pendingImage])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -63,27 +86,57 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
   const sendMessage = async (event: FormEvent) => {
     event.preventDefault()
     const message = input.trim()
-    if (!message || sending) return
+    if ((!message && !pendingImage) || sending) return
 
     setSending(true)
+    setUploadProgress(0)
     setError(null)
     try {
+      let imageUrl: string | undefined
+      let imageName: string | undefined
+      if (pendingImage) {
+        const safeName = pendingImage.file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+        const blob = await upload(`orders/${orderNo}/messages/${crypto.randomUUID()}-${safeName}`, pendingImage.file, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
+          onUploadProgress: ({ percentage }) => setUploadProgress(percentage),
+        })
+        imageUrl = blob.url
+        imageName = pendingImage.file.name
+      }
+
       const response = await fetch(`/api/orders/${orderId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, imageUrl, imageName }),
       })
       const payload = await response.json().catch(() => ({})) as { message?: MessageItem; error?: string }
       if (!response.ok || !payload.message) throw new Error(payload.error ?? 'Unable to send message')
       const createdMessage = payload.message
       setMessages((current) => [...current, createdMessage])
       setInput('')
+      setPendingImage(null)
+      setUploadProgress(0)
       inputRef.current?.focus()
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : 'Unable to send message')
     } finally {
       setSending(false)
     }
+  }
+
+  const selectImage = (file: File | undefined) => {
+    if (!file) return
+    if (!CHAT_IMAGE_TYPES.has(file.type)) {
+      setError('Choose a JPG, PNG, or WebP image')
+      return
+    }
+    if (file.size > MAX_CHAT_IMAGE_SIZE) {
+      setError('Image must be 15 MB or smaller')
+      return
+    }
+    setError(null)
+    setPendingImage({ file, previewUrl: URL.createObjectURL(file) })
   }
 
   return (
@@ -129,7 +182,17 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
                     {new Date(item.createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </time>
                 </div>
-                <p className="whitespace-pre-wrap break-words text-sm leading-5">{item.message}</p>
+                {item.imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImage({ url: item.imageUrl!, name: item.imageName ?? 'Message image' })}
+                    className="block overflow-hidden rounded border border-black/10 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    title="Open image preview"
+                  >
+                    <img src={item.imageUrl} alt={item.imageName ?? 'Message image'} className="max-h-64 w-full object-contain" />
+                  </button>
+                )}
+                {item.message && <p className={`whitespace-pre-wrap break-words text-sm leading-5 ${item.imageUrl ? 'mt-2' : ''}`}>{item.message}</p>}
               </div>
             </div>
           ))}
@@ -137,7 +200,40 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
 
         <form onSubmit={sendMessage} className="border-t border-border bg-surface p-3">
           {error && <p role="alert" className="mb-2 text-xs text-red-600">{error}</p>}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            className="sr-only"
+            onChange={(event) => {
+              selectImage(event.target.files?.[0])
+              event.target.value = ''
+            }}
+          />
+          {pendingImage && (
+            <div className="mb-2 flex items-center gap-2 rounded-card border border-border bg-bg p-2">
+              <img src={pendingImage.previewUrl} alt="Selected attachment" className="h-12 w-12 shrink-0 rounded object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-text">{pendingImage.file.name}</p>
+                <p className="text-[10px] text-text-muted">{(pendingImage.file.size / 1024 / 1024).toFixed(1)} MB</p>
+              </div>
+              <button type="button" onClick={() => setPendingImage(null)} disabled={sending} className="rounded p-1.5 text-text-muted hover:bg-surface hover:text-red-600" title="Remove image">
+                <X className="h-3.5 w-3.5" />
+                <span className="sr-only">Remove image</span>
+              </button>
+            </div>
+          )}
           <div className="flex items-end gap-2">
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={sending}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border text-green-700 hover:border-green-500 hover:bg-green-50 disabled:opacity-50"
+              title="Attach picture"
+            >
+              <ImagePlus className="h-4 w-4" />
+              <span className="sr-only">Attach picture</span>
+            </button>
             <textarea
               ref={inputRef}
               value={input}
@@ -155,17 +251,38 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
             />
             <button
               type="submit"
-              disabled={!input.trim() || sending}
+              disabled={(!input.trim() && !pendingImage) || sending}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-600 text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               title="Send message"
             >
-              <Send className="h-4 w-4" />
+              {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               <span className="sr-only">Send message</span>
             </button>
           </div>
-          <p className="mt-1 text-right text-[10px] text-text-muted">{input.length}/2000</p>
+          <div className="mt-1 flex items-center justify-between text-[10px] text-text-muted">
+            <span>{sending && pendingImage ? `Uploading ${Math.round(uploadProgress)}%` : 'JPG, PNG or WebP up to 15 MB'}</span>
+            <span>{input.length}/2000</span>
+          </div>
         </form>
       </div>
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview ${previewImage.name}`}
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setPreviewImage(null) }}
+        >
+          <div className="relative max-h-[92vh] max-w-5xl">
+            <img src={previewImage.url} alt={previewImage.name} className="max-h-[88vh] max-w-full object-contain" />
+            <button type="button" onClick={() => setPreviewImage(null)} className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white hover:bg-black" title="Close image preview">
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close image preview</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

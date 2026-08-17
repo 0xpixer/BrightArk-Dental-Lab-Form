@@ -4,7 +4,7 @@ import { requireSession } from '@/lib/admin/session'
 import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
 import { getDb } from '@/lib/db/client'
 import { orderMessages, orders, type OrderMessage } from '@/lib/db/schema'
-import { getMessageAuthor, parseOrderMessage } from '@/lib/orderMessages'
+import { getMessageAuthor, parseOrderMessagePayload } from '@/lib/orderMessages'
 import { getAccessiblePortalOrder } from '@/lib/portal/orderAccess'
 
 function serializeMessage(message: OrderMessage, viewerId: number) {
@@ -12,6 +12,8 @@ function serializeMessage(message: OrderMessage, viewerId: number) {
     id: message.id,
     author: getMessageAuthor(message.senderRole) ?? 'Admin',
     message: message.message,
+    imageUrl: message.imageUrl,
+    imageName: message.imageName,
     createdAt: message.createdAt,
     isOwn: message.senderId === viewerId,
   }
@@ -66,16 +68,15 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
 
-  const body = await request.json().catch(() => null)
-  const message = parseOrderMessage(body?.message)
-  if (!message) {
-    return NextResponse.json({ error: 'Enter a message of up to 2,000 characters' }, { status: 400 })
+  const content = parseOrderMessagePayload(await request.json().catch(() => null))
+  if (!content) {
+    return NextResponse.json({ error: 'Enter a message or attach a valid image' }, { status: 400 })
   }
 
   const db = getDb()
   const [created] = await db
     .insert(orderMessages)
-    .values({ orderId, senderId: userId, senderRole: role, message })
+    .values({ orderId, senderId: userId, senderRole: role, ...content })
     .returning()
 
   return NextResponse.json({ message: serializeMessage(created, userId) }, { status: 201 })

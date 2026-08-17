@@ -1,5 +1,6 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { NextResponse } from 'next/server'
+import { auth } from '@/auth'
 
 // This route only handles the TOKEN HANDSHAKE (tiny JSON payloads).
 // The actual file bytes travel directly from the browser to Vercel Blob
@@ -20,6 +21,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
 
       onBeforeGenerateToken: async (pathname) => {
+        if (pathname.split('/').includes('messages')) {
+          const session = await auth()
+          if (!session?.user) throw new Error('Unauthorized')
+          return {
+            allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+            maximumSizeInBytes: 15 * 1024 * 1024,
+            addRandomSuffix: false,
+          }
+        }
+
         // No auth check needed here — the form is public-facing.
         // Add session validation here in the future if required.
         return {

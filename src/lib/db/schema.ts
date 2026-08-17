@@ -81,7 +81,9 @@ export const orderMessages = pgTable('order_messages', {
   orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
   senderId: integer('sender_id').references(() => adminUsers.id, { onDelete: 'set null' }),
   senderRole: text('sender_role').notNull(),
-  message: text('message').notNull(),
+  message: text('message'),
+  imageUrl: text('image_url'),
+  imageName: text('image_name'),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
