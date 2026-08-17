@@ -8,6 +8,7 @@ import { type FileSlotId, type OrderFormValues } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
 import { inputClassName } from './ui/FormField'
 import type { SlotFile } from './fileUpload/UploadSlotCard'
+import { CASE_FILE_ACCEPT, CASE_FILE_FORMAT_DESCRIPTION, isSupportedCaseFile } from './fileUpload/fileTypes'
 import type { Dispatch, SetStateAction } from 'react'
 
 export type FilesState = Partial<Record<FileSlotId, SlotFile>>
@@ -22,14 +23,6 @@ interface FileUploadSectionProps {
   setValue: UseFormSetValue<OrderFormValues>
   error?: FieldError['message']
   onTitleClick?: () => void
-}
-
-const BULK_FILE_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf,.stl,.obj,.ply,.zip,.rar,.7z,.tar,.gz,.gzip,.tgz,image/jpeg,image/png,image/webp,application/pdf,model/stl,model/obj,model/ply,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/vnd.rar,application/x-7z-compressed,application/gzip,application/x-gzip,application/x-tar,application/octet-stream'
-const SUPPORTED_BULK_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf', 'stl', 'obj', 'ply', 'zip', 'rar', '7z', 'tar', 'gz', 'gzip', 'tgz'])
-
-function isSupportedBulkFile(file: File) {
-  const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
-  return SUPPORTED_BULK_EXTENSIONS.has(extension)
 }
 
 export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFilesChange, register, watch, setValue, error, onTitleClick }: FileUploadSectionProps) {
@@ -94,7 +87,7 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
   }
 
   const addBulkFiles = (selectedFiles: File[]) => {
-    const supportedFiles = selectedFiles.filter(isSupportedBulkFile)
+    const supportedFiles = selectedFiles.filter(isSupportedCaseFile)
     const rejectedCount = selectedFiles.length - supportedFiles.length
     setBulkUploadError(rejectedCount > 0
       ? `${rejectedCount} unsupported file${rejectedCount === 1 ? '' : 's'} skipped. Upload an image, PDF, dental scan, or compressed package.`
@@ -134,7 +127,7 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
             ref={bulkInputRef}
             type="file"
             multiple
-            accept={BULK_FILE_ACCEPT}
+            accept={CASE_FILE_ACCEPT}
             className="sr-only"
             onChange={(event) => {
               addBulkFiles(Array.from(event.target.files ?? []))
@@ -168,7 +161,7 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
             <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary"><UploadCloud className="h-6 w-6" aria-hidden /></span>
             <p className="text-sm font-semibold text-text">Drop all case files here</p>
             <p className="mt-1 text-xs text-text-muted">or click to select multiple files at once</p>
-            <p className="mt-3 max-w-lg text-[11px] text-text-muted">Images, PDFs, STL/OBJ/PLY scans, and ZIP/RAR/7Z/TAR/GZ packages</p>
+            <p className="mt-3 max-w-lg text-[11px] text-text-muted">{CASE_FILE_FORMAT_DESCRIPTION}</p>
           </div>
 
           {bulkUploadError && <p role="alert" className="text-xs text-red-600">{bulkUploadError}</p>}

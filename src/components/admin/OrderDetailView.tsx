@@ -8,6 +8,7 @@ import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
 import { getFilenameFromUrl, SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
 import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
+import { AddOrderFiles } from '@/components/orderDetails/AddOrderFiles'
 
 interface Order {
   id: number
@@ -259,6 +260,12 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
               <p className="text-sm text-text-muted">No files uploaded or linked</p>
             )}
           </div>
+          <AddOrderFiles
+            orderId={order.id}
+            orderNo={order.orderNo}
+            existingSlotIds={Object.keys(fileUrls)}
+            onFilesAdded={fetchOrder}
+          />
         </div>
       </div>
 
