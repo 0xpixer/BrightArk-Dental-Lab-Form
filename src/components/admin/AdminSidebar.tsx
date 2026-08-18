@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ClipboardList, Users, UserCircle, LogOut } from 'lucide-react'
+import { ClipboardList, Users, UserCircle, LogOut, Plus } from 'lucide-react'
 import { formatAdminRole } from '@/lib/admin/roles'
 
 interface AdminSidebarProps {
@@ -14,6 +14,7 @@ interface AdminSidebarProps {
 
 const NAV = [
   { href: '/admin/submissions', label: 'Submissions', icon: ClipboardList, roles: ['admin', 'superadmin'] },
+  { href: '/', label: 'New Order', icon: Plus, roles: ['admin', 'superadmin'] },
   { href: '/admin/accounts', label: 'Accounts', icon: Users, roles: ['superadmin'] },
   { href: '/admin/profile', label: 'My Profile', icon: UserCircle, roles: ['admin', 'superadmin'] },
 ]
@@ -34,7 +35,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
 
       <nav className="flex-1 space-y-1 p-3">
         {NAV.filter((item) => item.roles.includes(role)).map((item) => {
-          const active = pathname.startsWith(item.href)
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
           const Icon = item.icon
           return (
             <Link
