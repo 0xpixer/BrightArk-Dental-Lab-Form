@@ -29,12 +29,16 @@ export default function StlViewer({ url, filename, resetSignal }: StlViewerProps
     setError(null)
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#f5f6fa')
+    scene.background = new THREE.Color('#dfe4e8')
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 10000)
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 0.9
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = '100%'
     renderer.domElement.setAttribute('aria-label', `Interactive 3D preview of ${filename}`)
     renderer.domElement.dataset.testid = 'stl-preview-canvas'
     container.appendChild(renderer.domElement)
@@ -44,13 +48,16 @@ export default function StlViewer({ url, filename, resetSignal }: StlViewerProps
     controls.dampingFactor = 0.08
     controls.screenSpacePanning = true
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x78818d, 2.2))
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3)
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x66717c, 0.75))
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.8)
     keyLight.position.set(3, 4, 5)
     scene.add(keyLight)
-    const fillLight = new THREE.DirectionalLight(0xffd7bd, 1.2)
+    const fillLight = new THREE.DirectionalLight(0xcadfff, 0.7)
     fillLight.position.set(-4, -2, 3)
     scene.add(fillLight)
+    const rimLight = new THREE.DirectionalLight(0xffd8c2, 0.9)
+    rimLight.position.set(1, -4, -5)
+    scene.add(rimLight)
 
     let mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial> | null = null
     let frameId = 0
@@ -83,8 +90,8 @@ export default function StlViewer({ url, filename, resetSignal }: StlViewerProps
         geometry.computeVertexNormals()
         geometry.center()
         const material = new THREE.MeshStandardMaterial({
-          color: 0xe9edf0,
-          roughness: 0.68,
+          color: 0xd9dee2,
+          roughness: 0.72,
           metalness: 0.04,
           side: THREE.DoubleSide,
         })
@@ -141,7 +148,7 @@ export default function StlViewer({ url, filename, resetSignal }: StlViewerProps
   }, [filename, url])
 
   return (
-    <div ref={containerRef} className="relative h-full min-h-[280px] w-full overflow-hidden bg-bg sm:min-h-[480px]">
+    <div ref={containerRef} className="relative h-[min(70vh,560px)] min-h-[280px] w-full overflow-hidden bg-bg">
       {loading && (
         <div role="status" className="absolute inset-0 z-10 grid place-items-center bg-bg text-sm font-medium text-text-muted">
           Loading 3D model…
