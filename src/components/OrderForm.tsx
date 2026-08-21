@@ -161,6 +161,14 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
     ),
     [files],
   )
+  const isUploadingFiles = useMemo(
+    () => Object.values(files).some((file) => file?.status === 'uploading'),
+    [files],
+  )
+  const hasFailedUploads = useMemo(
+    () => Object.values(files).some((file) => file?.status === 'error'),
+    [files],
+  )
   const autosavePayload = useMemo(
     () => JSON.stringify({ values: watchedValues, fileUrls: { ...initialFileUrls, ...uploadedFileUrls } }),
     [initialFileUrls, uploadedFileUrls, watchedValues],
@@ -211,6 +219,15 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null)
+
+    if (isUploadingFiles || hasFailedUploads) {
+      setActiveStep(3)
+      setSubmitError(isUploadingFiles
+        ? 'Please wait for all selected files to finish uploading before submitting the order.'
+        : 'One or more files failed to upload. Remove or retry those files before submitting the order.')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
 
     setIsSubmitting(true)
 
@@ -451,6 +468,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
           {isLastStep && currentStep && (
             <SubmitSection
               isSubmitting={isSubmitting}
+              isUploading={isUploadingFiles}
               onSaveDraft={handleSaveDraft}
               draftSaved={draftSaved}
               submitLabel={orderId ? 'Save Order Changes' : 'Submit Order'}

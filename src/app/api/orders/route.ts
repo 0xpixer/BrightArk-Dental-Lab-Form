@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { and, eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, orders } from '@/lib/db/schema'
-import { mapPayloadToOrderInsert, type OrderApiPayload } from '@/lib/transformOrder'
+import { mapPayloadToOrderInsert } from '@/lib/transformOrder'
+import { parseOrderSubmission } from '@/lib/orderSubmission'
 import { requireAdmin, requireSession } from '@/lib/admin/session'
 import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
-import { orderFormSchema } from '@/types/orderForm'
 
 function todayOrderPrefix(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -46,12 +46,17 @@ export async function POST(request: Request) {
   try {
     const { session, error } = await requireSession()
     if (error) return error
-    const body = (await request.json()) as OrderApiPayload
+    const body = await request.json()
 
-    const parsed = orderFormSchema.safeParse(body)
+    const parsed = parseOrderSubmission(body)
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Please complete the required form fields' },
+        {
+          success: false,
+          error: parsed.reason === 'files'
+            ? 'One or more uploaded file links are invalid. Please upload those files again.'
+            : 'Please complete the required form fields',
+        },
         { status: 400 },
       )
     }
@@ -64,7 +69,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: 'Clinic staff must be linked to a doctor before submitting orders' }, { status: 403 })
       }
     } else if (isAdminRole(session!.user.role)) {
-      const doctorId = Number(parsed.data.submittedForDoctorId)
+      const doctorId = Number(parsed.values.submittedForDoctorId)
       if (!Number.isInteger(doctorId) || doctorId <= 0) {
         return NextResponse.json({ success: false, error: 'Select the doctor this case is for' }, { status: 400 })
       }
@@ -82,7 +87,11 @@ export async function POST(request: Request) {
     }
 
     const orderNo = await generateDailyOrderNo(db)
-    const orderData = mapPayloadToOrderInsert({ ...parsed.data, orderNo })
+    const orderData = mapPayloadToOrderInsert({
+      ...parsed.values,
+      orderNo,
+      file_urls: parsed.fileUrls,
+    })
     const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({
       orderNo: orders.orderNo,
     })
