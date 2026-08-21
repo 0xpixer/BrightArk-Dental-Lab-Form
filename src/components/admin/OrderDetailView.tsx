@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, FileIcon, Link2, MessageCircle, Pencil, Save, X } from 'lucide-react'
+import { ArrowLeft, Download, Link2, MessageCircle, Pencil, Save, X } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
-import { getFilenameFromUrl, SLOT_FOLDER_MAP } from '@/lib/admin/fileSlots'
 import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
 import { AddOrderFiles } from '@/components/orderDetails/AddOrderFiles'
 import { FinalProductionFiles } from '@/components/orderDetails/FinalProductionFiles'
 import { OrderMessagesModal } from '@/components/orderDetails/OrderMessagesModal'
+import { UploadedFileList } from '@/components/orderDetails/UploadedFileList'
 import { ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
 
 interface Order {
@@ -246,23 +246,10 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
                 {cloudDriveLinks.map((link, index) => <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs text-primary underline">Cloud drive link {index + 1}</a>)}
               </div>
             )}
-            <div className="space-y-2">
-              {Object.entries(fileUrls).map(([slotId, url]) => {
-                const label = getFilenameFromUrl(url)
-                  ?? SLOT_FOLDER_MAP[slotId]?.filename
-                  ?? slotId
-                return (
-                  <a key={slotId} href={url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-2 rounded border border-border px-3 py-2 text-sm text-primary hover:bg-bg">
-                    <FileIcon className="h-4 w-4 shrink-0" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate">{label}</span>
-                    <Download className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  </a>
-                )
-              })}
-              {Object.keys(fileUrls).length === 0 && cloudDriveLinks.length === 0 && (
-                <p className="text-sm text-text-muted">No files uploaded or linked</p>
-              )}
-            </div>
+            <UploadedFileList files={fileUrls} />
+            {Object.keys(fileUrls).length === 0 && cloudDriveLinks.length === 0 && (
+              <p className="text-sm text-text-muted">No files uploaded or linked</p>
+            )}
             <AddOrderFiles
               orderId={order.id}
               orderNo={order.orderNo}
