@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { StatusBadge } from '@/components/admin/StatusBadge'
 
 interface Order {
   id: number
@@ -10,6 +11,7 @@ interface Order {
   treatmentType: string | null
   status: string
   createdAt: string
+  hasUnreadMessage: boolean
 }
 
 interface Draft {
@@ -120,10 +122,10 @@ export function DoctorOrdersTable() {
               <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted">No orders yet.</td></tr>
             ) : orders.map((order) => (
               <tr key={order.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 text-sm font-medium">{order.orderNo}</td>
+                <td className="px-4 py-3 text-sm font-medium"><span className="inline-flex items-center gap-2">{order.orderNo}{order.hasUnreadMessage && <span className="h-2.5 w-2.5 rounded-full bg-red-500" title="New message"><span className="sr-only">New message</span></span>}</span></td>
                 <td className="px-4 py-3 text-sm">{order.patientName}</td>
                 <td className="px-4 py-3 text-sm text-text-muted">{order.treatmentType ?? '—'}</td>
-                <td className="px-4 py-3"><Status status={order.status} /></td>
+                <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
                 <td className="px-4 py-3 text-sm text-text-muted">{new Date(order.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right"><Link href={`/portal/orders/${order.id}`} className="text-sm font-medium text-primary hover:underline">View</Link></td>
               </tr>
@@ -133,8 +135,4 @@ export function DoctorOrdersTable() {
       </div>
     </>
   )
-}
-
-function Status({ status }: { status: string }) {
-  return <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">{status.replace('_', ' ')}</span>
 }

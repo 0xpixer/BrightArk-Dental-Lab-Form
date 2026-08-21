@@ -4,8 +4,7 @@ import { getDb } from '@/lib/db/client'
 import { larkNotifications, orders, sharedLinks } from '@/lib/db/schema'
 import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
-
-const VALID_STATUSES = new Set(['pending', 'in_progress', 'complete', 'delivered'])
+import { ORDER_STATUS_VALUES } from '@/lib/orderStatus'
 
 export async function GET(
   _request: Request,
@@ -53,10 +52,13 @@ export async function PATCH(
   const updateData: Record<string, unknown> = {}
 
   if (body.status !== undefined) {
-    if (!VALID_STATUSES.has(body.status)) {
+    if (!ORDER_STATUS_VALUES.has(body.status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
+    const [existingOrder] = await db.select({ status: orders.status }).from(orders).where(eq(orders.id, id)).limit(1)
+    if (!existingOrder) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     updateData.status = body.status
+    if (existingOrder.status !== body.status) updateData.statusUpdatedAt = new Date()
   }
   if (body.dentist !== undefined) updateData.dentist = body.dentist
   if (body.clinic !== undefined) updateData.clinic = body.clinic

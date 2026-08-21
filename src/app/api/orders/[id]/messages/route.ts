@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
 import { getDb } from '@/lib/db/client'
-import { orderMessages, orders, type OrderMessage } from '@/lib/db/schema'
+import { orderMessageReads, orderMessages, orders, type OrderMessage } from '@/lib/db/schema'
 import { getMessageAuthor, parseOrderMessagePayload } from '@/lib/orderMessages'
 import { getAccessiblePortalOrder } from '@/lib/portal/orderAccess'
 
@@ -49,6 +49,12 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     .from(orderMessages)
     .where(eq(orderMessages.orderId, orderId))
     .orderBy(asc(orderMessages.createdAt), asc(orderMessages.id))
+
+  const readAt = messages[messages.length - 1]?.createdAt ?? new Date()
+  await db.insert(orderMessageReads).values({ orderId, userId, readAt }).onConflictDoUpdate({
+    target: [orderMessageReads.orderId, orderMessageReads.userId],
+    set: { readAt },
+  })
 
   return NextResponse.json({ messages: messages.map((message) => serializeMessage(message, userId)) })
 }

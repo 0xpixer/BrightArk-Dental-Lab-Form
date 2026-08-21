@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { desc, eq, or, ilike, and, count } from 'drizzle-orm'
+import { desc, eq, or, ilike, and, count, getTableColumns } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { requireAdmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
+import { hasUnreadOrderMessage } from '@/lib/orderUnread'
 
 export async function GET(request: Request) {
   const { session, error } = await requireAdmin()
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
   const where = conditions.length > 0 ? and(...conditions) : undefined
 
   const db = getDb()
+  const userId = Number(session!.user.id)
 
   const sortColumn =
     sortBy === 'orderNo'
@@ -46,13 +48,15 @@ export async function GET(request: Request) {
           ? orders.patientName
           : sortBy === 'status'
             ? orders.status
-            : orders.createdAt
+            : sortBy === 'statusUpdatedAt'
+              ? orders.statusUpdatedAt
+              : orders.createdAt
 
   const orderByClause = sortDir === 'asc' ? sortColumn : desc(sortColumn)
 
   const [rows, totalResult] = await Promise.all([
     db
-      .select()
+      .select({ ...getTableColumns(orders), hasUnreadMessage: hasUnreadOrderMessage(userId) })
       .from(orders)
       .where(where)
       .orderBy(orderByClause)

@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Download, Link2, Eye, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
+import { Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react'
 import { ShareLinkModal } from './ShareLinkModal'
+import { isOrderStatusOverdue, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
 
 interface OrderRow {
   id: number
@@ -11,21 +12,19 @@ interface OrderRow {
   dentist: string
   patientName: string
   status: string
+  statusUpdatedAt: string
   createdAt: string
+  hasUnreadMessage: boolean
 }
-
-const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'complete', label: 'Complete' },
-  { value: 'delivered', label: 'Delivered' },
-] as const
 
 const STATUS_SELECT_CLASS: Record<string, string> = {
   pending: 'border-yellow-200 bg-yellow-100 text-yellow-800',
-  in_progress: 'border-blue-200 bg-blue-100 text-blue-800',
-  complete: 'border-green-200 bg-green-100 text-green-800',
-  delivered: 'border-pink-200 bg-pink-100 text-pink-800',
+  lab_designing: 'border-cyan-200 bg-cyan-100 text-cyan-800',
+  in_production: 'border-blue-200 bg-blue-100 text-blue-800',
+  shipped: 'border-violet-200 bg-violet-100 text-violet-800',
+  delivered: 'border-teal-200 bg-teal-100 text-teal-800',
+  redo: 'border-pink-200 bg-pink-100 text-pink-800',
+  completed: 'border-green-200 bg-green-100 text-green-800',
 }
 
 export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStatus: boolean; canDelete: boolean }) {
@@ -82,7 +81,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
     setUpdatingOrderId(orderId)
     setOrders((current) =>
       current.map((order) =>
-        order.id === orderId ? { ...order, status: nextStatus } : order,
+        order.id === orderId ? { ...order, status: nextStatus, statusUpdatedAt: new Date().toISOString() } : order,
       ),
     )
 
@@ -94,6 +93,9 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
       })
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error ?? 'Failed to update status')
+      setOrders((current) => current.map((order) => order.id === orderId
+        ? { ...order, statusUpdatedAt: data.order?.statusUpdatedAt ?? order.statusUpdatedAt }
+        : order))
     } catch (error) {
       setOrders(previousOrders)
       setActionError(error instanceof Error ? error.message : 'Failed to update status')
@@ -136,6 +138,16 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
+  const formatDateTime = (d: string) =>
+    new Date(d).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+  const exportSubmissions = () => {
+    const params = new URLSearchParams({ sortBy, sortDir })
+    if (status !== 'all') params.set('status', status)
+    if (search) params.set('search', search)
+    window.location.href = `/api/admin/orders/export?${params}`
+  }
+
   const SortHeader = ({ col, label }: { col: string; label: string }) => (
     <th
       className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted hover:text-text"
@@ -150,6 +162,9 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-xl font-semibold text-text">Submissions</h1>
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={exportSubmissions} className="inline-flex items-center gap-2 rounded-card border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100">
+            <FileSpreadsheet className="h-4 w-4" /> Export Excel
+          </button>
           <input
             type="search"
             placeholder="Search order, doctor, patient…"
@@ -169,10 +184,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
             className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
           >
             <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="complete">Complete</option>
-            <option value="delivered">Delivered</option>
+            {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </div>
       </div>
@@ -185,13 +197,14 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
 
       <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[1000px]">
             <thead className="border-b border-border bg-bg">
               <tr>
                 <SortHeader col="orderNo" label="Order ID" />
                 <SortHeader col="dentist" label="Doctor Name" />
                 <SortHeader col="patientName" label="Patient Name" />
                 <SortHeader col="status" label="Status" />
+                <SortHeader col="statusUpdatedAt" label="Update Time" />
                 <SortHeader col="createdAt" label="Submitted" />
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Download</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Actions</th>
@@ -200,20 +213,20 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-text-muted">
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-text-muted">
                     Loading…
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-text-muted">
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-text-muted">
                     No submissions found
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order.id} className="border-b border-border last:border-0 hover:bg-bg/50">
-                    <td className="px-4 py-3 text-sm font-medium text-text">{order.orderNo}</td>
+                  <tr key={order.id} className={`border-b border-border last:border-0 ${isOrderStatusOverdue(order.status, order.statusUpdatedAt) ? 'bg-pink-100 hover:bg-pink-200/70' : 'hover:bg-bg/50'}`}>
+                    <td className="px-4 py-3 text-sm font-medium text-text"><span className="inline-flex items-center gap-2">{order.orderNo}{order.hasUnreadMessage && <span className="h-2.5 w-2.5 rounded-full bg-red-500" title="New message"><span className="sr-only">New message</span></span>}</span></td>
                     <td className="px-4 py-3 text-sm text-text">{order.dentist}</td>
                     <td className="px-4 py-3 text-sm text-text">{order.patientName}</td>
                     <td className="px-4 py-3">
@@ -228,7 +241,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                           aria-label={`Update status for order ${order.orderNo}`}
                           title="Click to update status"
                         >
-                          {STATUS_OPTIONS.map((option) => (
+                          {ORDER_STATUS_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
                             </option>
@@ -236,10 +249,11 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                         </select>
                       ) : (
                         <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_SELECT_CLASS[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'}`}>
-                          {STATUS_OPTIONS.find((option) => option.value === order.status)?.label ?? order.status}
+                          {ORDER_STATUS_LABELS[order.status] ?? order.status}
                         </span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{formatDateTime(order.statusUpdatedAt)}</td>
                     <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.createdAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">

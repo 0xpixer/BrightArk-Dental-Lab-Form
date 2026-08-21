@@ -11,6 +11,7 @@ import { formatDetailLines } from '@/lib/admin/formatOrderDetails'
 import { AddOrderFiles } from '@/components/orderDetails/AddOrderFiles'
 import { FinalProductionFiles } from '@/components/orderDetails/FinalProductionFiles'
 import { OrderMessagesModal } from '@/components/orderDetails/OrderMessagesModal'
+import { ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
 
 interface Order {
   id: number
@@ -117,10 +118,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
               onChange={(e) => updateStatus(e.target.value)}
               className="rounded-card border border-border bg-surface px-3 py-2 text-sm"
             >
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="complete">Complete</option>
-              <option value="delivered">Delivered</option>
+              {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           )}
           <button

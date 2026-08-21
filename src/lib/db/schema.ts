@@ -7,6 +7,7 @@ import {
   date,
   jsonb,
   integer,
+  primaryKey,
 } from 'drizzle-orm/pg-core'
 
 export const adminUsers = pgTable('admin_users', {
@@ -64,6 +65,7 @@ export const orders = pgTable('orders', {
   cloudDriveLinks: jsonb('cloud_drive_links'),
   submittedBy: integer('submitted_by').references(() => adminUsers.id),
   status: text('status').default('pending').notNull(),
+  statusUpdatedAt: timestamp('status_updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
@@ -87,6 +89,14 @@ export const orderMessages = pgTable('order_messages', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const orderMessageReads = pgTable('order_message_reads', {
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  readAt: timestamp('read_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.orderId, table.userId] }),
+}))
+
 export const sharedLinks = pgTable('shared_links', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id')
@@ -109,6 +119,7 @@ export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type OrderDraft = typeof orderDrafts.$inferSelect
 export type OrderMessage = typeof orderMessages.$inferSelect
+export type OrderMessageRead = typeof orderMessageReads.$inferSelect
 export type AdminUser = typeof adminUsers.$inferSelect
 export type DoctorClinic = typeof doctorClinics.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect
