@@ -11,7 +11,6 @@ export const runtime = 'nodejs'
 function formatExportDate(value: Date): string {
   return new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Melbourne', day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).format(value)
 }
 

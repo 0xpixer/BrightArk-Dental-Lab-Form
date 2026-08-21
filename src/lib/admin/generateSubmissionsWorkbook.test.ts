@@ -5,8 +5,8 @@ import { generateSubmissionsWorkbook } from './generateSubmissionsWorkbook'
 
 test('generates an xlsx workbook with the requested columns in order', async () => {
   const buffer = await generateSubmissionsWorkbook([{
-    patientName: 'Jane & John', orderNo: '2026082101', statusUpdatedAt: '21/08/2026 10:00',
-    submittedAt: '20/08/2026 09:00', dentist: 'Dr Smith', status: 'Lab Designing',
+    patientName: 'Jane & John', orderNo: '2026082101', statusUpdatedAt: '21/08/2026',
+    submittedAt: '20/08/2026', dentist: 'Dr Smith', status: 'Lab Designing',
   }])
   const zip = await JSZip.loadAsync(buffer)
   const sheet = await zip.file('xl/worksheets/sheet1.xml')!.async('string')

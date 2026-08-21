@@ -138,9 +138,6 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-  const formatDateTime = (d: string) =>
-    new Date(d).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-
   const exportSubmissions = () => {
     const params = new URLSearchParams({ sortBy, sortDir })
     if (status !== 'all') params.set('status', status)
@@ -253,7 +250,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{formatDateTime(order.statusUpdatedAt)}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.statusUpdatedAt)}</td>
                     <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.createdAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
