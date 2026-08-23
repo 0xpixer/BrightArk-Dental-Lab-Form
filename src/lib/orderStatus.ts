@@ -15,6 +15,26 @@ export const ORDER_STATUS_LABELS: Record<string, string> = Object.fromEntries(
   ORDER_STATUS_OPTIONS.map((option) => [option.value, option.label]),
 )
 
+export const ORDER_STATUS_STYLES: Record<string, string> = {
+  pending: 'border-yellow-200 bg-yellow-100 text-yellow-800',
+  lab_designing: 'border-cyan-200 bg-cyan-100 text-cyan-800',
+  in_production: 'border-blue-200 bg-blue-100 text-blue-800',
+  shipped: 'border-violet-200 bg-violet-100 text-violet-800',
+  delivered: 'border-teal-200 bg-teal-100 text-teal-800',
+  redo: 'border-pink-200 bg-pink-100 text-pink-800',
+  completed: 'border-green-200 bg-green-100 text-green-800',
+}
+
+export const ORDER_STATUS_CHART_COLORS: Record<string, string> = {
+  pending: '#eab308',
+  lab_designing: '#06b6d4',
+  in_production: '#3b82f6',
+  shipped: '#8b5cf6',
+  delivered: '#14b8a6',
+  redo: '#ec4899',
+  completed: '#22c55e',
+}
+
 export const ORDER_STATUS_DUE_MS = 3 * 24 * 60 * 60 * 1000
 
 export function isOrderStatusOverdue(status: string, statusUpdatedAt: string | Date, now = new Date()): boolean {

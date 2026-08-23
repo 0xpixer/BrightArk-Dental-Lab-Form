@@ -73,7 +73,7 @@ export function DoctorOrdersTable() {
     <>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-text">Orders</h1>
           <p className="mt-1 text-sm text-text-muted">Orders and saved work for your clinic.</p>
         </div>
         <Link href="/" className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15]">

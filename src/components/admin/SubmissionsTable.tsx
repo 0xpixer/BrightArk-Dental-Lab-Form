@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react'
 import { ShareLinkModal } from './ShareLinkModal'
-import { isOrderStatusOverdue, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
+import { isOrderStatusOverdue, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS, ORDER_STATUS_STYLES } from '@/lib/orderStatus'
 
 interface OrderRow {
   id: number
@@ -15,16 +15,6 @@ interface OrderRow {
   statusUpdatedAt: string
   createdAt: string
   hasUnreadMessage: boolean
-}
-
-const STATUS_SELECT_CLASS: Record<string, string> = {
-  pending: 'border-yellow-200 bg-yellow-100 text-yellow-800',
-  lab_designing: 'border-cyan-200 bg-cyan-100 text-cyan-800',
-  in_production: 'border-blue-200 bg-blue-100 text-blue-800',
-  shipped: 'border-violet-200 bg-violet-100 text-violet-800',
-  delivered: 'border-teal-200 bg-teal-100 text-teal-800',
-  redo: 'border-pink-200 bg-pink-100 text-pink-800',
-  completed: 'border-green-200 bg-green-100 text-green-800',
 }
 
 export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStatus: boolean; canDelete: boolean }) {
@@ -233,7 +223,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                           disabled={updatingOrderId === order.id}
                           onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                           className={`rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-opacity focus:ring-2 focus:ring-primary/20 disabled:cursor-wait disabled:opacity-60 ${
-                            STATUS_SELECT_CLASS[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'
+                            ORDER_STATUS_STYLES[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'
                           }`}
                           aria-label={`Update status for order ${order.orderNo}`}
                           title="Click to update status"
@@ -245,7 +235,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                           ))}
                         </select>
                       ) : (
-                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_SELECT_CLASS[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'}`}>
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_STYLES[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'}`}>
                           {ORDER_STATUS_LABELS[order.status] ?? order.status}
                         </span>
                       )}

@@ -8,7 +8,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl
 
   if (pathname === '/admin') {
-    return NextResponse.redirect(new URL(req.auth?.user?.role === 'doctor' || req.auth?.user?.role === 'clinic_staff' ? '/portal/orders' : '/admin/submissions', req.url))
+    return NextResponse.redirect(new URL(req.auth?.user?.role === 'doctor' || req.auth?.user?.role === 'clinic_staff' ? '/portal/overview' : '/admin/overview', req.url))
   }
 
   if (pathname.startsWith('/admin/login') || pathname.startsWith('/admin/share/')) {
@@ -22,11 +22,11 @@ export default auth((req) => {
   }
 
   if (pathname.startsWith('/portal') && !['doctor', 'clinic_staff'].includes(req.auth.user?.role ?? '')) {
-    return NextResponse.redirect(new URL('/admin/submissions', req.url))
+    return NextResponse.redirect(new URL('/admin/overview', req.url))
   }
 
   if (pathname.startsWith('/admin') && ['doctor', 'clinic_staff'].includes(req.auth.user?.role ?? '')) {
-    return NextResponse.redirect(new URL('/portal/orders', req.url))
+    return NextResponse.redirect(new URL('/portal/overview', req.url))
   }
 
   if (

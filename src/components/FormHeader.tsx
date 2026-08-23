@@ -17,8 +17,8 @@ export function FormHeader() {
   }, [])
 
   const dashboardHref = user?.role === 'doctor' || user?.role === 'clinic_staff'
-    ? '/portal/orders'
-    : '/admin/submissions'
+    ? '/portal/overview'
+    : '/admin/overview'
   const displayName = user?.name || user?.username
 
   return (
