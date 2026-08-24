@@ -49,18 +49,15 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
         {NAV.filter((item) => item.roles.includes(role)).map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
           const Icon = item.icon
-          const isPrimaryAction = item.href === '/'
           return (
             <Link
               key={item.href}
               href={item.href}
               title={item.label}
               className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors duration-brand ${showLabels ? 'md:justify-start md:px-3' : ''} ${
-                isPrimaryAction
-                  ? 'bg-primary text-white hover:bg-[#df6c18]'
-                  : active
-                    ? 'bg-[#f0f0f0] text-text'
-                    : 'text-text-muted hover:bg-bg hover:text-text'
+                active
+                  ? 'bg-[#f0f0f0] text-text'
+                  : 'text-text-muted hover:bg-bg hover:text-text'
               }`}
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />

@@ -30,9 +30,8 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
       </div>
       <nav className="flex-1 space-y-1 p-2">
         {links.map(({ href, label, icon: Icon }) => {
-          const isPrimaryAction = href === '/'
           const active = pathname === href
-          return <Link key={href} href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${isPrimaryAction ? 'bg-primary text-white hover:bg-[#df6c18]' : active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><Icon className="h-[18px] w-[18px] shrink-0" />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link>
+          return <Link key={href} href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><Icon className="h-[18px] w-[18px] shrink-0" />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link>
         })}
       </nav>
       <div className="border-t border-border p-2">{showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><p className="text-xs capitalize text-text-muted">{role.replace('_', ' ')}</p></div>}<button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} title="Sign out" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`}><LogOut className="h-4 w-4" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button></div>

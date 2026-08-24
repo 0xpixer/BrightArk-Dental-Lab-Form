@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type UseFormSetValue } from 'react-hook-form'
-import type { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormHeader } from '@/components/FormHeader'
 import { ProgressBar } from '@/components/ProgressBar'
@@ -16,6 +16,8 @@ import { SuccessCard } from '@/components/SuccessCard'
 import { FormFooter } from '@/components/FormFooter'
 import { AuthModal } from '@/components/AuthModal'
 import { SectionCard } from '@/components/ui/SectionCard'
+import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { PortalSidebar } from '@/components/portal/PortalSidebar'
 import type { ClinicOption, DoctorOption } from '@/components/OrderInfoSection'
 import { useFormDraft } from '@/hooks/useFormDraft'
 import { orderFormSchema, defaultFormValues, generateUploadFolderId, type OrderFormValues } from '@/types/orderForm'
@@ -36,9 +38,26 @@ interface OrderFormProps {
   draftId?: string
   initialValues?: OrderFormValues
   initialFileUrls?: Record<string, string>
+  account?: { username: string; role: string }
 }
 
-export default function OrderForm({ orderId, draftId, initialValues, initialFileUrls = {} }: OrderFormProps) {
+function OrderFormShell({ account, children }: { account?: OrderFormProps['account']; children: ReactNode }) {
+  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin'
+  const isPortal = account?.role === 'doctor' || account?.role === 'clinic_staff'
+
+  return (
+    <div className="flex min-h-screen bg-bg">
+      {account && isAdmin && <AdminSidebar username={account.username} role={account.role} />}
+      {account && isPortal && <PortalSidebar username={account.username} role={account.role} />}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {!isAdmin && !isPortal && <FormHeader />}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export default function OrderForm({ orderId, draftId, initialValues, initialFileUrls = {}, account }: OrderFormProps) {
   const [uploadFolderId] = useState(() => generateUploadFolderId())
   const [files, setFiles] = useState<FilesState>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -330,8 +349,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-bg">
-        <FormHeader />
+      <OrderFormShell account={account}>
         <main className="mx-auto max-w-form px-4 py-8 md:px-6">
           <SuccessCard orderNo={submittedOrderNo} />
           <button
@@ -349,14 +367,12 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
           </button>
         </main>
         <FormFooter />
-      </div>
+      </OrderFormShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-bg">
-      <FormHeader />
-
+    <OrderFormShell account={account}>
       {authModalOpen && (
         <AuthModal
           onClose={() => setAuthModalOpen(false)}
@@ -486,6 +502,6 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
       </main>
 
       <FormFooter />
-    </div>
+    </OrderFormShell>
   )
 }
