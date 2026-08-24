@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Activity, CircleCheck, ClockAlert, PackageSearch, RefreshCw } from 'lucide-react'
+import { Clock3, ClockAlert, Factory, PackageSearch, RefreshCw, RotateCcw, Truck } from 'lucide-react'
 import {
   ORDER_STATUS_CHART_COLORS,
   ORDER_STATUS_LABELS,
@@ -29,6 +29,7 @@ export function OverviewDashboard() {
   const [data, setData] = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hoveredStatus, setHoveredStatus] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -51,19 +52,22 @@ export function OverviewDashboard() {
     load()
   }, [load])
 
-  const donut = useMemo(() => {
-    if (!data || data.metrics.totals.all === 0) return '#e5e7eb 0deg 360deg'
-    let cursor = 0
+  const statusSegments = useMemo(() => {
+    const total = data?.metrics.totals.all ?? 0
+    let offset = 0
     return ORDER_STATUS_OPTIONS.map((status) => {
-      const count = data.metrics.statusCounts[status.value] ?? 0
-      const start = cursor
-      cursor += count / data.metrics.totals.all * 360
-      return `${ORDER_STATUS_CHART_COLORS[status.value]} ${start}deg ${cursor}deg`
-    }).join(', ')
+      const count = data?.metrics.statusCounts[status.value] ?? 0
+      const fraction = total > 0 ? count / total : 0
+      const segment = { ...status, count, fraction, offset }
+      offset += fraction
+      return segment
+    })
   }, [data])
 
   const maxTrend = Math.max(1, ...(data?.metrics.trend.map((point) => point.count) ?? [1]))
   const totals = data?.metrics.totals
+  const statusCounts = data?.metrics.statusCounts
+  const hoveredSegment = statusSegments.find((segment) => segment.value === hoveredStatus)
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
@@ -109,11 +113,19 @@ export function OverviewDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <MetricCard label="All Orders" value={totals?.all} icon={PackageSearch} tone="orange" loading={loading} />
-        <MetricCard label="Active Cases" value={totals?.active} icon={Activity} tone="blue" loading={loading} />
-        <MetricCard label="Completed" value={totals?.completed} icon={CircleCheck} tone="green" loading={loading} />
-        <MetricCard label="Overdue" value={totals?.overdue} icon={ClockAlert} tone="pink" loading={loading} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <MetricCard label="All Orders" value={totals?.all} icon={PackageSearch} loading={loading} />
+        <MetricCard label="Overdue" value={totals?.overdue} icon={ClockAlert} loading={loading} />
+        <MetricCard label="Pending" value={statusCounts?.pending} icon={Clock3} loading={loading} />
+        <MetricCard label="In Production" value={statusCounts?.in_production} icon={Factory} loading={loading} />
+        <SplitMetricCard
+          label="Shipped / Delivered"
+          first={{ label: 'Shipped', value: statusCounts?.shipped }}
+          second={{ label: 'Delivered', value: statusCounts?.delivered }}
+          icon={Truck}
+          loading={loading}
+        />
+        <MetricCard label="Re-Do" value={statusCounts?.redo} icon={RotateCcw} loading={loading} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
@@ -123,14 +135,38 @@ export function OverviewDashboard() {
             <p className="mt-1 text-xs text-text-muted">Current status across all matching orders</p>
           </div>
           <div className="grid items-center gap-6 sm:grid-cols-[180px_1fr] xl:grid-cols-1 2xl:grid-cols-[180px_1fr]">
-            <div
-              role="img"
-              aria-label="Order status distribution"
-              className="relative mx-auto aspect-square w-44 rounded-full"
-              style={{ backgroundImage: `conic-gradient(${donut})` }}
-            >
-              <div className="absolute inset-7 grid place-items-center rounded-full bg-surface text-center">
-                <div><p className="text-2xl font-semibold text-text">{loading ? '—' : totals?.all ?? 0}</p><p className="text-[11px] text-text-muted">orders</p></div>
+            <div className="relative mx-auto aspect-square w-44" role="group" aria-label="Interactive order status distribution">
+              <svg viewBox="0 0 176 176" className="h-full w-full -rotate-90" aria-hidden="false">
+                <circle cx="88" cy="88" r="70" fill="none" stroke="#e5e5e5" strokeWidth="24" />
+                {statusSegments.map((segment) => segment.count > 0 && (
+                  <g key={segment.value}>
+                    <circle
+                      cx="88"
+                      cy="88"
+                      r="70"
+                      fill="none"
+                      stroke={ORDER_STATUS_CHART_COLORS[segment.value]}
+                      strokeWidth={hoveredStatus === segment.value ? 28 : 24}
+                      strokeDasharray={`${segment.fraction * DONUT_CIRCUMFERENCE} ${DONUT_CIRCUMFERENCE}`}
+                      strokeDashoffset={-segment.offset * DONUT_CIRCUMFERENCE}
+                      className="cursor-pointer outline-none transition-[stroke-width,opacity] duration-150 focus:opacity-80"
+                      tabIndex={0}
+                      role="img"
+                      aria-label={`${segment.label}: ${segment.count} orders, ${Math.round(segment.fraction * 100)} percent`}
+                      onMouseEnter={() => setHoveredStatus(segment.value)}
+                      onMouseLeave={() => setHoveredStatus(null)}
+                      onFocus={() => setHoveredStatus(segment.value)}
+                      onBlur={() => setHoveredStatus(null)}
+                    />
+                  </g>
+                ))}
+              </svg>
+              <div className="pointer-events-none absolute inset-7 grid place-items-center rounded-full bg-surface text-center">
+                <div className="max-w-24">
+                  <p className={`${hoveredSegment ? 'text-lg' : 'text-2xl'} font-semibold tabular-nums text-text`}>{loading ? '—' : hoveredSegment?.count ?? totals?.all ?? 0}</p>
+                  <p className="truncate text-[11px] font-medium text-text-muted">{hoveredSegment?.label ?? 'orders'}</p>
+                  {hoveredSegment && <p className="text-[10px] text-text-muted">{Math.round(hoveredSegment.fraction * 100)}%</p>}
+                </div>
               </div>
             </div>
             <div className="space-y-2.5">
@@ -186,19 +222,37 @@ export function OverviewDashboard() {
   )
 }
 
-const TONES = {
-  orange: 'bg-bg text-text',
-  blue: 'bg-bg text-text',
-  green: 'bg-bg text-text',
-  pink: 'bg-bg text-text',
-} as const
+const DONUT_CIRCUMFERENCE = 2 * Math.PI * 70
 
-function MetricCard({ label, value, icon: Icon, tone, loading }: { label: string; value?: number; icon: typeof PackageSearch; tone: keyof typeof TONES; loading: boolean }) {
+function MetricCard({ label, value, icon: Icon, loading }: { label: string; value?: number; icon: typeof PackageSearch; loading: boolean }) {
   return (
     <section className="rounded-card border border-border bg-surface p-4">
-      <div className={`mb-3 grid h-8 w-8 place-items-center rounded ${TONES[tone]}`}><Icon className="h-4 w-4" aria-hidden /></div>
+      <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><Icon className="h-4 w-4" aria-hidden /></div>
       <p className="text-xs font-medium text-text-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p>
+    </section>
+  )
+}
+
+function SplitMetricCard({ label, first, second, icon: Icon, loading }: {
+  label: string
+  first: { label: string; value?: number }
+  second: { label: string; value?: number }
+  icon: typeof PackageSearch
+  loading: boolean
+}) {
+  return (
+    <section className="rounded-card border border-border bg-surface p-4">
+      <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><Icon className="h-4 w-4" aria-hidden /></div>
+      <p className="truncate text-xs font-medium text-text-muted">{label}</p>
+      <div className="mt-1 grid grid-cols-2 gap-2">
+        {[first, second].map((item) => (
+          <div key={item.label} className="min-w-0">
+            <p className="text-xl font-semibold tabular-nums text-text">{loading ? '—' : item.value ?? 0}</p>
+            <p className="truncate text-[10px] text-text-muted">{item.label}</p>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
