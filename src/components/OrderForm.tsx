@@ -350,7 +350,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
   if (submitted) {
     return (
       <OrderFormShell account={account}>
-        <main className="mx-auto max-w-form px-4 py-8 md:px-6">
+        <main className="mx-auto w-full max-w-form px-4 py-8 md:px-6">
           <SuccessCard orderNo={submittedOrderNo} />
           <button
             type="button"
@@ -390,7 +390,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
         </div>
       )}
 
-      <main className="mx-auto max-w-form space-y-4 px-4 py-6 md:space-y-6 md:px-6 md:py-8">
+      <main className="mx-auto w-full max-w-form space-y-4 px-4 py-6 md:space-y-6 md:px-6 md:py-8">
         <ProgressBar activeStep={activeStep} />
 
         {submitError && (
