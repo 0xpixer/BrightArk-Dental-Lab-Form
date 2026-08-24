@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, lte } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { larkNotifications, orders } from '@/lib/db/schema'
 import { getLarkWebhookError } from '@/lib/lark'
+import { DELIVERED_AUTO_COMPLETE_MS } from '@/lib/orderStatus'
 
 const MAX_ORDERS_PER_RUN = 50
 
@@ -33,12 +34,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const db = getDb()
+  const completedOrders = await db
+    .update(orders)
+    .set({ status: 'completed', statusUpdatedAt: new Date() })
+    .where(and(
+      eq(orders.status, 'delivered'),
+      lte(orders.statusUpdatedAt, new Date(Date.now() - DELIVERED_AUTO_COMPLETE_MS)),
+    ))
+    .returning({ id: orders.id })
+  const autoCompleted = completedOrders.length
+
   const webhookUrl = process.env.LARK_WEBHOOK_URL
   if (!webhookUrl) {
-    return NextResponse.json({ error: 'LARK_WEBHOOK_URL is not configured' }, { status: 503 })
+    return NextResponse.json({ error: 'LARK_WEBHOOK_URL is not configured', autoCompleted }, { status: 503 })
   }
 
-  const db = getDb()
   const pendingOrders = await db
     .select({
       id: orders.id,
@@ -91,7 +102,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(
-    { success: failures.length === 0, sent, failures },
+    { success: failures.length === 0, sent, failures, autoCompleted },
     { status: failures.length === 0 ? 200 : 502 },
   )
 }

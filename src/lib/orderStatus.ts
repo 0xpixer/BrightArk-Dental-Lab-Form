@@ -42,10 +42,18 @@ export const ORDER_STATUS_CHART_COLORS: Record<string, string> = {
 }
 
 export const ORDER_STATUS_DUE_MS = 3 * 24 * 60 * 60 * 1000
+export const DELIVERED_AUTO_COMPLETE_MS = 14 * 24 * 60 * 60 * 1000
 
 export function isOrderStatusOverdue(status: string, statusUpdatedAt: string | Date, now = new Date()): boolean {
   if (status === 'completed') return false
   const updatedAt = new Date(statusUpdatedAt)
   if (Number.isNaN(updatedAt.getTime())) return false
   return now.getTime() - updatedAt.getTime() >= ORDER_STATUS_DUE_MS
+}
+
+export function isDeliveredReadyForCompletion(status: string, statusUpdatedAt: string | Date, now = new Date()): boolean {
+  if (status !== 'delivered') return false
+  const updatedAt = new Date(statusUpdatedAt)
+  if (Number.isNaN(updatedAt.getTime())) return false
+  return now.getTime() - updatedAt.getTime() >= DELIVERED_AUTO_COMPLETE_MS
 }

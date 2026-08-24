@@ -125,7 +125,6 @@ export function DoctorOrdersTable({ initialStatus = 'all' }: { initialStatus?: s
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Patient</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Treatment</th>
               <th className="px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
-                <span className="mb-1.5 block">Status</span>
                 <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filter orders by status" className="min-w-32 rounded border border-border bg-surface px-2 py-1 text-xs font-medium normal-case text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10">
                   <option value="all">All statuses</option>
                   {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}

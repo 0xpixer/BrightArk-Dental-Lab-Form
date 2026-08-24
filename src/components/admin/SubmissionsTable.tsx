@@ -180,9 +180,6 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
                 <SortHeader col="dentist" label="Doctor Name" />
                 <SortHeader col="patientName" label="Patient Name" />
                 <th className="px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
-                  <button type="button" onClick={() => toggleSort('status')} className="mb-1.5 block hover:text-text">
-                    Status {sortBy === 'status' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                  </button>
                   <select
                     value={status}
                     onChange={(event) => {
