@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Trash2 } from 'lucide-react'
+import { Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Save, Trash2 } from 'lucide-react'
 import { ShareLinkModal } from './ShareLinkModal'
 import { isOrderStatusOverdue, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS, ORDER_STATUS_STYLES } from '@/lib/orderStatus'
+import { ORDER_NOTE_MAX_LENGTH } from '@/lib/orderActivity'
 
 interface OrderRow {
   id: number
@@ -13,11 +14,12 @@ interface OrderRow {
   patientName: string
   status: string
   statusUpdatedAt: string
+  notes: string | null
   createdAt: string
   hasUnreadMessage: boolean
 }
 
-export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = 'all' }: { canUpdateStatus: boolean; canDelete: boolean; initialStatus?: string }) {
+export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, initialStatus = 'all' }: { canUpdateStatus: boolean; canEditNotes: boolean; canDelete: boolean; initialStatus?: string }) {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState(initialStatus)
@@ -30,6 +32,8 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null)
   const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [noteDrafts, setNoteDrafts] = useState<Record<number, string>>({})
+  const [savingNoteOrderId, setSavingNoteOrderId] = useState<number | null>(null)
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -121,6 +125,32 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
     }
   }
 
+  const saveNote = async (order: OrderRow) => {
+    if (!canEditNotes) return
+    const notes = noteDrafts[order.id] ?? order.notes ?? ''
+    setActionError(null)
+    setSavingNoteOrderId(order.id)
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Failed to save note')
+      setOrders((current) => current.map((row) => row.id === order.id ? { ...row, notes: data.order?.notes ?? null } : row))
+      setNoteDrafts((current) => {
+        const next = { ...current }
+        delete next[order.id]
+        return next
+      })
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Failed to save note')
+    } finally {
+      setSavingNoteOrderId(null)
+    }
+  }
+
   const downloadZip = (id: number, orderNo: string) => {
     window.location.href = `/api/admin/orders/${id}/download`
   }
@@ -173,7 +203,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
 
       <div className="overflow-hidden rounded-card border border-border bg-surface">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
+          <table className="w-full min-w-[1160px]">
             <thead className="border-b border-border bg-bg">
               <tr>
                 <SortHeader col="orderNo" label="Order ID" />
@@ -196,6 +226,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
                 </th>
                 <SortHeader col="statusUpdatedAt" label="Update Time" />
                 <SortHeader col="createdAt" label="Submitted" />
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Notes</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Download</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Actions</th>
               </tr>
@@ -203,13 +234,13 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-text-muted">
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-text-muted">
                     Loading…
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-text-muted">
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-text-muted">
                     No submissions found
                   </td>
                 </tr>
@@ -245,6 +276,32 @@ export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = '
                     </td>
                     <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.statusUpdatedAt)}</td>
                     <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.createdAt)}</td>
+                    <td className="w-52 px-4 py-3">
+                      {canEditNotes ? (
+                        <form onSubmit={(event) => { event.preventDefault(); saveNote(order) }} className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={noteDrafts[order.id] ?? order.notes ?? ''}
+                            maxLength={ORDER_NOTE_MAX_LENGTH}
+                            onChange={(event) => setNoteDrafts((current) => ({ ...current, [order.id]: event.target.value }))}
+                            placeholder="Add note"
+                            aria-label={`Notes for order ${order.orderNo}`}
+                            className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1 text-xs text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"
+                          />
+                          <button
+                            type="submit"
+                            disabled={savingNoteOrderId === order.id || (noteDrafts[order.id] ?? order.notes ?? '').trim() === (order.notes ?? '')}
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded text-text hover:bg-bg disabled:pointer-events-none disabled:opacity-20"
+                            title="Save note"
+                          >
+                            <Save className="h-3.5 w-3.5" />
+                            <span className="sr-only">Save note for order {order.orderNo}</span>
+                          </button>
+                        </form>
+                      ) : (
+                        <p className="max-w-52 truncate text-xs text-text-muted" title={order.notes ?? undefined}>{order.notes || '—'}</p>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
                         <button

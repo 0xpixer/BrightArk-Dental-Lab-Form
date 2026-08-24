@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { and, eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, orders } from '@/lib/db/schema'
+import { adminUsers, orderActivities, orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert } from '@/lib/transformOrder'
 import { parseOrderSubmission } from '@/lib/orderSubmission'
 import { requireAdmin, requireSession } from '@/lib/admin/session'
@@ -93,7 +93,16 @@ export async function POST(request: Request) {
       file_urls: parsed.fileUrls,
     })
     const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({
+      id: orders.id,
       orderNo: orders.orderNo,
+    })
+    await db.insert(orderActivities).values({
+      orderId: inserted.id,
+      eventType: 'status',
+      detail: 'pending',
+      actorId: Number(session!.user.id),
+      actorRole: session!.user.role,
+      actorName: session!.user.name || session!.user.username || 'User',
     })
 
     return NextResponse.json(

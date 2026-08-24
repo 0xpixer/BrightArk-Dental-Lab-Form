@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { larkNotifications, orders, sharedLinks } from '@/lib/db/schema'
+import { larkNotifications, orderActivities, orders, sharedLinks } from '@/lib/db/schema'
 import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 import { ORDER_STATUS_VALUES } from '@/lib/orderStatus'
+import { normalizeOrderNote } from '@/lib/orderActivity'
 
 export async function GET(
   _request: Request,
@@ -19,7 +20,10 @@ export async function GET(
   }
 
   const db = getDb()
-  const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1)
+  const [[order], activities] = await Promise.all([
+    db.select().from(orders).where(eq(orders.id, id)).limit(1),
+    db.select().from(orderActivities).where(eq(orderActivities.orderId, id)).orderBy(desc(orderActivities.createdAt)),
+  ])
 
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -27,6 +31,7 @@ export async function GET(
 
   return NextResponse.json({
     order: session!.user.role === 'admin' ? redactOrderForLabAdmin(order) : order,
+    activities,
   })
 }
 
@@ -44,21 +49,33 @@ export async function PATCH(
 
   const body = await request.json()
   const isSuperadmin = session!.user.role === 'superadmin'
-  if (!isSuperadmin && (Object.keys(body).length !== 1 || body.status === undefined)) {
-    return NextResponse.json({ error: 'Lab Admins can only update order status' }, { status: 403 })
+  const labAdminFields = new Set(['status', 'notes'])
+  if (!isSuperadmin && Object.keys(body).some((field) => !labAdminFields.has(field))) {
+    return NextResponse.json({ error: 'Lab Admins can only update order status and notes' }, { status: 403 })
   }
   const db = getDb()
 
   const updateData: Record<string, unknown> = {}
+  const [existingOrder] = await db.select({ status: orders.status, notes: orders.notes }).from(orders).where(eq(orders.id, id)).limit(1)
+  if (!existingOrder) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  let statusChanged = false
+  let noteChanged = false
+  let normalizedNote: string | null | undefined
 
   if (body.status !== undefined) {
     if (!ORDER_STATUS_VALUES.has(body.status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
-    const [existingOrder] = await db.select({ status: orders.status }).from(orders).where(eq(orders.id, id)).limit(1)
-    if (!existingOrder) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     updateData.status = body.status
-    if (existingOrder.status !== body.status) updateData.statusUpdatedAt = new Date()
+    statusChanged = existingOrder.status !== body.status
+    if (statusChanged) updateData.statusUpdatedAt = new Date()
+  }
+  if (body.notes !== undefined) {
+    const parsedNote = normalizeOrderNote(body.notes)
+    if (parsedNote.error) return NextResponse.json({ error: parsedNote.error }, { status: 400 })
+    normalizedNote = parsedNote.value
+    noteChanged = (existingOrder.notes ?? null) !== normalizedNote
+    updateData.notes = normalizedNote
   }
   if (body.dentist !== undefined) updateData.dentist = body.dentist
   if (body.clinic !== undefined) updateData.clinic = body.clinic
@@ -88,17 +105,33 @@ export async function PATCH(
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }
 
-  const [updated] = await db
-    .update(orders)
-    .set(updateData)
-    .where(eq(orders.id, id))
-    .returning()
+  const actorId = Number(session!.user.id)
+  const actorName = session!.user.name || session!.user.username || (isSuperadmin ? 'Superadmin' : 'Lab Admin')
+  const activities = []
+  if (statusChanged) {
+    activities.push({ orderId: id, eventType: 'status', detail: body.status, actorId, actorRole: session!.user.role, actorName })
+  }
+  if (noteChanged && normalizedNote) {
+    activities.push({ orderId: id, eventType: 'note', detail: normalizedNote, actorId, actorRole: session!.user.role, actorName })
+  }
+
+  let updated
+  if (activities.length > 0) {
+    const [updatedRows] = await db.batch([
+      db.update(orders).set(updateData).where(eq(orders.id, id)).returning(),
+      db.insert(orderActivities).values(activities),
+    ])
+    updated = updatedRows[0]
+  } else {
+    const [updatedRow] = await db.update(orders).set(updateData).where(eq(orders.id, id)).returning()
+    updated = updatedRow
+  }
 
   if (!updated) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ success: true, order: updated })
+  return NextResponse.json({ success: true, order: session!.user.role === 'admin' ? redactOrderForLabAdmin(updated) : updated })
 }
 
 export async function DELETE(

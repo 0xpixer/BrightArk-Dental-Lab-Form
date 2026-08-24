@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { and, eq, isNull, lte } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { larkNotifications, orders } from '@/lib/db/schema'
+import { larkNotifications, orderActivities, orders } from '@/lib/db/schema'
 import { getLarkWebhookError } from '@/lib/lark'
 import { DELIVERED_AUTO_COMPLETE_MS } from '@/lib/orderStatus'
 
@@ -35,15 +35,26 @@ export async function GET(request: NextRequest) {
   }
 
   const db = getDb()
+  const completedAt = new Date()
   const completedOrders = await db
     .update(orders)
-    .set({ status: 'completed', statusUpdatedAt: new Date() })
+    .set({ status: 'completed', statusUpdatedAt: completedAt })
     .where(and(
       eq(orders.status, 'delivered'),
       lte(orders.statusUpdatedAt, new Date(Date.now() - DELIVERED_AUTO_COMPLETE_MS)),
     ))
     .returning({ id: orders.id })
   const autoCompleted = completedOrders.length
+  if (autoCompleted > 0) {
+    await db.insert(orderActivities).values(completedOrders.map((order) => ({
+      orderId: order.id,
+      eventType: 'status',
+      detail: 'completed',
+      actorRole: 'system',
+      actorName: 'System',
+      createdAt: completedAt,
+    })))
+  }
 
   const webhookUrl = process.env.LARK_WEBHOOK_URL
   if (!webhookUrl) {

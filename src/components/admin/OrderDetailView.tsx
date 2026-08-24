@@ -11,7 +11,9 @@ import { AddOrderFiles } from '@/components/orderDetails/AddOrderFiles'
 import { FinalProductionFiles } from '@/components/orderDetails/FinalProductionFiles'
 import { OrderMessagesModal } from '@/components/orderDetails/OrderMessagesModal'
 import { UploadedFileList } from '@/components/orderDetails/UploadedFileList'
+import { OrderActivityHistory } from '@/components/orderDetails/OrderActivityHistory'
 import { ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
+import type { OrderActivityItem } from '@/lib/orderActivity'
 
 interface Order {
   id: number
@@ -53,11 +55,13 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
   const [messagesOpen, setMessagesOpen] = useState(false)
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [draft, setDraft] = useState<Partial<Order>>({})
+  const [activities, setActivities] = useState<OrderActivityItem[]>([])
 
   const fetchOrder = useCallback(async () => {
     const res = await fetch(`/api/admin/orders/${orderId}`)
     const data = await res.json()
     setOrder(data.order)
+    setActivities(data.activities ?? [])
     setLoading(false)
   }, [orderId])
 
@@ -235,6 +239,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
               )}
             </SectionCard>
           )}
+          <OrderActivityHistory activities={activities} />
         </div>
 
         <div className="space-y-4">

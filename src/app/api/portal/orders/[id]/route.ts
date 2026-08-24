@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { orders } from '@/lib/db/schema'
+import { orderActivities, orders } from '@/lib/db/schema'
 import { requirePortalUser } from '@/lib/admin/session'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { getAccessiblePortalOrder } from '@/lib/portal/orderAccess'
@@ -15,7 +15,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })
   const order = await getAccessiblePortalOrder(id, parseInt(session!.user.id, 10), session!.user.role)
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-  return NextResponse.json({ order })
+  const activities = await getDb().select().from(orderActivities).where(eq(orderActivities.orderId, id)).orderBy(desc(orderActivities.createdAt))
+  return NextResponse.json({ order, activities })
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {

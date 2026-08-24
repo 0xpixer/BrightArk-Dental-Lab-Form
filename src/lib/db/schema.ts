@@ -65,7 +65,19 @@ export const orders = pgTable('orders', {
   cloudDriveLinks: jsonb('cloud_drive_links'),
   submittedBy: integer('submitted_by').references(() => adminUsers.id),
   status: text('status').default('pending').notNull(),
+  notes: text('notes'),
   statusUpdatedAt: timestamp('status_updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})
+
+export const orderActivities = pgTable('order_activities', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  eventType: text('event_type').notNull(),
+  detail: text('detail').notNull(),
+  actorId: integer('actor_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  actorRole: text('actor_role').notNull(),
+  actorName: text('actor_name').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
@@ -120,6 +132,7 @@ export type NewOrder = typeof orders.$inferInsert
 export type OrderDraft = typeof orderDrafts.$inferSelect
 export type OrderMessage = typeof orderMessages.$inferSelect
 export type OrderMessageRead = typeof orderMessageReads.$inferSelect
+export type OrderActivity = typeof orderActivities.$inferSelect
 export type AdminUser = typeof adminUsers.$inferSelect
 export type DoctorClinic = typeof doctorClinics.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect

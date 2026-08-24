@@ -106,6 +106,13 @@
       "when": 1787270972655,
       "tag": "0014_eminent_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787555234128,
+      "tag": "0015_optimal_golden_guardian",
+      "breakpoints": true
     }
   ]
 }
