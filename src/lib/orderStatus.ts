@@ -11,9 +11,15 @@ export const ORDER_STATUS_OPTIONS = [
 export type OrderStatus = (typeof ORDER_STATUS_OPTIONS)[number]['value']
 
 export const ORDER_STATUS_VALUES = new Set<string>(ORDER_STATUS_OPTIONS.map((option) => option.value))
+export const ORDER_STATUS_FILTER_VALUES = new Set<string>(['all', 'overdue', ...ORDER_STATUS_VALUES])
 export const ORDER_STATUS_LABELS: Record<string, string> = Object.fromEntries(
   ORDER_STATUS_OPTIONS.map((option) => [option.value, option.label]),
 )
+
+export function normalizeOrderStatusFilter(value: string | string[] | undefined): string {
+  const status = Array.isArray(value) ? value[0] : value
+  return status && ORDER_STATUS_FILTER_VALUES.has(status) ? status : 'all'
+}
 
 export const ORDER_STATUS_STYLES: Record<string, string> = {
   pending: 'border-yellow-200 bg-yellow-100 text-yellow-800',

@@ -17,10 +17,10 @@ interface OrderRow {
   hasUnreadMessage: boolean
 }
 
-export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStatus: boolean; canDelete: boolean }) {
+export function SubmissionsTable({ canUpdateStatus, canDelete, initialStatus = 'all' }: { canUpdateStatus: boolean; canDelete: boolean; initialStatus?: string }) {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('all')
+  const [status, setStatus] = useState(initialStatus)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)

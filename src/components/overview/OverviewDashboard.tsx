@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Clock3, ClockAlert, Factory, PackageSearch, RefreshCw, RotateCcw, Truck } from 'lucide-react'
 import {
   ORDER_STATUS_CHART_COLORS,
@@ -23,7 +24,7 @@ interface OverviewData {
   generatedAt: string
 }
 
-export function OverviewDashboard() {
+export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
   const [granularity, setGranularity] = useState<OverviewGranularity>('month')
   const [doctorId, setDoctorId] = useState('all')
   const [data, setData] = useState<OverviewData | null>(null)
@@ -114,18 +115,18 @@ export function OverviewDashboard() {
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="All Orders" value={totals?.all} icon={PackageSearch} loading={loading} />
-        <MetricCard label="Overdue" value={totals?.overdue} icon={ClockAlert} loading={loading} />
-        <MetricCard label="Pending" value={statusCounts?.pending} icon={Clock3} loading={loading} />
-        <MetricCard label="In Production" value={statusCounts?.in_production} icon={Factory} loading={loading} />
+        <MetricCard label="All Orders" value={totals?.all} icon={PackageSearch} loading={loading} href={ordersPath} />
+        <MetricCard label="Overdue" value={totals?.overdue} icon={ClockAlert} loading={loading} href={`${ordersPath}?status=overdue`} />
+        <MetricCard label="Pending" value={statusCounts?.pending} icon={Clock3} loading={loading} href={`${ordersPath}?status=pending`} />
+        <MetricCard label="In Production" value={statusCounts?.in_production} icon={Factory} loading={loading} href={`${ordersPath}?status=in_production`} />
         <SplitMetricCard
           label="Shipped / Delivered"
-          first={{ label: 'Shipped', value: statusCounts?.shipped }}
-          second={{ label: 'Delivered', value: statusCounts?.delivered }}
+          first={{ label: 'Shipped', value: statusCounts?.shipped, href: `${ordersPath}?status=shipped` }}
+          second={{ label: 'Delivered', value: statusCounts?.delivered, href: `${ordersPath}?status=delivered` }}
           icon={Truck}
           loading={loading}
         />
-        <MetricCard label="Re-Do" value={statusCounts?.redo} icon={RotateCcw} loading={loading} />
+        <MetricCard label="Re-Do" value={statusCounts?.redo} icon={RotateCcw} loading={loading} href={`${ordersPath}?status=redo`} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
@@ -224,20 +225,20 @@ export function OverviewDashboard() {
 
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * 70
 
-function MetricCard({ label, value, icon: Icon, loading }: { label: string; value?: number; icon: typeof PackageSearch; loading: boolean }) {
+function MetricCard({ label, value, icon: Icon, loading, href }: { label: string; value?: number; icon: typeof PackageSearch; loading: boolean; href: string }) {
   return (
-    <section className="rounded-card border border-border bg-surface p-4">
+    <Link href={href} aria-label={label === 'All Orders' ? 'View all orders' : `View ${label} orders`} className="rounded-card border border-border bg-surface p-4 transition-colors hover:border-neutral-400 hover:bg-bg focus:outline-none focus:ring-2 focus:ring-text/10">
       <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><Icon className="h-4 w-4" aria-hidden /></div>
       <p className="text-xs font-medium text-text-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p>
-    </section>
+    </Link>
   )
 }
 
 function SplitMetricCard({ label, first, second, icon: Icon, loading }: {
   label: string
-  first: { label: string; value?: number }
-  second: { label: string; value?: number }
+  first: { label: string; value?: number; href: string }
+  second: { label: string; value?: number; href: string }
   icon: typeof PackageSearch
   loading: boolean
 }) {
@@ -247,10 +248,10 @@ function SplitMetricCard({ label, first, second, icon: Icon, loading }: {
       <p className="truncate text-xs font-medium text-text-muted">{label}</p>
       <div className="mt-1 grid grid-cols-2 gap-2">
         {[first, second].map((item) => (
-          <div key={item.label} className="min-w-0">
+          <Link key={item.label} href={item.href} aria-label={`View ${item.label} orders`} className="min-w-0 rounded p-1 -m-1 transition-colors hover:bg-bg focus:outline-none focus:ring-2 focus:ring-text/10">
             <p className="text-xl font-semibold tabular-nums text-text">{loading ? '—' : item.value ?? 0}</p>
             <p className="truncate text-[10px] text-text-muted">{item.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

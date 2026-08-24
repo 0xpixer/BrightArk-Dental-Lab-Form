@@ -1,5 +1,5 @@
 import { OverviewDashboard } from '@/components/overview/OverviewDashboard'
 
 export default function PortalOverviewPage() {
-  return <OverviewDashboard />
+  return <OverviewDashboard ordersPath="/portal/orders" />
 }

@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { StatusBadge } from '@/components/admin/StatusBadge'
+import { isOrderStatusOverdue, ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
 
 interface Order {
   id: number
@@ -10,6 +11,7 @@ interface Order {
   patientName: string
   treatmentType: string | null
   status: string
+  statusUpdatedAt: string
   createdAt: string
   hasUnreadMessage: boolean
 }
@@ -31,10 +33,17 @@ const treatmentLabels: Record<string, string> = {
   removable: 'Removable Restoration',
 }
 
-export function DoctorOrdersTable() {
+export function DoctorOrdersTable({ initialStatus = 'all' }: { initialStatus?: string }) {
   const [orders, setOrders] = useState<Order[]>([])
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState(initialStatus)
+
+  const filteredOrders = useMemo(() => orders.filter((order) => {
+    if (status === 'all') return true
+    if (status === 'overdue') return isOrderStatusOverdue(order.status, order.statusUpdatedAt)
+    return order.status === status
+  }), [orders, status])
 
   const load = useCallback(async () => {
     const [ordersResponse, draftsResponse] = await Promise.all([
@@ -112,15 +121,25 @@ export function DoctorOrdersTable() {
         <table className="w-full">
           <thead className="border-b border-border bg-bg">
             <tr>
-              {['Order', 'Patient', 'Treatment', 'Status', 'Submitted', ''].map((heading) => (
-                <th key={heading} className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">{heading}</th>
-              ))}
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Order</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Patient</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Treatment</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
+                <span className="mb-1.5 block">Status</span>
+                <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filter orders by status" className="min-w-32 rounded border border-border bg-surface px-2 py-1 text-xs font-medium normal-case text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10">
+                  <option value="all">All statuses</option>
+                  {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  <option value="overdue">Overdue</option>
+                </select>
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Submitted</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
-            {orders.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted">No orders yet.</td></tr>
-            ) : orders.map((order) => (
+            {filteredOrders.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted">No matching orders.</td></tr>
+            ) : filteredOrders.map((order) => (
               <tr key={order.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3 text-sm font-medium"><span className="inline-flex items-center gap-2">{order.orderNo}{order.hasUnreadMessage && <span className="h-2.5 w-2.5 rounded-full bg-red-500" title="New message"><span className="sr-only">New message</span></span>}</span></td>
                 <td className="px-4 py-3 text-sm">{order.patientName}</td>
