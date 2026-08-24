@@ -162,17 +162,6 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
             }}
             className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"
           />
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value)
-              setPage(1)
-            }}
-            className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-text"
-          >
-            <option value="all">All</option>
-            {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
         </div>
       </div>
 
@@ -190,7 +179,24 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                 <SortHeader col="orderNo" label="Order ID" />
                 <SortHeader col="dentist" label="Doctor Name" />
                 <SortHeader col="patientName" label="Patient Name" />
-                <SortHeader col="status" label="Status" />
+                <th className="px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
+                  <button type="button" onClick={() => toggleSort('status')} className="mb-1.5 block hover:text-text">
+                    Status {sortBy === 'status' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                  </button>
+                  <select
+                    value={status}
+                    onChange={(event) => {
+                      setStatus(event.target.value)
+                      setPage(1)
+                    }}
+                    aria-label="Filter submissions by status"
+                    className="w-full min-w-32 rounded border border-border bg-surface px-2 py-1 text-xs font-medium normal-case text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"
+                  >
+                    <option value="all">All statuses</option>
+                    {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </th>
                 <SortHeader col="statusUpdatedAt" label="Update Time" />
                 <SortHeader col="createdAt" label="Submitted" />
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">Download</th>

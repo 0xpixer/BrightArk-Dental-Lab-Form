@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { desc, eq, or, ilike, and, count, getTableColumns } from 'drizzle-orm'
+import { desc, eq, or, ilike, and, count, getTableColumns, lte, ne } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { requireAdmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 import { hasUnreadOrderMessage } from '@/lib/orderUnread'
+import { ORDER_STATUS_DUE_MS, ORDER_STATUS_VALUES } from '@/lib/orderStatus'
 
 export async function GET(request: Request) {
   const { session, error } = await requireAdmin()
@@ -21,7 +22,14 @@ export async function GET(request: Request) {
 
   const conditions = []
   if (status && status !== 'all') {
-    conditions.push(eq(orders.status, status))
+    if (status === 'overdue') {
+      conditions.push(and(
+        ne(orders.status, 'completed'),
+        lte(orders.statusUpdatedAt, new Date(Date.now() - ORDER_STATUS_DUE_MS)),
+      )!)
+    } else if (ORDER_STATUS_VALUES.has(status)) {
+      conditions.push(eq(orders.status, status))
+    }
   }
   if (search) {
     const pattern = `%${search}%`

@@ -1,10 +1,10 @@
-import { and, asc, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, lte, ne, or } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin/session'
 import { generateSubmissionsWorkbook } from '@/lib/admin/generateSubmissionsWorkbook'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
-import { ORDER_STATUS_LABELS } from '@/lib/orderStatus'
+import { ORDER_STATUS_DUE_MS, ORDER_STATUS_LABELS, ORDER_STATUS_VALUES } from '@/lib/orderStatus'
 
 export const runtime = 'nodejs'
 
@@ -24,7 +24,16 @@ export async function GET(request: Request) {
   const sortBy = searchParams.get('sortBy') ?? 'createdAt'
   const sortDirection = searchParams.get('sortDir') === 'asc' ? asc : desc
   const conditions = []
-  if (status && status !== 'all') conditions.push(eq(orders.status, status))
+  if (status && status !== 'all') {
+    if (status === 'overdue') {
+      conditions.push(and(
+        ne(orders.status, 'completed'),
+        lte(orders.statusUpdatedAt, new Date(Date.now() - ORDER_STATUS_DUE_MS)),
+      )!)
+    } else if (ORDER_STATUS_VALUES.has(status)) {
+      conditions.push(eq(orders.status, status))
+    }
+  }
   if (search) {
     const pattern = `%${search}%`
     conditions.push(or(ilike(orders.orderNo, pattern), ilike(orders.dentist, pattern), ilike(orders.patientName, pattern))!)
