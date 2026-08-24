@@ -42,7 +42,7 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg p-4">
-      <div className="w-full max-w-md rounded-card border border-border bg-surface p-8 shadow-lg">
+      <div className="w-full max-w-md rounded-card border border-border bg-surface p-8">
         <div className="mb-6 flex flex-col items-center">
           <Image src="/Logo-SVG.svg" alt="BrightArk" width={160} height={48} className="mb-4 h-12 w-auto" />
           <h1 className="text-xl font-semibold text-text">BrightArk Portal</h1>
@@ -60,7 +60,7 @@ function LoginForm() {
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"
               required
             />
           </div>
@@ -76,7 +76,7 @@ function LoginForm() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 pr-10 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 pr-10 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"
                 required
               />
               <button
@@ -106,7 +106,7 @@ function LoginForm() {
         </form>
 
         <p className="mt-4 text-center text-xs text-text-muted">
-          Doctors can <Link href="/register" className="font-medium text-primary hover:underline">create an account</Link> to submit and manage orders.
+          Doctors can <Link href="/register" className="font-medium text-text hover:underline">create an account</Link> to submit and manage orders.
         </p>
       </div>
     </div>

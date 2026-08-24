@@ -56,11 +56,11 @@ export function NewAccountForm() {
 
   return (
     <div className="mx-auto max-w-md">
-      <Link href="/admin/accounts" className="mb-4 inline-block text-sm text-primary hover:underline">
+      <Link href="/admin/accounts" className="mb-4 inline-block text-sm text-text hover:underline">
         ← Back to Accounts
       </Link>
 
-      <div className="rounded-card border border-border bg-surface p-6 shadow-sm">
+      <div className="rounded-card border border-border bg-surface p-6">
         <h1 className="mb-6 text-xl font-semibold text-text">Create Account</h1>
 
         {success ? (

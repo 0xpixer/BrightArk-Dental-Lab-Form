@@ -45,7 +45,7 @@ export function ShareLinkModal({ orderId, onClose }: ShareLinkModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-card bg-surface p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-card border border-border bg-surface p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Shareable Download Link</h2>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-text">
@@ -68,7 +68,7 @@ export function ShareLinkModal({ orderId, onClose }: ShareLinkModalProps) {
                   onClick={() => setExpiryDays(opt.value)}
                   className={`rounded-full border px-3 py-1 text-xs font-medium ${
                     expiryDays === opt.value
-                      ? 'border-primary bg-primary/10 text-primary'
+                      ? 'border-text bg-neutral-100 text-text'
                       : 'border-border text-text-muted'
                   }`}
                 >

@@ -11,8 +11,8 @@ export function ToggleChip({ id, label, checked, onChange }: ToggleChipProps) {
       htmlFor={id}
       className={`inline-flex cursor-pointer select-none items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-brand ease-in-out ${
         checked
-          ? 'border-primary bg-primary/10 text-primary'
-          : 'border-border bg-surface text-text-muted hover:border-primary/50'
+          ? 'border-text bg-text text-white'
+          : 'border-border bg-surface text-text-muted hover:border-neutral-400 hover:text-text'
       }`}
     >
       <input
@@ -24,7 +24,7 @@ export function ToggleChip({ id, label, checked, onChange }: ToggleChipProps) {
       />
       <span
         className={`h-3.5 w-3.5 rounded border transition-colors duration-brand ${
-          checked ? 'border-primary bg-primary' : 'border-border bg-white'
+          checked ? 'border-white bg-white text-text' : 'border-border bg-white'
         }`}
         aria-hidden
       >

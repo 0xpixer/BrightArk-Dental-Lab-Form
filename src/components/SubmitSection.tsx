@@ -11,7 +11,7 @@ interface SubmitSectionProps {
 export function SubmitSection({ isSubmitting, isUploading = false, onSaveDraft, draftSaved, submitLabel = 'Submit Order' }: SubmitSectionProps) {
   return (
     <div className="space-y-3 md:static">
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:relative md:border-0 md:bg-transparent md:p-0 md:shadow-none">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface p-4 md:relative md:border-0 md:bg-transparent md:p-0">
         <button
           type="submit"
           disabled={isSubmitting || isUploading}
@@ -25,7 +25,7 @@ export function SubmitSection({ isSubmitting, isUploading = false, onSaveDraft, 
       <button
         type="button"
         onClick={onSaveDraft}
-        className="hidden w-full rounded-card border-2 border-secondary py-2.5 text-sm font-semibold text-secondary transition-colors duration-brand hover:bg-secondary/5 md:block"
+        className="hidden w-full rounded-card border border-border py-2.5 text-sm font-semibold text-text transition-colors duration-brand hover:bg-bg md:block"
       >
         {draftSaved ? 'Draft Saved ✓' : 'Save Draft'}
       </button>
@@ -33,7 +33,7 @@ export function SubmitSection({ isSubmitting, isUploading = false, onSaveDraft, 
       <button
         type="button"
         onClick={onSaveDraft}
-        className="w-full rounded-card border-2 border-secondary py-2.5 text-sm font-semibold text-secondary transition-colors duration-brand hover:bg-secondary/5 md:hidden"
+        className="w-full rounded-card border border-border py-2.5 text-sm font-semibold text-text transition-colors duration-brand hover:bg-bg md:hidden"
       >
         {draftSaved ? 'Draft Saved ✓' : 'Save Draft'}
       </button>

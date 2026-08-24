@@ -12,7 +12,7 @@ interface ProgressBarProps {
 
 export function ProgressBar({ activeStep }: ProgressBarProps) {
   return (
-    <nav aria-label="Form progress" className="rounded-card bg-surface p-4 shadow-sm">
+    <nav aria-label="Form progress" className="rounded-card border border-border bg-surface p-4">
       <ol className="flex items-center justify-between gap-2">
         {STEPS.map((step, index) => {
           const isComplete = activeStep !== null && step.id < activeStep
@@ -23,10 +23,10 @@ export function ProgressBar({ activeStep }: ProgressBarProps) {
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-brand ${
                     isComplete
-                      ? 'bg-secondary text-white'
+                      ? 'bg-text text-white'
                       : isActive
-                        ? 'bg-primary text-white'
-                        : 'bg-border text-text-muted'
+                        ? 'bg-text text-white'
+                        : 'border border-border bg-bg text-text-muted'
                   }`}
                   aria-current={isActive ? 'step' : undefined}
                 >
@@ -34,7 +34,7 @@ export function ProgressBar({ activeStep }: ProgressBarProps) {
                 </span>
                 <span
                   className={`text-center text-[10px] font-medium sm:text-left sm:text-xs ${
-                    isActive ? 'text-primary' : isComplete ? 'text-secondary' : 'text-text-muted'
+                    isActive || isComplete ? 'text-text' : 'text-text-muted'
                   }`}
                 >
                   <span className="hidden md:inline">Step {step.id}: </span>
@@ -44,7 +44,7 @@ export function ProgressBar({ activeStep }: ProgressBarProps) {
               {index < STEPS.length - 1 && (
                 <div
                   className={`mx-1 hidden h-0.5 flex-1 sm:block ${
-                    activeStep !== null && step.id < activeStep ? 'bg-secondary' : 'bg-border'
+                    activeStep !== null && step.id < activeStep ? 'bg-text' : 'bg-border'
                   }`}
                   aria-hidden
                 />

@@ -65,30 +65,30 @@ function ToothButton({
       onClick={() => onToggle(tooth)}
       aria-label={`FDI tooth ${tooth}${selected ? ', selected' : ''}`}
       aria-pressed={selected}
-      className="absolute z-10 flex aspect-square w-[10%] min-w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[6px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      className="absolute z-10 flex aspect-square w-[10%] min-w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[6px] focus:outline-none focus:ring-2 focus:ring-text/30 focus:ring-offset-2"
       style={{ left: `${position.left}%`, top: `${position.top}%` }}
     >
-      <svg viewBox="0 0 48 56" className="h-full w-full drop-shadow-sm" aria-hidden>
+      <svg viewBox="0 0 48 56" className="h-full w-full" aria-hidden>
         <path
           d={toothShapePath(tooth)}
-          fill={selected ? '#FED7AA' : '#FFFFFF'}
-          stroke={selected ? '#F47B20' : '#3D414A'}
+          fill={selected ? '#E5E5E5' : '#FFFFFF'}
+          stroke={selected ? '#171717' : '#525252'}
           strokeWidth="1.8"
           className="transition-[fill,stroke] duration-brand"
         />
         <path
           d="M17 19 C21 16 27 16 31 19 M16 29 C21 32 27 32 32 29"
           fill="none"
-          stroke={selected ? '#D96A10' : '#5F6470'}
+          stroke={selected ? '#171717' : '#737373'}
           strokeLinecap="round"
           strokeWidth="1.2"
           opacity="0.8"
         />
       </svg>
       <span
-        className={`absolute z-10 rounded-full px-1 py-0.5 text-[9px] font-bold leading-none shadow-sm sm:text-[10px] ${
+        className={`absolute z-10 rounded-full px-1 py-0.5 text-[9px] font-bold leading-none sm:text-[10px] ${
           isUpperTooth ? '-bottom-3' : '-top-3'
-        } ${selected ? 'bg-primary text-white' : 'bg-surface text-text'}`}
+        } ${selected ? 'bg-text text-white' : 'bg-surface text-text'}`}
       >
         {tooth}
       </span>
@@ -104,7 +104,7 @@ function DentalChart({
   onToggle: (n: number) => void
 }) {
   return (
-    <div className="mx-auto w-full max-w-[500px] rounded-card border border-border bg-bg p-2 shadow-sm">
+    <div className="mx-auto w-full max-w-[500px] rounded-card border border-border bg-bg p-2">
       <div className="relative aspect-square" role="group" aria-label="FDI adult dental chart">
         {FDI_TEETH.map((tooth) => (
           <ToothButton key={tooth} tooth={tooth} selected={selected.includes(tooth)} onToggle={onToggle} />
@@ -144,7 +144,7 @@ export function ToothSelectorSection({ register, errors, watch, setValue, onTitl
                   <label
                     key={m}
                     className={`cursor-pointer rounded-[6px] px-3 py-1 text-xs font-medium capitalize transition-colors duration-brand ${
-                      mode === m ? 'bg-primary text-white' : 'text-text-muted hover:text-text'
+                      mode === m ? 'bg-text text-white' : 'text-text-muted hover:text-text'
                     }`}
                   >
                     <input type="radio" value={m} {...register('toothMode')} className="sr-only" />

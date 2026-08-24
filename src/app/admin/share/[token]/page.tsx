@@ -64,7 +64,7 @@ export default function ShareDownloadPage({ params }: { params: { token: string 
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-4">
       <Image src="/Logo-SVG.svg" alt="BrightArk" width={160} height={48} className="mb-8" />
 
-      <div className="w-full max-w-md rounded-card border border-border bg-surface p-8 shadow-lg text-center">
+      <div className="w-full max-w-md rounded-card border border-border bg-surface p-8 text-center">
         <dl className="mb-6 space-y-3 text-left text-sm">
           <div>
             <dt className="text-text-muted">Order ID</dt>
@@ -92,7 +92,7 @@ export default function ShareDownloadPage({ params }: { params: { token: string 
 
         <p className="mt-6 text-xs text-text-muted">
           This link was shared by BrightArk. For questions contact{' '}
-          <a href="mailto:cs@theBrightArk.com" className="text-primary underline">
+          <a href="mailto:cs@theBrightArk.com" className="text-text underline">
             cs@theBrightArk.com
           </a>
         </p>

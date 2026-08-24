@@ -37,8 +37,8 @@ export const inputClassName = (hasError?: boolean) =>
   `w-full rounded-card border px-3 py-2 text-sm text-text outline-none transition-[border-color,box-shadow] duration-brand ease-in-out focus:ring-2 ${
     hasError
       ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200'
-      : 'border-border bg-grey-input focus:border-secondary focus:ring-secondary/20'
+      : 'border-border bg-grey-input focus:border-text focus:ring-text/10'
   }`
 
 export const orderInputClassName = (hasError?: boolean) =>
-  `${inputClassName(hasError)} !bg-[#E3E3E3]`
+  inputClassName(hasError)

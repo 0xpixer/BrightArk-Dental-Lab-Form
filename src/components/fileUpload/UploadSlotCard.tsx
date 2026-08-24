@@ -57,7 +57,7 @@ export function UploadSlotCard({
       onClick={openPicker}
       onKeyDown={handleKeyDown}
       aria-label={`Upload ${slot.label}${slot.required ? ', required' : ''}`}
-      className={`group relative flex flex-col items-center rounded-card border-2 border-dashed bg-bg p-3 transition-all duration-brand ease-in-out hover:scale-[1.02] hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+      className={`group relative flex flex-col items-center rounded-card border-2 border-dashed bg-bg p-3 transition-all duration-brand ease-in-out hover:scale-[1.02] hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-text/10 ${
         hasError
           ? 'border-red-400'
           : isSuccess
@@ -65,8 +65,8 @@ export function UploadSlotCard({
             : isError
               ? 'border-red-400'
               : slotFile
-                ? 'border-primary/50'
-                : 'border-border hover:border-primary'
+                ? 'border-neutral-400'
+                : 'border-border hover:border-neutral-400'
       } ${isUploading ? 'pointer-events-none' : ''}`}
     >
       {slot.formatBadge && !slotFile && (
@@ -120,7 +120,7 @@ export function UploadSlotCard({
                 e.stopPropagation()
                 onRemove()
               }}
-              className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow transition-colors hover:bg-red-600"
+              className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white transition-colors hover:bg-red-600"
               aria-label={`Remove ${slot.label}`}
             >
               <X className="h-3.5 w-3.5" />

@@ -15,8 +15,8 @@ export function YesNoToggle({ name, label, value, onChange }: YesNoToggleProps) 
           key={opt}
           className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize transition-all duration-brand ${
             value === opt
-              ? 'border-secondary bg-secondary/10 text-secondary'
-              : 'border-border text-text-muted hover:border-secondary/40'
+              ? 'border-text bg-text text-white'
+              : 'border-border text-text-muted hover:border-neutral-400 hover:text-text'
           }`}
         >
           <input

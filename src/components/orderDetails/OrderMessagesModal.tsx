@@ -147,7 +147,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}
     >
-      <div className="flex h-[min(720px,90vh)] w-full max-w-lg flex-col overflow-hidden rounded-card border border-border bg-surface shadow-xl">
+      <div className="flex h-[min(720px,90vh)] w-full max-w-lg flex-col overflow-hidden rounded-card border border-border bg-surface">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
@@ -175,7 +175,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
             </div>
           ) : messages.map((item) => (
             <div key={item.id} className={`flex ${item.isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[82%] rounded-card border px-3 py-2 shadow-sm ${BUBBLE_STYLES[item.author]}`}>
+              <div className={`max-w-[82%] rounded-card border px-3 py-2 ${BUBBLE_STYLES[item.author]}`}>
                 <div className="mb-1 flex items-center justify-between gap-3">
                   <span className="text-[10px] font-bold uppercase">{item.author}</span>
                   <time className="text-[10px] opacity-65" dateTime={item.createdAt}>

@@ -18,7 +18,7 @@ export function UploadedFileList({ files }: { files: Record<string, string> }) {
             ?? SLOT_FOLDER_MAP[slotId]?.filename
             ?? slotId.replace(/-/g, ' ')
           const kind = getFilePreviewKind(url)
-          const rowClass = 'flex w-full min-w-0 items-center gap-2 rounded border border-border px-3 py-2 text-left text-sm text-primary hover:bg-bg'
+          const rowClass = 'flex w-full min-w-0 items-center gap-2 rounded border border-border px-3 py-2 text-left text-sm text-text hover:bg-bg'
 
           return kind ? (
             <button key={slotId} type="button" onClick={() => setPreview({ url, filename, kind })} className={rowClass} title={`Preview ${filename}`}>

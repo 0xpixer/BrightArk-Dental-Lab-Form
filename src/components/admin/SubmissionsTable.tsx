@@ -160,7 +160,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"
           />
           <select
             value={status}
@@ -168,7 +168,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
               setStatus(e.target.value)
               setPage(1)
             }}
-            className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+            className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-text"
           >
             <option value="all">All</option>
             {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -182,7 +182,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
         </div>
       )}
 
-      <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+      <div className="overflow-hidden rounded-card border border-border bg-surface">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead className="border-b border-border bg-bg">
@@ -222,7 +222,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                           value={order.status}
                           disabled={updatingOrderId === order.id}
                           onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                          className={`rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-opacity focus:ring-2 focus:ring-primary/20 disabled:cursor-wait disabled:opacity-60 ${
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-opacity focus:ring-2 focus:ring-text/10 disabled:cursor-wait disabled:opacity-60 ${
                             ORDER_STATUS_STYLES[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'
                           }`}
                           aria-label={`Update status for order ${order.orderNo}`}
@@ -247,7 +247,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                         <button
                           type="button"
                           onClick={() => downloadZip(order.id, order.orderNo)}
-                          className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-primary hover:text-primary"
+                          className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-neutral-400 hover:text-text"
                           title="Download ZIP"
                         >
                           <Download className="h-3.5 w-3.5" />
@@ -268,7 +268,7 @@ export function SubmissionsTable({ canUpdateStatus, canDelete }: { canUpdateStat
                       <div className="flex gap-1">
                         <Link
                           href={`/admin/submissions/${order.id}`}
-                          className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                          className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-text hover:bg-neutral-200"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           View

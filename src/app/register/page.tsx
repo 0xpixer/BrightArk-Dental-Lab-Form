@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen bg-bg px-4 py-8">
-      <div className="mx-auto w-full max-w-lg rounded-card border border-border bg-surface p-6 shadow-sm md:p-8">
+      <div className="mx-auto w-full max-w-lg rounded-card border border-border bg-surface p-6 md:p-8">
         <div className="mb-6 flex flex-col items-center"><BrightArkLogo /><h1 className="mt-4 text-xl font-semibold text-text">Create doctor account</h1></div>
         <form onSubmit={submit} className="space-y-4">
           <Field label="Doctor name" value={form.fullName} onChange={(value) => update('fullName', value)} required />
@@ -52,12 +52,12 @@ export default function RegisterPage() {
             {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
-        <p className="mt-5 text-center text-sm text-text-muted">Already registered? <Link href="/admin/login?callbackUrl=/portal/orders" className="font-medium text-primary hover:underline">Sign in</Link></p>
+        <p className="mt-5 text-center text-sm text-text-muted">Already registered? <Link href="/admin/login?callbackUrl=/portal/orders" className="font-medium text-text hover:underline">Sign in</Link></p>
       </div>
     </main>
   )
 }
 
 function Field({ label, value, onChange, type = 'text', required, minLength }: { label: string; value: string; onChange: (value: string) => void; type?: string; required?: boolean; minLength?: number }) {
-  return <label className="block text-sm font-medium text-text"><span className="mb-1 block">{label}{required ? ' *' : ''}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} required={required} minLength={minLength} className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 text-sm outline-none focus:border-primary" /></label>
+  return <label className="block text-sm font-medium text-text"><span className="mb-1 block">{label}{required ? ' *' : ''}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} required={required} minLength={minLength} className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 text-sm outline-none focus:border-text" /></label>
 }

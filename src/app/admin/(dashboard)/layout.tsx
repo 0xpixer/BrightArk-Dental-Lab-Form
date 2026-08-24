@@ -16,10 +16,10 @@ export default async function AdminDashboardLayout({
     <div className="flex min-h-screen bg-bg">
       <AdminSidebar username={session.user.username} role={session.user.role} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-4 shadow-sm md:px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center border-b border-border bg-surface px-4 md:px-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-text-muted">BrightArk Admin Portal</p>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <span className="rounded-full bg-bg px-3 py-1 text-xs font-medium text-text-muted">
               {session.user.username}
             </span>
           </div>

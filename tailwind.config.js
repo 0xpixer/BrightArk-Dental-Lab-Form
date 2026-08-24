@@ -5,15 +5,15 @@ export default {
     extend: {
       colors: {
         primary: '#F47B20',
-        secondary: '#ea6624',
-        accent: '#6B4EFF',
-        bg: '#F5F6FA',
+        secondary: '#171717',
+        accent: '#404040',
+        bg: '#F7F7F8',
         surface: '#FFFFFF',
-        border: '#E0E3ED',
-        text: '#1A1D2E',
-        'text-muted': '#6B7280',
-        'grey-input': '#e3e3e3',
-        'order-green': '#E3E3E3',
+        border: '#E5E5E5',
+        text: '#171717',
+        'text-muted': '#737373',
+        'grey-input': '#FFFFFF',
+        'order-green': '#F5F5F5',
       },
       fontFamily: {
         sans: ['var(--font-noto-sans)', '"Noto Sans"', 'system-ui', 'sans-serif'],

@@ -59,7 +59,7 @@ function RadioOption({
       className={`flex min-h-10 cursor-pointer items-start gap-2 rounded-[6px] border px-2.5 py-2 text-xs leading-snug transition-colors duration-brand ${
         selected
           ? 'border-secondary bg-secondary/10 text-secondary'
-          : 'border-border bg-surface text-text hover:border-primary/60'
+          : 'border-border bg-surface text-text hover:border-neutral-400'
       }`}
     >
       <input
@@ -126,7 +126,7 @@ function OptionGroup({
             className={`flex min-h-10 cursor-pointer items-start gap-2 rounded-[6px] border px-2.5 py-2 text-xs leading-snug transition-colors duration-brand ${
               current === opt.value
                 ? 'border-secondary bg-secondary/10 text-secondary'
-                : 'border-border bg-surface text-text hover:border-primary/60'
+                : 'border-border bg-surface text-text hover:border-neutral-400'
             }`}
           >
             <input
@@ -313,7 +313,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
             onClick={() => handleCategoryChange(cat)}
             className={`rounded-[6px] px-3 py-2 text-xs font-medium transition-colors duration-brand ease-in-out ${
               category === cat
-                ? 'bg-secondary text-white shadow-sm'
+                ? 'bg-text text-white'
                 : 'text-text-muted hover:bg-white hover:text-text'
             }`}
           >
@@ -367,7 +367,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
               <span className="text-xs font-semibold text-secondary">Implant Series</span>
               <select
                 {...register('implantSeries')}
-                className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text`}
               >
                 <option value="">-- Select Implant Series --</option>
                 <optgroup label="Implant Crowns & Dentures">
@@ -444,7 +444,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
               <span className="text-xs font-semibold text-secondary">Type</span>
               <select
                 {...register('fixedType')}
-                className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text`}
                 onChange={(e) => {
                   setValue('fixedType', e.target.value)
                   setValue('fixedSubDetail', '') // reset child selection
@@ -463,7 +463,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                   <span className="text-xs font-medium text-text-muted">All Ceramic Sub-Detail</span>
                   <select
                     {...register('fixedSubDetail')}
-                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text`}
                   >
                     <option value="">-- Select Sub-Detail --</option>
                     {[
@@ -498,7 +498,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                   <span className="text-xs font-medium text-text-muted">PFM Sub-Detail</span>
                   <select
                     {...register('fixedSubDetail')}
-                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text`}
                   >
                     <option value="">-- Select Sub-Detail --</option>
                     {[
@@ -521,7 +521,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                     ))}
                   </select>
                 </label>
-                <p className="text-xs italic text-primary/80 mt-1">
+                <p className="text-xs italic text-text-muted mt-1">
                   *Porcelain Alloy Additional: Weight+15%
                 </p>
               </div>
@@ -533,7 +533,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                   <span className="text-xs font-medium text-text-muted">Full Metal Sub-Detail</span>
                   <select
                     {...register('fixedSubDetail')}
-                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary`}
+                    className={`mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text`}
                   >
                     <option value="">-- Select Sub-Detail --</option>
                     {[
@@ -555,7 +555,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                     ))}
                   </select>
                 </label>
-                <p className="text-xs italic text-primary/80 mt-1">
+                <p className="text-xs italic text-text-muted mt-1">
                   *Metal Alloy Additional: Weight+15%. Alloy charged by per gram, cost per crown depends on the weight
                 </p>
               </div>
@@ -630,7 +630,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                     className={`flex min-h-10 cursor-pointer items-start gap-2 rounded-[6px] border px-2.5 py-2 text-xs leading-snug transition-colors duration-brand ${
                       insufficientRoom === opt
                         ? 'border-secondary bg-secondary/10 text-secondary'
-                        : 'border-border bg-surface text-text hover:border-primary/60'
+                        : 'border-border bg-surface text-text hover:border-neutral-400'
                     }`}
                   >
                     <input type="radio" value={opt} {...register('insufficientRoom')} checked={insufficientRoom === opt} className="mt-0.5 accent-secondary" />
@@ -659,7 +659,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
               <span className="text-xs font-semibold text-secondary">Product Group</span>
               <select
                 {...register('additionalGroup')}
-                className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text"
                 onChange={(e) => {
                   setValue('additionalGroup', e.target.value)
                   setValue('additionalProduct', '')
@@ -678,7 +678,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
                 <span className="text-xs font-medium text-text-muted">Product</span>
                 <select
                   {...register('additionalProduct')}
-                  className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text"
                 >
                   <option value="">-- Select Product --</option>
                   {ADDITIONAL_PRODUCT_GROUPS[additionalGroup]?.map((product) => (
@@ -708,7 +708,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
               <span className="text-xs font-semibold text-secondary">Product Group</span>
               <select
                 {...register('removableType')}
-                className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+                className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text"
                 onChange={(e) => {
                   setValue('removableType', e.target.value)
                   setValue('removableProduct', '')
@@ -724,7 +724,7 @@ export function TreatmentTypeSection({ register, watch, setValue, onTitleClick, 
             {removableType && (
               <label className="block">
                 <span className="text-xs font-medium text-text-muted">Product</span>
-                <select {...register('removableProduct')} className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-primary">
+                <select {...register('removableProduct')} className="mt-1 w-full rounded border border-border px-3 py-2 text-sm outline-none focus:border-text">
                   <option value="">-- Select Product --</option>
                   {REMOVABLE_PRODUCT_GROUPS[removableType]?.map((product) => (
                     <option key={product} value={product}>{product}</option>

@@ -103,7 +103,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/admin/submissions" className="text-text-muted hover:text-primary">
+          <Link href="/admin/submissions" className="text-text-muted hover:text-text">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
@@ -124,7 +124,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
           <button
             type="button"
             onClick={() => { window.location.href = `/api/admin/orders/${orderId}/download` }}
-            className="inline-flex items-center gap-1 rounded-card border border-border px-3 py-2 text-sm hover:border-primary"
+            className="inline-flex items-center gap-1 rounded-card border border-border px-3 py-2 text-sm hover:border-neutral-400"
           >
             <Download className="h-4 w-4" /> ZIP
           </button>
@@ -238,12 +238,12 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId
         </div>
 
         <div className="space-y-4">
-          <section className="rounded-card border border-border bg-surface p-4 shadow-sm">
+          <section className="rounded-card border border-border bg-surface p-4">
             <h2 className="mb-4 text-sm font-semibold text-secondary">Uploaded Files</h2>
             {cloudDriveLinks.length > 0 && (
-              <div className="mb-4 rounded border border-primary/20 bg-primary/5 p-3">
+              <div className="mb-4 rounded border border-border bg-neutral-50 p-3">
                 <p className="text-xs font-semibold text-secondary">Cloud Drive Links</p>
-                {cloudDriveLinks.map((link, index) => <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs text-primary underline">Cloud drive link {index + 1}</a>)}
+                {cloudDriveLinks.map((link, index) => <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs text-text underline">Cloud drive link {index + 1}</a>)}
               </div>
             )}
             <UploadedFileList files={fileUrls} />
@@ -319,11 +319,11 @@ function SectionCard({
   onCancel?: () => void
 }) {
   return (
-    <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
+    <div className="rounded-card border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between border-b border-border pb-2">
         <h2 className="text-sm font-semibold text-secondary">{title}</h2>
         {!hideEdit && !editing ? (
-          <button type="button" onClick={onEdit} className="text-xs text-primary hover:underline">
+          <button type="button" onClick={onEdit} className="text-xs text-text hover:underline">
             <Pencil className="inline h-3.5 w-3.5" /> Edit
           </button>
         ) : !hideEdit && editing ? (

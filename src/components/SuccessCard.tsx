@@ -8,7 +8,7 @@ export function SuccessCard({ orderNo }: SuccessCardProps) {
   return (
     <div
       role="status"
-      className="rounded-card border border-green-200 bg-green-50 p-6 text-center shadow-sm"
+      className="rounded-card border border-green-200 bg-green-50 p-6 text-center"
     >
       <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-600" aria-hidden />
       <h2 className="text-lg font-semibold text-green-800">Order submitted successfully!</h2>

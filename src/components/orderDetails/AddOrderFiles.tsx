@@ -146,9 +146,9 @@ export function AddOrderFiles({
           setIsDragging(false)
           addFiles(Array.from(event.dataTransfer.files))
         }}
-        className={`flex min-h-28 flex-col items-center justify-center rounded-card border-2 border-dashed px-3 py-4 text-center focus:outline-none focus:ring-2 focus:ring-primary/30 ${isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'} ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-bg hover:border-primary'}`}
+        className={`flex min-h-28 flex-col items-center justify-center rounded-card border-2 border-dashed px-3 py-4 text-center focus:outline-none focus:ring-2 focus:ring-text/10 ${isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'} ${isDragging ? 'border-text bg-neutral-50' : 'border-border bg-bg hover:border-neutral-400'}`}
       >
-        <UploadCloud className="h-5 w-5 text-primary" aria-hidden />
+        <UploadCloud className="h-5 w-5 text-text" aria-hidden />
         <p className="mt-1.5 text-xs font-semibold text-text">{label}</p>
         <p className="mt-0.5 text-[10px] text-text-muted">Drop files here or browse</p>
         <p className="mt-1.5 text-[9px] leading-4 text-text-muted">{CASE_FILE_FORMAT_DESCRIPTION}</p>
@@ -166,7 +166,7 @@ export function AddOrderFiles({
             {entry.status === 'error' && <p className="mt-0.5 truncate text-[9px] text-red-600">{entry.error}</p>}
           </div>
           {entry.status === 'error' && <>
-            <button type="button" onClick={() => void uploadEntries([entry])} className="text-primary" title="Retry"><RotateCcw className="h-3.5 w-3.5" /><span className="sr-only">Retry {entry.file.name}</span></button>
+            <button type="button" onClick={() => void uploadEntries([entry])} className="text-text" title="Retry"><RotateCcw className="h-3.5 w-3.5" /><span className="sr-only">Retry {entry.file.name}</span></button>
             <button type="button" onClick={() => setQueue((current) => current.filter((item) => item.slotId !== entry.slotId))} className="text-text-muted hover:text-red-600" title="Remove"><X className="h-3.5 w-3.5" /><span className="sr-only">Remove {entry.file.name}</span></button>
           </>}
         </div>)}

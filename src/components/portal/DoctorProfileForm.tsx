@@ -77,7 +77,7 @@ export function DoctorProfileForm() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-xl font-semibold text-text">My Profile</h1>
       <p className="mb-6 text-sm text-text-muted">Contact details and saved clinic delivery addresses for new orders.</p>
-      <form onSubmit={save} className="space-y-6 rounded-card border border-border bg-surface p-5 shadow-sm">
+      <form onSubmit={save} className="space-y-6 rounded-card border border-border bg-surface p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           {(['fullName', 'email', 'phone'] as const).map((key) => (
             <label key={key} className="block text-sm font-medium">
@@ -100,7 +100,7 @@ export function DoctorProfileForm() {
               {!editable && <p className="mt-1 text-xs text-text-muted">These clinics are shared with your linked doctor.</p>}
             </div>
             {clinicEditable && (
-              <button type="button" onClick={addClinic} title="Add clinic" className="inline-flex h-8 w-8 items-center justify-center rounded-card border border-border text-primary hover:border-primary">
+              <button type="button" onClick={addClinic} title="Add clinic" className="inline-flex h-8 w-8 items-center justify-center rounded-card border border-border text-text hover:border-neutral-400">
                 <Plus className="h-4 w-4" />
               </button>
             )}
@@ -126,7 +126,7 @@ export function DoctorProfileForm() {
           </div>
         </div>
 
-        {message && <p className="text-sm text-primary">{message}</p>}
+        {message && <p className="text-sm text-text">{message}</p>}
         {(editable || clinicEditable) && <button type="submit" className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15]">Save Profile</button>}
       </form>
     </div>

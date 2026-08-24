@@ -34,13 +34,13 @@ export function FinalProductionFiles({ orderId, orderNo, files, canUpload, onFil
   }, [preview])
 
   return (
-    <section className="rounded-card border border-border bg-surface p-4 shadow-sm">
+    <section className="rounded-card border border-border bg-surface p-4">
       <h2 className="mb-3 border-b border-border pb-2 text-sm font-semibold text-secondary">Final Production Files</h2>
       <div className="space-y-2">
         {entries.map(([slotId, url]) => {
           const filename = getFilenameFromUrl(url) ?? slotId
           const image = isImageUrl(url)
-          const rowClass = 'flex w-full min-w-0 items-center gap-2 rounded border border-border px-3 py-2 text-left text-sm text-primary hover:bg-bg'
+          const rowClass = 'flex w-full min-w-0 items-center gap-2 rounded border border-border px-3 py-2 text-left text-sm text-text hover:bg-bg'
 
           return image ? (
             <button key={slotId} type="button" onClick={() => setPreview({ url, filename })} className={rowClass}>
@@ -79,11 +79,11 @@ export function FinalProductionFiles({ orderId, orderNo, files, canUpload, onFil
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
           onMouseDown={(event) => { if (event.target === event.currentTarget) setPreview(null) }}
         >
-          <div className="relative flex max-h-[92vh] w-full max-w-4xl flex-col rounded-card bg-surface p-4 shadow-xl">
+          <div className="relative flex max-h-[92vh] w-full max-w-4xl flex-col rounded-card border border-border bg-surface p-4">
             <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
               <p className="truncate text-sm font-semibold text-text">{preview.filename}</p>
               <div className="flex shrink-0 items-center gap-2">
-                <a href={preview.url} target="_blank" rel="noopener noreferrer" className="rounded p-2 text-primary hover:bg-bg" title="Download file">
+                <a href={preview.url} target="_blank" rel="noopener noreferrer" className="rounded p-2 text-text hover:bg-bg" title="Download file">
                   <Download className="h-4 w-4" />
                   <span className="sr-only">Download {preview.filename}</span>
                 </a>

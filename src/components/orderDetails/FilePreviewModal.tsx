@@ -42,7 +42,7 @@ export function FilePreviewModal({ file, onClose }: { file: PreviewFile; onClose
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4"
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}
     >
-      <div className="flex max-h-[96vh] w-full max-w-5xl flex-col overflow-hidden rounded-card bg-surface shadow-xl sm:max-h-[92vh]">
+      <div className="flex max-h-[96vh] w-full max-w-5xl flex-col overflow-hidden rounded-card border border-border bg-surface sm:max-h-[92vh]">
         <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{file.filename}</p>
           <div className="flex shrink-0 items-center gap-1">
@@ -52,7 +52,7 @@ export function FilePreviewModal({ file, onClose }: { file: PreviewFile; onClose
                 <span className="sr-only">Reset 3D view</span>
               </button>
             )}
-            <a href={file.url} target="_blank" rel="noopener noreferrer" className="rounded p-2 text-primary hover:bg-bg" title="Download file">
+            <a href={file.url} target="_blank" rel="noopener noreferrer" className="rounded p-2 text-text hover:bg-bg" title="Download file">
               <Download className="h-4 w-4" aria-hidden />
               <span className="sr-only">Download {file.filename}</span>
             </a>

@@ -83,7 +83,7 @@ export function DoctorOrdersTable() {
 
       {error && <p className="mb-4 rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
 
-      <section className="mb-6 overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+      <section className="mb-6 overflow-hidden rounded-card border border-border bg-surface">
         <div className="border-b border-border bg-bg px-4 py-3">
           <h2 className="text-sm font-semibold text-text">Saved Drafts</h2>
         </div>
@@ -100,7 +100,7 @@ export function DoctorOrdersTable() {
                     {' - '}Saved {new Date(draft.updatedAt).toLocaleString()}
                   </p>
                 </div>
-                <Link href={`/portal/drafts/${draft.id}`} className="text-sm font-medium text-primary hover:underline">Continue</Link>
+                <Link href={`/portal/drafts/${draft.id}`} className="text-sm font-medium text-text hover:underline">Continue</Link>
                 <button type="button" onClick={() => deleteDraft(draft.id)} className="text-sm text-text-muted hover:text-red-600">Delete</button>
               </div>
             ))}
@@ -108,7 +108,7 @@ export function DoctorOrdersTable() {
         )}
       </section>
 
-      <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+      <div className="overflow-hidden rounded-card border border-border bg-surface">
         <table className="w-full">
           <thead className="border-b border-border bg-bg">
             <tr>
@@ -127,7 +127,7 @@ export function DoctorOrdersTable() {
                 <td className="px-4 py-3 text-sm text-text-muted">{order.treatmentType ?? '—'}</td>
                 <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
                 <td className="px-4 py-3 text-sm text-text-muted">{new Date(order.createdAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-right"><Link href={`/portal/orders/${order.id}`} className="text-sm font-medium text-primary hover:underline">View</Link></td>
+                <td className="px-4 py-3 text-right"><Link href={`/portal/orders/${order.id}`} className="text-sm font-medium text-text hover:underline">View</Link></td>
               </tr>
             ))}
           </tbody>

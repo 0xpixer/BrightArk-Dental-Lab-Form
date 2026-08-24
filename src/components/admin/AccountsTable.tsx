@@ -134,7 +134,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+      <div className="overflow-hidden rounded-card border border-border bg-surface">
         <table className="w-full">
           <thead className="border-b border-border bg-bg">
             <tr>
@@ -208,7 +208,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                           type="button"
                           disabled={pendingAccountId === acc.id}
                           onClick={() => toggleActive(acc.id, acc.isActive)}
-                          className="rounded border border-border px-2 py-1 text-xs hover:border-primary disabled:opacity-60"
+                          className="rounded border border-border px-2 py-1 text-xs hover:border-neutral-400 disabled:opacity-60"
                         >
                           {acc.isActive ? 'Deactivate' : 'Activate'}
                         </button>
@@ -233,7 +233,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
 
       {resetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-card bg-surface p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-card border border-border bg-surface p-6">
             <h2 className="mb-4 text-lg font-semibold">Reset Password — {resetModal.username}</h2>
             {tempPassword ? (
               <div>

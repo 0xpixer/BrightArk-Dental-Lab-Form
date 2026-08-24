@@ -27,7 +27,7 @@ export function InstructionsSection({ register, watch, onTitleClick, embedded }:
           maxLength={MAX_CHARS}
           placeholder="Add any special instructions, notes, or clinical details here..."
           {...register('instructions')}
-          className="w-full resize-y rounded-card border border-border bg-grey-input px-3 py-2 text-sm text-text outline-none transition-[border-color,box-shadow] duration-brand ease-in-out focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+          className="w-full resize-y rounded-card border border-border bg-grey-input px-3 py-2 text-sm text-text outline-none transition-[border-color,box-shadow] duration-brand ease-in-out focus:border-text focus:ring-2 focus:ring-text/10"
         />
         <span className="absolute bottom-2 right-3 text-xs text-text-muted" aria-live="polite">
           {count}/{MAX_CHARS}

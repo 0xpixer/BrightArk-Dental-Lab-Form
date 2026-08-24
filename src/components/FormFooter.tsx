@@ -5,7 +5,7 @@ export function FormFooter() {
         © BrightArk |{' '}
         <a
           href="mailto:cs@theBrightArk.com"
-          className="text-text underline decoration-primary decoration-2 underline-offset-2 transition-colors hover:text-primary"
+          className="text-text underline decoration-text decoration-2 underline-offset-2 transition-colors hover:text-text"
         >
           cs@theBrightArk.com
         </a>{' '}

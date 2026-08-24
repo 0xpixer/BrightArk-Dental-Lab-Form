@@ -79,7 +79,7 @@ export function OverviewDashboard() {
               <select
                 value={doctorId}
                 onChange={(event) => setDoctorId(event.target.value)}
-                className="min-w-48 rounded-card border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="min-w-48 rounded-card border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"
               >
                 <option value="all">All doctors</option>
                 {data.doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}
@@ -93,7 +93,7 @@ export function OverviewDashboard() {
                 type="button"
                 onClick={() => setGranularity(option)}
                 aria-pressed={granularity === option}
-                className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${granularity === option ? 'bg-primary text-white' : 'text-text-muted hover:text-text'}`}
+                className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${granularity === option ? 'bg-text text-white' : 'text-text-muted hover:text-text'}`}
               >
                 {option === 'week' ? 'Weekly' : 'Monthly'}
               </button>
@@ -117,7 +117,7 @@ export function OverviewDashboard() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-        <section className="rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
+        <section className="rounded-card border border-border bg-surface p-4 sm:p-5">
           <div className="mb-5">
             <h2 className="text-sm font-semibold text-text">Order Status</h2>
             <p className="mt-1 text-xs text-text-muted">Current status across all matching orders</p>
@@ -149,7 +149,7 @@ export function OverviewDashboard() {
           </div>
         </section>
 
-        <section className="rounded-card border border-border bg-surface p-4 shadow-sm sm:p-5">
+        <section className="rounded-card border border-border bg-surface p-4 sm:p-5">
           <div className="mb-5 flex items-start justify-between gap-3">
             <div><h2 className="text-sm font-semibold text-text">Order Volume</h2><p className="mt-1 text-xs text-text-muted">{data?.metrics.periodLabel ?? (granularity === 'week' ? 'Last 8 weeks' : 'Last 6 months')}</p></div>
             <p className="text-xs text-text-muted">Submitted orders</p>
@@ -168,7 +168,7 @@ export function OverviewDashboard() {
                       <span className="text-[10px] font-semibold tabular-nums text-text-muted">{point.count}</span>
                       <div className="flex h-[calc(100%-38px)] w-full items-end justify-center">
                         <div
-                          className="w-full max-w-12 rounded-t bg-primary transition-[height] duration-300"
+                          className="w-full max-w-12 rounded-t bg-text transition-[height] duration-300"
                           style={{ height: point.count > 0 ? `${Math.max(7, point.count / maxTrend * 100)}%` : '2px', opacity: point.count > 0 ? 1 : 0.22 }}
                           title={`${point.label}: ${point.count} orders`}
                         />
@@ -187,15 +187,15 @@ export function OverviewDashboard() {
 }
 
 const TONES = {
-  orange: 'bg-orange-50 text-orange-700',
-  blue: 'bg-blue-50 text-blue-700',
-  green: 'bg-green-50 text-green-700',
-  pink: 'bg-pink-50 text-pink-700',
+  orange: 'bg-bg text-text',
+  blue: 'bg-bg text-text',
+  green: 'bg-bg text-text',
+  pink: 'bg-bg text-text',
 } as const
 
 function MetricCard({ label, value, icon: Icon, tone, loading }: { label: string; value?: number; icon: typeof PackageSearch; tone: keyof typeof TONES; loading: boolean }) {
   return (
-    <section className="rounded-card border border-border bg-surface p-4 shadow-sm">
+    <section className="rounded-card border border-border bg-surface p-4">
       <div className={`mb-3 grid h-8 w-8 place-items-center rounded ${TONES[tone]}`}><Icon className="h-4 w-4" aria-hidden /></div>
       <p className="text-xs font-medium text-text-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p>

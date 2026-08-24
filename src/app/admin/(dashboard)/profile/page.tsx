@@ -51,7 +51,7 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-md">
       <h1 className="mb-6 text-xl font-semibold text-text">My Profile</h1>
 
-      <div className="mb-6 rounded-card border border-border bg-surface p-6 shadow-sm">
+      <div className="mb-6 rounded-card border border-border bg-surface p-6">
         <dl className="space-y-2 text-sm">
           <div>
             <dt className="text-text-muted">Username</dt>
@@ -68,7 +68,7 @@ export default function ProfilePage() {
         </dl>
       </div>
 
-      <div className="rounded-card border border-border bg-surface p-6 shadow-sm">
+      <div className="rounded-card border border-border bg-surface p-6">
         <h2 className="mb-4 text-sm font-semibold text-secondary">Change Password</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

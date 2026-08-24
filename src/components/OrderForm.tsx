@@ -369,7 +369,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
       )}
 
       {isAutoSaving && (
-        <div role="status" className="fixed right-4 top-4 z-50 rounded-full bg-pink-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
+        <div role="status" className="fixed right-4 top-4 z-50 rounded-full bg-pink-500 px-3 py-1.5 text-xs font-semibold text-white">
           Auto saving
         </div>
       )}
@@ -417,7 +417,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
                   key={step.id}
                   type="button"
                   onClick={() => goToStep(step.step)}
-                  className="flex w-full items-center justify-between rounded-card border border-border bg-surface px-4 py-3 text-left text-sm font-semibold text-text-muted shadow-sm transition-colors hover:border-primary hover:text-primary"
+                  className="flex w-full items-center justify-between rounded-card border border-border bg-surface px-4 py-3 text-left text-sm font-semibold text-text-muted transition-colors hover:border-neutral-400 hover:text-text"
                   aria-expanded={false}
                   aria-controls={step.id}
                 >
@@ -429,12 +429,12 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
           </div>
 
           {currentStep ? (
-            <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
                 onClick={() => goToStep(Math.max((activeStep ?? 1) - 1, 1))}
                 disabled={isFirstStep}
-                className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-neutral-400 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Previous
               </button>
@@ -453,14 +453,14 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
                 <button
                   type="button"
                   onClick={() => goToStep(1)}
-                  className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
+                  className="rounded-card border border-border px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-neutral-400 hover:text-text"
                 >
                   Back to Start
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-card border border-border bg-surface p-3 text-center text-xs font-medium text-text-muted shadow-sm">
+            <div className="rounded-card border border-border bg-surface p-3 text-center text-xs font-medium text-text-muted">
               Select a folded section above to continue.
             </div>
           )}
