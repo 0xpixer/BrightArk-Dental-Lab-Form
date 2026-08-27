@@ -47,12 +47,12 @@ interface Order {
   createdAt: string
 }
 
-export function OrderDetailView({ orderId, canUpdateStatus, canEdit }: { orderId: string; canUpdateStatus: boolean; canEdit: boolean }) {
+export function OrderDetailView({ orderId, canUpdateStatus, canEdit, openMessages = false }: { orderId: string; canUpdateStatus: boolean; canEdit: boolean; openMessages?: boolean }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
-  const [messagesOpen, setMessagesOpen] = useState(false)
+  const [messagesOpen, setMessagesOpen] = useState(openMessages)
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [draft, setDraft] = useState<Partial<Order>>({})
   const [activities, setActivities] = useState<OrderActivityItem[]>([])

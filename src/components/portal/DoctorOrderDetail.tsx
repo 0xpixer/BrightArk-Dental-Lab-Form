@@ -26,10 +26,10 @@ interface Order {
   status: string
 }
 
-export function DoctorOrderDetail({ orderId }: { orderId: string }) {
+export function DoctorOrderDetail({ orderId, openMessages = false }: { orderId: string; openMessages?: boolean }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [messagesOpen, setMessagesOpen] = useState(false)
+  const [messagesOpen, setMessagesOpen] = useState(openMessages)
   const [activities, setActivities] = useState<OrderActivityItem[]>([])
   const load = useCallback(async () => {
     const response = await fetch(`/api/portal/orders/${orderId}`)

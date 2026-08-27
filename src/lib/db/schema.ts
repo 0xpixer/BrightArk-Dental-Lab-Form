@@ -7,6 +7,7 @@ import {
   date,
   jsonb,
   integer,
+  index,
   primaryKey,
 } from 'drizzle-orm/pg-core'
 
@@ -99,7 +100,9 @@ export const orderMessages = pgTable('order_messages', {
   imageUrl: text('image_url'),
   imageName: text('image_name'),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-})
+}, (table) => ({
+  latestByOrderIdx: index('order_messages_latest_by_order_idx').on(table.orderId, table.createdAt, table.id),
+}))
 
 export const orderMessageReads = pgTable('order_message_reads', {
   orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),

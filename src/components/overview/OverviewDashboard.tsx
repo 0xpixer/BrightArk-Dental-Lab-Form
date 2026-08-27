@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Clock3, ClockAlert, Factory, PackageSearch, RefreshCw, RotateCcw, Truck } from 'lucide-react'
+import { ChevronRight, Clock3, ClockAlert, Factory, MessageCircle, PackageSearch, RefreshCw, RotateCcw, Truck } from 'lucide-react'
 import {
   ORDER_STATUS_CHART_COLORS,
   ORDER_STATUS_LABELS,
@@ -21,6 +21,7 @@ interface OverviewData {
   canFilterDoctors: boolean
   selectedDoctorId: number | null
   doctors: Array<{ id: number; name: string }>
+  newMessages: Array<{ orderId: number; orderNo: string; patientName: string; latestMessageAt: string }>
   generatedAt: string
 }
 
@@ -129,14 +130,14 @@ export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
         <MetricCard label="Re-Do" value={statusCounts?.redo} icon={RotateCcw} loading={loading} href={`${ordersPath}?status=redo`} />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
+      <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(300px,0.9fr)_minmax(0,1.35fr)_minmax(250px,0.8fr)]">
         <section className="rounded-card border border-border bg-surface p-4 sm:p-5">
           <div className="mb-5">
             <h2 className="text-sm font-semibold text-text">Order Status</h2>
             <p className="mt-1 text-xs text-text-muted">Current status across all matching orders</p>
           </div>
-          <div className="grid items-center gap-6 sm:grid-cols-[180px_1fr] xl:grid-cols-1 2xl:grid-cols-[180px_1fr]">
-            <div className="relative mx-auto aspect-square w-44" role="group" aria-label="Interactive order status distribution">
+          <div className="grid items-center gap-4 sm:grid-cols-[180px_1fr] xl:grid-cols-[140px_minmax(0,1fr)]">
+            <div className="relative mx-auto aspect-square w-44 xl:w-36" role="group" aria-label="Interactive order status distribution">
               <svg viewBox="0 0 176 176" className="h-full w-full -rotate-90" aria-hidden="false">
                 <circle cx="88" cy="88" r="70" fill="none" stroke="#e5e5e5" strokeWidth="24" />
                 {statusSegments.map((segment) => segment.count > 0 && (
@@ -214,6 +215,52 @@ export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
                     </div>
                   ))}
             </div>
+          </div>
+        </section>
+
+        <section className="flex min-h-0 flex-col rounded-card border border-border bg-surface p-4 sm:p-5">
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-text">New Messages</h2>
+              <p className="mt-1 text-xs text-text-muted">Orders awaiting your review</p>
+            </div>
+            {!loading && data && data.newMessages.length > 0 && (
+              <span className="grid h-6 min-w-6 place-items-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white" aria-label={`${data.newMessages.length} orders with new messages`}>
+                {data.newMessages.length}
+              </span>
+            )}
+          </div>
+          <div className="h-64 overflow-y-auto rounded border border-border" aria-live="polite">
+            {loading ? (
+              <div className="space-y-1 p-2">
+                {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-12 animate-pulse rounded bg-bg" />)}
+              </div>
+            ) : (data?.newMessages.length ?? 0) === 0 ? (
+              <div className="grid h-full place-items-center px-4 text-center">
+                <div>
+                  <MessageCircle className="mx-auto h-6 w-6 text-text-muted" aria-hidden />
+                  <p className="mt-2 text-sm font-medium text-text">No new messages</p>
+                  <p className="mt-1 text-xs text-text-muted">You are up to date.</p>
+                </div>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {data!.newMessages.map((order) => (
+                  <li key={order.orderId}>
+                    <Link href={`${ordersPath}/${order.orderId}?messages=open`} className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-3 hover:bg-bg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-text/10">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-2 text-xs font-semibold text-text">
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden />
+                          <span className="truncate">{order.orderNo}</span>
+                        </p>
+                        <p className="mt-1 truncate pl-4 text-xs text-text-muted">{order.patientName}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-text-muted" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
       </div>

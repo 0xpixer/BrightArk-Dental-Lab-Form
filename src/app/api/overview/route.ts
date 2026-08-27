@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import { and, asc, eq, isNull, or } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, or } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, orders } from '@/lib/db/schema'
 import { requireSession } from '@/lib/admin/session'
 import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { buildOverviewMetrics, type OverviewGranularity } from '@/lib/overviewMetrics'
+import { latestOrderMessageAt, unreadLatestOrderMessageCondition } from '@/lib/orderUnread'
 
 function doctorOrderCondition(doctorId: number, email?: string | null) {
   return email
@@ -52,7 +53,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const [rows, doctorRows] = await Promise.all([
+  const latestMessageAt = latestOrderMessageAt()
+  const [rows, doctorRows, newMessages] = await Promise.all([
     db
       .select({ status: orders.status, createdAt: orders.createdAt, statusUpdatedAt: orders.statusUpdatedAt })
       .from(orders)
@@ -64,6 +66,16 @@ export async function GET(request: Request) {
           .where(and(eq(adminUsers.role, 'doctor'), eq(adminUsers.isActive, true)))
           .orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
       : Promise.resolve([]),
+    db
+      .select({
+        orderId: orders.id,
+        orderNo: orders.orderNo,
+        patientName: orders.patientName,
+        latestMessageAt,
+      })
+      .from(orders)
+      .where(and(accessCondition, unreadLatestOrderMessageCondition(userId)))
+      .orderBy(desc(latestMessageAt)),
   ])
 
   return NextResponse.json({
@@ -72,6 +84,7 @@ export async function GET(request: Request) {
     canFilterDoctors: role === 'superadmin',
     selectedDoctorId,
     doctors: doctorRows.map((doctor) => ({ id: doctor.id, name: doctor.fullName || doctor.username })),
+    newMessages,
     generatedAt: new Date().toISOString(),
   })
 }

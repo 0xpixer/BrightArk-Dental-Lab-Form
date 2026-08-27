@@ -1,0 +1,1 @@
+CREATE INDEX "order_messages_latest_by_order_idx" ON "order_messages" USING btree ("order_id","created_at","id");
