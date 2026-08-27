@@ -39,7 +39,7 @@ export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
     try {
       const params = new URLSearchParams({ granularity })
       if (doctorId !== 'all') params.set('doctorId', doctorId)
-      const response = await fetch(`/api/overview?${params}`)
+      const response = await fetch(`/api/overview?${params}`, { cache: 'no-store' })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error ?? 'Unable to load overview')
       setData(payload)
@@ -70,6 +70,12 @@ export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
   const totals = data?.metrics.totals
   const statusCounts = data?.metrics.statusCounts
   const hoveredSegment = statusSegments.find((segment) => segment.value === hoveredStatus)
+
+  const dismissNewMessage = (orderId: number) => {
+    setData((current) => current
+      ? { ...current, newMessages: current.newMessages.filter((order) => order.orderId !== orderId) }
+      : current)
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
@@ -247,7 +253,11 @@ export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
               <ul className="divide-y divide-border">
                 {data!.newMessages.map((order) => (
                   <li key={order.orderId}>
-                    <Link href={`${ordersPath}/${order.orderId}?messages=open`} className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-3 hover:bg-bg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-text/10">
+                    <Link
+                      href={`${ordersPath}/${order.orderId}?messages=open`}
+                      onClick={() => dismissNewMessage(order.orderId)}
+                      className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-3 hover:bg-bg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-text/10"
+                    >
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 text-xs font-semibold text-text">
                           <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden />
