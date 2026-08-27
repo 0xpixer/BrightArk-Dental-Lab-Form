@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
@@ -50,7 +50,10 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     .where(eq(orderMessages.orderId, orderId))
     .orderBy(asc(orderMessages.createdAt), asc(orderMessages.id))
 
-  const readAt = messages[messages.length - 1]?.createdAt ?? new Date()
+  const latestMessage = messages[messages.length - 1]
+  const readAt = latestMessage
+    ? sql<Date>`(select ${orderMessages.createdAt} from ${orderMessages} where ${orderMessages.id} = ${latestMessage.id})`
+    : sql<Date>`now()`
   await db.insert(orderMessageReads).values({ orderId, userId, readAt }).onConflictDoUpdate({
     target: [orderMessageReads.orderId, orderMessageReads.userId],
     set: { readAt },
