@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Save, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Save, Trash2 } from 'lucide-react'
 import { ShareLinkModal } from './ShareLinkModal'
 import { isOrderStatusOverdue, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS, ORDER_STATUS_STYLES } from '@/lib/orderStatus'
 import { ORDER_NOTE_MAX_LENGTH } from '@/lib/orderActivity'
@@ -19,10 +19,12 @@ interface OrderRow {
   hasUnreadMessage: boolean
 }
 
-export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, initialStatus = 'all' }: { canUpdateStatus: boolean; canEditNotes: boolean; canDelete: boolean; initialStatus?: string }) {
+const STATUS_FILTER_OPTIONS = [...ORDER_STATUS_OPTIONS, { value: 'overdue', label: 'Overdue' }] as const
+
+export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, initialStatuses = [] }: { canUpdateStatus: boolean; canEditNotes: boolean; canDelete: boolean; initialStatuses?: string[] }) {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState(initialStatus)
+  const [statuses, setStatuses] = useState<string[]>(initialStatuses)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -43,7 +45,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
       sortBy,
       sortDir,
     })
-    if (status !== 'all') params.set('status', status)
+    statuses.forEach((status) => params.append('status', status))
     if (search) params.set('search', search)
 
     const res = await fetch(`/api/admin/orders?${params}`)
@@ -51,7 +53,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
     setOrders(data.orders ?? [])
     setTotalPages(data.pagination?.totalPages ?? 1)
     setLoading(false)
-  }, [page, status, search, sortBy, sortDir])
+  }, [page, statuses, search, sortBy, sortDir])
 
   useEffect(() => {
     const t = setTimeout(fetchOrders, search ? 300 : 0)
@@ -160,10 +162,23 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
 
   const exportSubmissions = () => {
     const params = new URLSearchParams({ sortBy, sortDir })
-    if (status !== 'all') params.set('status', status)
+    statuses.forEach((status) => params.append('status', status))
     if (search) params.set('search', search)
     window.location.href = `/api/admin/orders/export?${params}`
   }
+
+  const toggleStatusFilter = (status: string) => {
+    setStatuses((current) => current.includes(status)
+      ? current.filter((value) => value !== status)
+      : [...current, status])
+    setPage(1)
+  }
+
+  const statusFilterLabel = statuses.length === 0
+    ? 'All statuses'
+    : statuses.length === 1
+      ? STATUS_FILTER_OPTIONS.find((option) => option.value === statuses[0])?.label ?? '1 status'
+      : `${statuses.length} statuses`
 
   const SortHeader = ({ col, label }: { col: string; label: string }) => (
     <th
@@ -209,20 +224,35 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                 <SortHeader col="orderNo" label="Order ID" />
                 <SortHeader col="dentist" label="Doctor Name" />
                 <SortHeader col="patientName" label="Patient Name" />
-                <th className="px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
-                  <select
-                    value={status}
-                    onChange={(event) => {
-                      setStatus(event.target.value)
-                      setPage(1)
-                    }}
-                    aria-label="Filter submissions by status"
-                    className="w-full min-w-32 rounded border border-border bg-surface px-2 py-1 text-xs font-medium normal-case text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"
-                  >
-                    <option value="all">All statuses</option>
-                    {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                    <option value="overdue">Overdue</option>
-                  </select>
+                <th className="relative px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
+                  <details className="group relative w-full min-w-36 normal-case">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-text outline-none focus:ring-2 focus:ring-text/10 [&::-webkit-details-marker]:hidden">
+                      <span className="truncate">{statusFilterLabel}</span>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+                    </summary>
+                    <div className="absolute left-0 top-full z-30 mt-1 w-52 rounded-card border border-border bg-surface p-1.5 text-xs font-normal text-text">
+                      <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 hover:bg-bg">
+                        <input type="checkbox" checked={statuses.length === 0} onChange={() => { setStatuses([]); setPage(1) }} className="sr-only" />
+                        <span className={`grid h-4 w-4 place-items-center rounded border ${statuses.length === 0 ? 'border-text bg-text text-white' : 'border-border'}`}>
+                          {statuses.length === 0 && <Check className="h-3 w-3" aria-hidden />}
+                        </span>
+                        All statuses
+                      </label>
+                      <div className="my-1 border-t border-border" />
+                      {STATUS_FILTER_OPTIONS.map((option) => {
+                        const checked = statuses.includes(option.value)
+                        return (
+                          <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 hover:bg-bg">
+                            <input type="checkbox" checked={checked} onChange={() => toggleStatusFilter(option.value)} className="sr-only" />
+                            <span className={`grid h-4 w-4 place-items-center rounded border ${checked ? 'border-text bg-text text-white' : 'border-border'}`}>
+                              {checked && <Check className="h-3 w-3" aria-hidden />}
+                            </span>
+                            {option.label}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </details>
                 </th>
                 <SortHeader col="statusUpdatedAt" label="Update Time" />
                 <SortHeader col="createdAt" label="Submitted" />

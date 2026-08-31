@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { KeyRound } from 'lucide-react'
+import { KeyRound, Save } from 'lucide-react'
 import { Toast } from './Toast'
 import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
 
 interface Account {
   id: number
   username: string
+  fullName: string | null
   role: string
   linkedDoctorId: number | null
   isActive: boolean
@@ -28,6 +29,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const [toast, setToast] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pendingAccountId, setPendingAccountId] = useState<number | null>(null)
+  const [actorNameDrafts, setActorNameDrafts] = useState<Record<number, string>>({})
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
@@ -94,6 +96,30 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     fetchAccounts()
   }
 
+  const updateActorName = async (account: Account) => {
+    const fullName = (actorNameDrafts[account.id] ?? account.fullName ?? account.username).trim()
+    setPendingAccountId(account.id)
+    setError(null)
+    const res = await fetch(`/api/admin/accounts/${account.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fullName }),
+    })
+    const data = await res.json()
+    setPendingAccountId(null)
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to update actor name')
+      return
+    }
+    setActorNameDrafts((current) => {
+      const next = { ...current }
+      delete next[account.id]
+      return next
+    })
+    setToast('Actor name updated')
+    fetchAccounts()
+  }
+
   const resetPassword = async () => {
     if (!resetModal || !newPassword) return
     setError(null)
@@ -134,11 +160,11 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
-        <table className="w-full">
+      <div className="overflow-x-auto rounded-card border border-border bg-surface">
+        <table className="w-full min-w-[1080px]">
           <thead className="border-b border-border bg-bg">
             <tr>
-              {['Username', 'Role', 'Linked Doctor', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
+              {['Username', 'Actor Name', 'Role', 'Linked Doctor', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">
                   {h}
                 </th>
@@ -148,13 +174,13 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-text-muted">
                   Loading…
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-red-600">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-red-600">
                   {error}
                 </td>
               </tr>
@@ -162,6 +188,27 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
               accounts.map((acc) => (
                 <tr key={acc.id} className="border-b border-border last:border-0 hover:bg-bg/50">
                   <td className="px-4 py-3 text-sm font-medium">{acc.username}</td>
+                  <td className="w-52 px-4 py-3">
+                    <form onSubmit={(event) => { event.preventDefault(); updateActorName(acc) }} className="flex items-center gap-1">
+                      <input
+                        value={actorNameDrafts[acc.id] ?? acc.fullName ?? acc.username}
+                        maxLength={100}
+                        onChange={(event) => setActorNameDrafts((current) => ({ ...current, [acc.id]: event.target.value }))}
+                        className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1 text-xs"
+                        aria-label={`Actor name for ${acc.username}`}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={pendingAccountId === acc.id || (actorNameDrafts[acc.id] ?? acc.fullName ?? acc.username).trim() === (acc.fullName ?? acc.username)}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded text-text hover:bg-bg disabled:pointer-events-none disabled:opacity-20"
+                        title="Save actor name"
+                      >
+                        <Save className="h-3.5 w-3.5" />
+                        <span className="sr-only">Save actor name for {acc.username}</span>
+                      </button>
+                    </form>
+                  </td>
                   <td className="px-4 py-3 text-sm">
                     {acc.id === currentUserId ? (
                       <span className="font-medium">{formatAdminRole(acc.role)}</span>

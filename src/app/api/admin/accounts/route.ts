@@ -5,17 +5,19 @@ import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
+import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
 
 export async function GET() {
-  const { error } = await requireSuperadmin()
+  const { session, error } = await requireSuperadmin()
   if (error) return error
 
   const db = getDb()
   const users = await db.select().from(adminUsers).orderBy(desc(adminUsers.createdAt))
-  const usernameById = new Map(users.map((u) => [u.id, u.username]))
+  const visibleUsers = users.filter((user) => canViewAccount(session!.user.username, user.username))
+  const usernameById = new Map(visibleUsers.map((user) => [user.id, user.username]))
 
   return NextResponse.json({
-    accounts: users.map((u) => ({
+    accounts: visibleUsers.map((u) => ({
       id: u.id,
       username: u.username,
       email: u.email,
@@ -24,12 +26,12 @@ export async function GET() {
       role: u.role,
       linkedDoctorId: u.linkedDoctorId,
       isActive: u.isActive,
-      createdBy: u.createdBy,
+      createdBy: u.createdBy && usernameById.has(u.createdBy) ? u.createdBy : null,
       createdByUsername: u.createdBy ? usernameById.get(u.createdBy) ?? null : null,
       createdAt: u.createdAt,
       lastLoginAt: u.lastLoginAt,
     })),
-    doctors: users.filter((u) => u.role === 'doctor').map((u) => ({ id: u.id, name: u.fullName ?? u.username })),
+    doctors: visibleUsers.filter((u) => u.role === 'doctor').map((u) => ({ id: u.id, name: u.fullName ?? u.username })),
   })
 }
 
@@ -39,9 +41,14 @@ export async function POST(request: Request) {
 
   const body = await request.json()
   const { username, password, role, linkedDoctorId } = body
+  const parsedName = normalizeActorName(body.fullName)
 
   if (!username || !password) {
     return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
+  }
+
+  if (parsedName.error) {
+    return NextResponse.json({ error: parsedName.error }, { status: 400 })
   }
 
   if (!isAccountRole(role)) {
@@ -82,6 +89,7 @@ export async function POST(request: Request) {
     .insert(adminUsers)
     .values({
       username,
+      fullName: parsedName.value,
       passwordHash,
       role,
       linkedDoctorId: linkedDoctor,
@@ -91,6 +99,7 @@ export async function POST(request: Request) {
     .returning({
       id: adminUsers.id,
       username: adminUsers.username,
+      fullName: adminUsers.fullName,
       role: adminUsers.role,
       linkedDoctorId: adminUsers.linkedDoctorId,
     })

@@ -4,6 +4,7 @@ import { getDb } from '@/lib/db/client'
 import { adminUsers, doctorClinics } from '@/lib/db/schema'
 import { requirePortalUser } from '@/lib/admin/session'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
+import { normalizeActorName } from '@/lib/admin/accountIdentity'
 
 type ClinicInput = { id?: number; name: string; address: string }
 
@@ -27,10 +28,19 @@ export async function GET() {
   const ownerId = await getOrderOwnerId(userId, session!.user.role)
   if (!ownerId) return NextResponse.json({ error: 'Clinic staff is not linked to a doctor' }, { status: 403 })
 
-  const profile = await getDoctorProfile(ownerId)
+  const db = getDb()
+  const [profile, [account]] = await Promise.all([
+    getDoctorProfile(ownerId),
+    db.select({ fullName: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(eq(adminUsers.id, userId)).limit(1),
+  ])
   if (!profile) return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 })
+  if (!account) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  return NextResponse.json({ profile, editable: session!.user.role === 'doctor', clinicEditable: true })
+  return NextResponse.json({
+    profile: { ...profile, actorName: account.fullName || account.username },
+    editable: session!.user.role === 'doctor',
+    clinicEditable: true,
+  })
 }
 
 export async function PATCH(request: Request) {
@@ -42,6 +52,9 @@ export async function PATCH(request: Request) {
   if (!ownerId) return NextResponse.json({ error: 'Clinic staff is not linked to a doctor' }, { status: 403 })
 
   const body = await request.json()
+  const parsedActorName = normalizeActorName(session!.user.role === 'doctor' ? body.fullName : body.actorName)
+  if (parsedActorName.error) return NextResponse.json({ error: parsedActorName.error }, { status: 400 })
+
   const clinics = parseClinics(body.clinics)
   if (!clinics) {
     return NextResponse.json({ error: 'Add at least one clinic with its delivery address' }, { status: 400 })
@@ -84,7 +97,7 @@ export async function PATCH(request: Request) {
     await db
       .update(adminUsers)
       .set({
-        fullName,
+        fullName: parsedActorName.value,
         email,
         username: email,
         phone: typeof body.phone === 'string' ? body.phone.trim() || null : null,
@@ -93,12 +106,18 @@ export async function PATCH(request: Request) {
       })
       .where(eq(adminUsers.id, ownerId))
   } else {
-    await db
-      .update(adminUsers)
-      .set({ clinicName: primaryClinic.name, address: primaryClinic.address })
-      .where(eq(adminUsers.id, ownerId))
+    await Promise.all([
+      db
+        .update(adminUsers)
+        .set({ clinicName: primaryClinic.name, address: primaryClinic.address })
+        .where(eq(adminUsers.id, ownerId)),
+      db
+        .update(adminUsers)
+        .set({ fullName: parsedActorName.value })
+        .where(eq(adminUsers.id, userId)),
+    ])
   }
 
   const profile = await getDoctorProfile(ownerId)
-  return NextResponse.json({ success: true, profile })
+  return NextResponse.json({ success: true, profile: profile && { ...profile, actorName: parsedActorName.value } })
 }

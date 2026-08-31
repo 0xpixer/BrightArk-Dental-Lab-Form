@@ -6,6 +6,7 @@ import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 import { ORDER_STATUS_VALUES } from '@/lib/orderStatus'
 import { normalizeOrderNote } from '@/lib/orderActivity'
+import { getOrderActivityActorName } from '@/lib/orderActivityActor'
 
 export async function GET(
   _request: Request,
@@ -106,7 +107,7 @@ export async function PATCH(
   }
 
   const actorId = Number(session!.user.id)
-  const actorName = session!.user.name || session!.user.username || (isSuperadmin ? 'Superadmin' : 'Lab Admin')
+  const actorName = await getOrderActivityActorName(actorId, isSuperadmin ? 'Superadmin' : 'Lab Admin')
   const activities = []
   if (statusChanged) {
     activities.push({ orderId: id, eventType: 'status', detail: body.status, actorId, actorRole: session!.user.role, actorName })

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isDeliveredReadyForCompletion, isOrderStatusOverdue, normalizeOrderStatusFilter, ORDER_STATUS_OPTIONS } from './orderStatus'
+import { isDeliveredReadyForCompletion, isOrderStatusOverdue, normalizeOrderStatusFilter, normalizeOrderStatusFilters, ORDER_STATUS_OPTIONS } from './orderStatus'
 
 test('keeps the requested status workflow order', () => {
   assert.deepEqual(ORDER_STATUS_OPTIONS.map((option) => option.label), [
@@ -21,6 +21,12 @@ test('normalizes status links and allows the derived overdue filter', () => {
   assert.equal(normalizeOrderStatusFilter('overdue'), 'overdue')
   assert.equal(normalizeOrderStatusFilter(['shipped', 'pending']), 'shipped')
   assert.equal(normalizeOrderStatusFilter('unknown'), 'all')
+})
+
+test('normalizes multiple unique status filters', () => {
+  assert.deepEqual(normalizeOrderStatusFilters(['pending', 'shipped', 'pending']), ['pending', 'shipped'])
+  assert.deepEqual(normalizeOrderStatusFilters('delivered,overdue,unknown'), ['delivered', 'overdue'])
+  assert.deepEqual(normalizeOrderStatusFilters('all'), [])
 })
 
 test('completes delivered orders once their status is 14 days old', () => {

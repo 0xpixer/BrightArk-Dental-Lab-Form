@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
+import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
 
 export async function PATCH(
   request: Request,
@@ -18,20 +19,27 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid account ID' }, { status: 400 })
   }
 
+  const body = await request.json()
   const currentUserId = parseInt(session!.user.id, 10)
-  if (id === currentUserId) {
-    return NextResponse.json({ error: 'Cannot modify your own account via this endpoint' }, { status: 400 })
+  const isSelf = id === currentUserId
+  if (isSelf && Object.keys(body).some((field) => field !== 'fullName')) {
+    return NextResponse.json({ error: 'Use My Profile to change your own account settings' }, { status: 400 })
   }
 
-  const body = await request.json()
   const db = getDb()
   const [existing] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1)
 
-  if (!existing) {
+  if (!existing || !canViewAccount(session!.user.username, existing.username)) {
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })
   }
 
   const updateData: Partial<typeof adminUsers.$inferInsert> = {}
+
+  if (body.fullName !== undefined) {
+    const parsedName = normalizeActorName(body.fullName)
+    if (parsedName.error) return NextResponse.json({ error: parsedName.error }, { status: 400 })
+    updateData.fullName = parsedName.value
+  }
 
   if (body.isActive !== undefined) {
     updateData.isActive = Boolean(body.isActive)
@@ -89,6 +97,7 @@ export async function PATCH(
     .returning({
       id: adminUsers.id,
       username: adminUsers.username,
+      fullName: adminUsers.fullName,
       role: adminUsers.role,
       linkedDoctorId: adminUsers.linkedDoctorId,
       isActive: adminUsers.isActive,

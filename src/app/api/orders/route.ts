@@ -7,6 +7,7 @@ import { parseOrderSubmission } from '@/lib/orderSubmission'
 import { requireAdmin, requireSession } from '@/lib/admin/session'
 import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
+import { getOrderActivityActorName } from '@/lib/orderActivityActor'
 
 function todayOrderPrefix(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -96,13 +97,15 @@ export async function POST(request: Request) {
       id: orders.id,
       orderNo: orders.orderNo,
     })
+    const actorId = Number(session!.user.id)
+    const actorName = await getOrderActivityActorName(actorId, session!.user.username || 'User')
     await db.insert(orderActivities).values({
       orderId: inserted.id,
       eventType: 'status',
       detail: 'pending',
-      actorId: Number(session!.user.id),
+      actorId,
       actorRole: session!.user.role,
-      actorName: session!.user.name || session!.user.username || 'User',
+      actorName,
     })
 
     return NextResponse.json(

@@ -5,23 +5,45 @@ import { Toast } from '@/components/admin/Toast'
 import { formatAdminRole } from '@/lib/admin/roles'
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<{ username: string; role: string } | null>(null)
+  const [profile, setProfile] = useState<{ username: string; role: string; fullName: string } | null>(null)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [actorError, setActorError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [savingName, setSavingName] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/session')
+    fetch('/api/admin/profile')
       .then((r) => r.json())
       .then((data) => {
-        if (data?.user) {
-          setProfile({ username: data.user.username, role: data.user.role })
+        if (data?.profile) {
+          setProfile(data.profile)
         }
       })
   }, [])
+
+  const updateActorName = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!profile) return
+    setActorError(null)
+    setSavingName(true)
+    const response = await fetch('/api/admin/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fullName: profile.fullName }),
+    })
+    const data = await response.json()
+    setSavingName(false)
+    if (!response.ok) {
+      setActorError(data.error ?? 'Failed to update actor name')
+      return
+    }
+    setProfile(data.profile)
+    setToast('Actor name updated')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,6 +88,24 @@ export default function ProfilePage() {
             </dd>
           </div>
         </dl>
+      </div>
+
+      <div className="mb-6 rounded-card border border-border bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold text-secondary">Actor Name</h2>
+        <p className="mb-4 text-xs text-text-muted">Shown beside status and note history entries.</p>
+        <form onSubmit={updateActorName} className="space-y-3">
+          <input
+            value={profile?.fullName ?? ''}
+            onChange={(event) => setProfile((current) => current ? { ...current, fullName: event.target.value } : current)}
+            maxLength={100}
+            className="w-full rounded-card border border-border px-3 py-2 text-sm"
+            required
+          />
+          {actorError && <p className="text-sm text-red-600">{actorError}</p>}
+          <button type="submit" disabled={!profile || savingName} className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15] disabled:opacity-60">
+            {savingName ? 'Saving…' : 'Save Actor Name'}
+          </button>
+        </form>
       </div>
 
       <div className="rounded-card border border-border bg-surface p-6">

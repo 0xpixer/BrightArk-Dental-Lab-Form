@@ -5,6 +5,7 @@ import { Plus, Trash2 } from 'lucide-react'
 
 type Clinic = { id?: number; name: string; address: string }
 type Profile = {
+  actorName: string
   fullName: string
   clinicName: string
   email: string
@@ -14,7 +15,7 @@ type Profile = {
 }
 
 const PROFILE_LABELS = {
-  fullName: 'Full Name',
+  fullName: 'Actor Name',
   email: 'Email',
   phone: 'Phone',
 } as const
@@ -44,6 +45,10 @@ export function DoctorProfileForm() {
 
   const change = (key: 'fullName' | 'email' | 'phone', value: string) => {
     setProfile((current) => current ? { ...current, [key]: value } : current)
+  }
+
+  const changeActorName = (value: string) => {
+    setProfile((current) => current ? { ...current, actorName: value } : current)
   }
 
   const updateClinic = (index: number, key: 'name' | 'address', value: string) => {
@@ -78,6 +83,19 @@ export function DoctorProfileForm() {
       <h1 className="mb-1 text-xl font-semibold text-text">My Profile</h1>
       <p className="mb-6 text-sm text-text-muted">Contact details and saved clinic delivery addresses for new orders.</p>
       <form onSubmit={save} className="space-y-6 rounded-card border border-border bg-surface p-5">
+        {!editable && (
+          <label className="block max-w-sm text-sm font-medium">
+            <span className="mb-1 block">Actor Name</span>
+            <input
+              value={profile.actorName}
+              maxLength={100}
+              onChange={(event) => changeActorName(event.target.value)}
+              className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm"
+              required
+            />
+            <span className="mt-1 block text-xs font-normal text-text-muted">Shown beside status and note history entries.</span>
+          </label>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           {(['fullName', 'email', 'phone'] as const).map((key) => (
             <label key={key} className="block text-sm font-medium">
@@ -87,6 +105,8 @@ export function DoctorProfileForm() {
                 value={profile[key] ?? ''}
                 onChange={(event) => change(key, event.target.value)}
                 disabled={!editable}
+                maxLength={key === 'fullName' ? 100 : undefined}
+                required={editable && (key === 'fullName' || key === 'email')}
                 className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm disabled:opacity-60"
               />
             </label>

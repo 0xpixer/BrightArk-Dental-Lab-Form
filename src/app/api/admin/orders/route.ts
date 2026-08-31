@@ -5,7 +5,7 @@ import { orders } from '@/lib/db/schema'
 import { requireAdmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 import { hasUnreadOrderMessage } from '@/lib/orderUnread'
-import { ORDER_STATUS_DUE_MS, ORDER_STATUS_VALUES, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
+import { normalizeOrderStatusFilters, ORDER_STATUS_DUE_MS, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
 
 export async function GET(request: Request) {
   const { session, error } = await requireAdmin()
@@ -15,21 +15,20 @@ export async function GET(request: Request) {
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)))
   const offset = (page - 1) * limit
-  const status = searchParams.get('status')
+  const statuses = normalizeOrderStatusFilters(searchParams.getAll('status'))
   const search = searchParams.get('search')?.trim()
   const sortBy = searchParams.get('sortBy') ?? 'createdAt'
   const sortDir = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc'
 
   const conditions = []
-  if (status && status !== 'all') {
-    if (status === 'overdue') {
-      conditions.push(and(
+  if (statuses.length > 0) {
+    const statusConditions = statuses.map((status) => status === 'overdue'
+      ? and(
         notInArray(orders.status, ORDER_TERMINAL_STATUSES),
         lte(orders.statusUpdatedAt, new Date(Date.now() - ORDER_STATUS_DUE_MS)),
-      )!)
-    } else if (ORDER_STATUS_VALUES.has(status)) {
-      conditions.push(eq(orders.status, status))
-    }
+      )!
+      : eq(orders.status, status))
+    conditions.push(or(...statusConditions)!)
   }
   if (search) {
     const pattern = `%${search}%`

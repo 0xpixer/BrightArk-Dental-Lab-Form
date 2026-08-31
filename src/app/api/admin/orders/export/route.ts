@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/admin/session'
 import { generateSubmissionsWorkbook } from '@/lib/admin/generateSubmissionsWorkbook'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
-import { ORDER_STATUS_DUE_MS, ORDER_STATUS_LABELS, ORDER_STATUS_VALUES, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
+import { normalizeOrderStatusFilters, ORDER_STATUS_DUE_MS, ORDER_STATUS_LABELS, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
 
 export const runtime = 'nodejs'
 
@@ -19,20 +19,19 @@ export async function GET(request: Request) {
   if (error) return error
 
   const { searchParams } = new URL(request.url)
-  const status = searchParams.get('status')
+  const statuses = normalizeOrderStatusFilters(searchParams.getAll('status'))
   const search = searchParams.get('search')?.trim()
   const sortBy = searchParams.get('sortBy') ?? 'createdAt'
   const sortDirection = searchParams.get('sortDir') === 'asc' ? asc : desc
   const conditions = []
-  if (status && status !== 'all') {
-    if (status === 'overdue') {
-      conditions.push(and(
+  if (statuses.length > 0) {
+    const statusConditions = statuses.map((status) => status === 'overdue'
+      ? and(
         notInArray(orders.status, ORDER_TERMINAL_STATUSES),
         lte(orders.statusUpdatedAt, new Date(Date.now() - ORDER_STATUS_DUE_MS)),
-      )!)
-    } else if (ORDER_STATUS_VALUES.has(status)) {
-      conditions.push(eq(orders.status, status))
-    }
+      )!
+      : eq(orders.status, status))
+    conditions.push(or(...statusConditions)!)
   }
   if (search) {
     const pattern = `%${search}%`

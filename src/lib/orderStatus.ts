@@ -23,6 +23,14 @@ export function normalizeOrderStatusFilter(value: string | string[] | undefined)
   return status && ORDER_STATUS_FILTER_VALUES.has(status) ? status : 'all'
 }
 
+export function normalizeOrderStatusFilters(value: string | string[] | undefined): string[] {
+  const values = (Array.isArray(value) ? value : value ? [value] : [])
+    .flatMap((status) => status.split(','))
+    .map((status) => status.trim())
+    .filter((status) => status !== 'all' && ORDER_STATUS_FILTER_VALUES.has(status))
+  return [...new Set(values)]
+}
+
 export const ORDER_STATUS_STYLES: Record<string, string> = {
   pending: 'border-yellow-200 bg-yellow-100 text-yellow-800',
   lab_designing: 'border-cyan-200 bg-cyan-100 text-cyan-800',

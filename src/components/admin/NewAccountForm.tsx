@@ -8,6 +8,7 @@ import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/ro
 export function NewAccountForm() {
   const router = useRouter()
   const [username, setUsername] = useState('')
+  const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [role, setRole] = useState<AccountRole>('admin')
@@ -40,7 +41,7 @@ export function NewAccountForm() {
     const res = await fetch('/api/admin/accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role, linkedDoctorId }),
+      body: JSON.stringify({ username, fullName, password, role, linkedDoctorId }),
     })
     const data = await res.json()
     setLoading(false)
@@ -86,6 +87,19 @@ export function NewAccountForm() {
                 className="w-full rounded-card border border-border px-3 py-2 text-sm"
                 required
               />
+            </div>
+
+            <div>
+              <label htmlFor="fullName" className="mb-1 block text-xs font-medium">Actor Name</label>
+              <input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                maxLength={100}
+                className="w-full rounded-card border border-border px-3 py-2 text-sm"
+                required
+              />
+              <p className="mt-1 text-xs text-text-muted">Shown beside status and note history entries.</p>
             </div>
 
             <div>
