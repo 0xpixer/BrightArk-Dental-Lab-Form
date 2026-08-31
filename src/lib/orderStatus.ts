@@ -6,11 +6,13 @@ export const ORDER_STATUS_OPTIONS = [
   { value: 'delivered', label: 'Delivered' },
   { value: 'redo', label: 'Re-Do' },
   { value: 'completed', label: 'Completed' },
+  { value: 'canceled', label: 'Canceled' },
 ] as const
 
 export type OrderStatus = (typeof ORDER_STATUS_OPTIONS)[number]['value']
 
 export const ORDER_STATUS_VALUES = new Set<string>(ORDER_STATUS_OPTIONS.map((option) => option.value))
+export const ORDER_TERMINAL_STATUSES: string[] = ['completed', 'canceled']
 export const ORDER_STATUS_FILTER_VALUES = new Set<string>(['all', 'overdue', ...ORDER_STATUS_VALUES])
 export const ORDER_STATUS_LABELS: Record<string, string> = Object.fromEntries(
   ORDER_STATUS_OPTIONS.map((option) => [option.value, option.label]),
@@ -29,6 +31,7 @@ export const ORDER_STATUS_STYLES: Record<string, string> = {
   delivered: 'border-teal-200 bg-teal-100 text-teal-800',
   redo: 'border-pink-200 bg-pink-100 text-pink-800',
   completed: 'border-green-200 bg-green-100 text-green-800',
+  canceled: 'border-neutral-300 bg-neutral-100 text-neutral-700',
 }
 
 export const ORDER_STATUS_CHART_COLORS: Record<string, string> = {
@@ -39,13 +42,18 @@ export const ORDER_STATUS_CHART_COLORS: Record<string, string> = {
   delivered: '#14b8a6',
   redo: '#ec4899',
   completed: '#22c55e',
+  canceled: '#737373',
 }
 
 export const ORDER_STATUS_DUE_MS = 3 * 24 * 60 * 60 * 1000
 export const DELIVERED_AUTO_COMPLETE_MS = 14 * 24 * 60 * 60 * 1000
 
+export function isTerminalOrderStatus(status: string): boolean {
+  return ORDER_TERMINAL_STATUSES.some((terminalStatus) => terminalStatus === status)
+}
+
 export function isOrderStatusOverdue(status: string, statusUpdatedAt: string | Date, now = new Date()): boolean {
-  if (status === 'completed') return false
+  if (isTerminalOrderStatus(status)) return false
   const updatedAt = new Date(statusUpdatedAt)
   if (Number.isNaN(updatedAt.getTime())) return false
   return now.getTime() - updatedAt.getTime() >= ORDER_STATUS_DUE_MS

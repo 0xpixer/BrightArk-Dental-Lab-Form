@@ -1,4 +1,4 @@
-import { isOrderStatusOverdue, ORDER_STATUS_OPTIONS } from './orderStatus'
+import { isOrderStatusOverdue, isTerminalOrderStatus, ORDER_STATUS_OPTIONS } from './orderStatus'
 
 export type OverviewGranularity = 'week' | 'month'
 
@@ -66,7 +66,7 @@ export function buildOverviewMetrics(
   }
 
   const completed = statusCounts.completed ?? 0
-  const active = orders.length - completed
+  const active = orders.filter((order) => !isTerminalOrderStatus(order.status)).length
   const overdue = orders.filter((order) => isOrderStatusOverdue(order.status, order.statusUpdatedAt, now)).length
 
   return {

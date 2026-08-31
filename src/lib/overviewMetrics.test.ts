@@ -8,15 +8,17 @@ const orders = [
   { status: 'completed', createdAt: '2026-08-10T02:00:00.000Z', statusUpdatedAt: '2026-08-12T00:00:00.000Z' },
   { status: 'redo', createdAt: '2026-07-15T02:00:00.000Z', statusUpdatedAt: '2026-08-23T00:00:00.000Z' },
   { status: 'in_production', createdAt: '2026-01-10T02:00:00.000Z', statusUpdatedAt: '2026-08-22T00:00:00.000Z' },
+  { status: 'canceled', createdAt: '2026-01-11T02:00:00.000Z', statusUpdatedAt: '2026-01-11T00:00:00.000Z' },
 ]
 
 test('builds all-time status totals and overdue counts', () => {
   const metrics = buildOverviewMetrics(orders, 'month', now)
 
-  assert.deepEqual(metrics.totals, { all: 4, active: 3, completed: 1, overdue: 1 })
+  assert.deepEqual(metrics.totals, { all: 5, active: 3, completed: 1, overdue: 1 })
   assert.equal(metrics.statusCounts.pending, 1)
   assert.equal(metrics.statusCounts.completed, 1)
   assert.equal(metrics.statusCounts.redo, 1)
+  assert.equal(metrics.statusCounts.canceled, 1)
 })
 
 test('groups recent order volume into weekly and monthly buckets', () => {

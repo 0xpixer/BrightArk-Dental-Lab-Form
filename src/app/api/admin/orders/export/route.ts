@@ -1,10 +1,10 @@
-import { and, asc, desc, eq, ilike, lte, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, lte, notInArray, or } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin/session'
 import { generateSubmissionsWorkbook } from '@/lib/admin/generateSubmissionsWorkbook'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
-import { ORDER_STATUS_DUE_MS, ORDER_STATUS_LABELS, ORDER_STATUS_VALUES } from '@/lib/orderStatus'
+import { ORDER_STATUS_DUE_MS, ORDER_STATUS_LABELS, ORDER_STATUS_VALUES, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
 
 export const runtime = 'nodejs'
 
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   if (status && status !== 'all') {
     if (status === 'overdue') {
       conditions.push(and(
-        ne(orders.status, 'completed'),
+        notInArray(orders.status, ORDER_TERMINAL_STATUSES),
         lte(orders.statusUpdatedAt, new Date(Date.now() - ORDER_STATUS_DUE_MS)),
       )!)
     } else if (ORDER_STATUS_VALUES.has(status)) {
