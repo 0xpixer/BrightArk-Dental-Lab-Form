@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ClipboardList, LayoutDashboard, Users, UserCircle, LogOut, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, Users, UserCircle, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine } from 'lucide-react'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 
@@ -13,12 +13,21 @@ interface AdminSidebarProps {
   role: string
 }
 
-const NAV = [
-  { href: '/admin/overview', label: 'Overview', icon: LayoutDashboard, roles: ['admin', 'superadmin'] },
-  { href: '/admin/submissions', label: 'Submissions', icon: ClipboardList, roles: ['admin', 'superadmin'] },
-  { href: '/', label: 'New Order', icon: Plus, roles: ['admin', 'superadmin'] },
-  { href: '/admin/accounts', label: 'Accounts', icon: Users, roles: ['superadmin'] },
-  { href: '/admin/profile', label: 'My Profile', icon: UserCircle, roles: ['admin', 'superadmin'] },
+const NAV_GROUPS = [
+  { label: null, items: [
+    { href: '/admin/overview', label: 'Overview', icon: LayoutDashboard, roles: ['admin', 'superadmin'] },
+  ] },
+  { label: 'Dental Lab Orders', items: [
+    { href: '/admin/submissions', label: 'Submissions', icon: ClipboardList, roles: ['admin', 'superadmin'] },
+    { href: '/', label: 'New Order', icon: Plus, roles: ['admin', 'superadmin'] },
+  ] },
+  { label: 'iDesign', items: [
+    { href: '/admin/idesign/orders', label: 'Orders', icon: ScanLine, roles: ['superadmin'] },
+  ] },
+  { label: 'Administration', items: [
+    { href: '/admin/accounts', label: 'Accounts', icon: Users, roles: ['superadmin'] },
+    { href: '/admin/profile', label: 'My Profile', icon: UserCircle, roles: ['admin', 'superadmin'] },
+  ] },
 ]
 
 export function AdminSidebar({ username, role }: AdminSidebarProps) {
@@ -45,25 +54,23 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 p-2">
-        {NAV.filter((item) => item.roles.includes(role)).map((item) => {
-          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={item.label}
-              className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors duration-brand ${showLabels ? 'md:justify-start md:px-3' : ''} ${
-                active
-                  ? 'bg-[#f0f0f0] text-text'
-                  : 'text-text-muted hover:bg-bg hover:text-text'
-              }`}
-            >
-              <Icon className="h-[18px] w-[18px] shrink-0" />
-              {showLabels && <span className="hidden truncate md:inline">{item.label}</span>}
-            </Link>
-          )
+      <nav className="flex-1 space-y-3 overflow-y-auto p-2">
+        {NAV_GROUPS.map((group) => {
+          const items = group.items.filter((item) => item.roles.includes(role))
+          if (items.length === 0) return null
+          return <div key={group.label ?? 'main'} className="space-y-1">
+            {group.label && (showLabels
+              ? <p className="hidden px-3 pb-1 pt-2 text-[10px] font-semibold uppercase text-text-muted md:block">{group.label}</p>
+              : <div className="mx-2 border-t border-border" aria-hidden />)}
+            {items.map((item) => {
+              const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+              const Icon = item.icon
+              return <Link key={item.href} href={item.href} title={group.label ? `${group.label}: ${item.label}` : item.label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors duration-brand ${showLabels ? 'md:justify-start md:px-3' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}>
+                <Icon className="h-[18px] w-[18px] shrink-0" />
+                {showLabels && <span className="hidden truncate md:inline">{item.label}</span>}
+              </Link>
+            })}
+          </div>
         })}
       </nav>
 

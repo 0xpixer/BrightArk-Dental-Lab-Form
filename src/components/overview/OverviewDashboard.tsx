@@ -25,7 +25,7 @@ interface OverviewData {
   generatedAt: string
 }
 
-export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
+export function OverviewDashboard({ ordersPath, title = 'Overview' }: { ordersPath: string; title?: string }) {
   const [granularity, setGranularity] = useState<OverviewGranularity>('month')
   const [doctorId, setDoctorId] = useState('all')
   const [data, setData] = useState<OverviewData | null>(null)
@@ -81,7 +81,7 @@ export function OverviewDashboard({ ordersPath }: { ordersPath: string }) {
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text">Overview</h1>
+          <h1 className="text-xl font-semibold text-text">{title}</h1>
           <p className="mt-1 text-sm text-text-muted">{data?.scopeLabel ?? 'Order performance and current workload'}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

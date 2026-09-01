@@ -36,6 +36,13 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/admin/submissions', req.url))
   }
 
+  if (
+    pathname.startsWith('/admin/idesign') &&
+    req.auth.user?.role !== 'superadmin'
+  ) {
+    return NextResponse.redirect(new URL('/admin/overview', req.url))
+  }
+
   return NextResponse.next()
 })
 

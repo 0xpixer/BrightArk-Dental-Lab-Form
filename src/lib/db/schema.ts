@@ -71,6 +71,49 @@ export const orders = pgTable('orders', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const idesignOrders = pgTable('idesign_orders', {
+  id: serial('id').primaryKey(),
+  sourceKey: text('source_key').unique(),
+  salespersonName: text('salesperson_name').notNull(),
+  salesAccountId: integer('sales_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  country: text('country').notNull(),
+  patientName: text('patient_name').notNull(),
+  caseId: text('case_id'),
+  sourceUpdatedOn: date('source_updated_on', { mode: 'string' }),
+  sourceCreatedOn: date('source_created_on', { mode: 'string' }),
+  doctorName: text('doctor_name').notNull(),
+  doctorAccountId: integer('doctor_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  latestProgress: text('latest_progress').notNull(),
+  category: text('category').notNull(),
+  purchasedProducts: text('purchased_products'),
+  originalCurrency: text('original_currency'),
+  originalPrice: text('original_price'),
+  discount: text('discount'),
+  totalAmount: text('total_amount'),
+  paymentCurrency: text('payment_currency'),
+  actualPayment: text('actual_payment'),
+  paymentStatus: text('payment_status').notNull(),
+  invoiceNo: text('invoice_no'),
+  invoiceDate: date('invoice_date', { mode: 'string' }),
+  paymentDate: date('payment_date', { mode: 'string' }),
+  shippedDate: date('shipped_date', { mode: 'string' }),
+  trackingNo: text('tracking_no'),
+  deliveredDate: date('delivered_date', { mode: 'string' }),
+  totalSteps: text('total_steps'),
+  producedSteps: text('produced_steps'),
+  salesCommissionRate: text('sales_commission_rate'),
+  attributedMonth: text('attributed_month'),
+  salesCommission: text('sales_commission'),
+  createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  categoryIdx: index('idesign_orders_category_idx').on(table.category),
+  progressIdx: index('idesign_orders_progress_idx').on(table.latestProgress),
+  doctorNameIdx: index('idesign_orders_doctor_name_idx').on(table.doctorName),
+  createdOnIdx: index('idesign_orders_created_on_idx').on(table.sourceCreatedOn),
+}))
+
 export const orderActivities = pgTable('order_activities', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
@@ -132,6 +175,8 @@ export const larkNotifications = pgTable('lark_notifications', {
 
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
+export type IDesignOrder = typeof idesignOrders.$inferSelect
+export type NewIDesignOrder = typeof idesignOrders.$inferInsert
 export type OrderDraft = typeof orderDrafts.$inferSelect
 export type OrderMessage = typeof orderMessages.$inferSelect
 export type OrderMessageRead = typeof orderMessageReads.$inferSelect
