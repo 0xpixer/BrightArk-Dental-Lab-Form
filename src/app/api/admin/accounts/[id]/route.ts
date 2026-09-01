@@ -22,15 +22,15 @@ export async function PATCH(
   const body = await request.json()
   const currentUserId = parseInt(session!.user.id, 10)
   const isSelf = id === currentUserId
-  if (isSelf && Object.keys(body).some((field) => field !== 'fullName')) {
-    return NextResponse.json({ error: 'Use My Profile to change your own account settings' }, { status: 400 })
-  }
 
   const db = getDb()
   const [existing] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1)
 
   if (!existing || !canViewAccount(session!.user.username, existing.username)) {
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+  }
+  if (isSelf && Object.keys(body).some((field) => !['fullName', 'servedDoctorIds'].includes(field))) {
+    return NextResponse.json({ error: 'Use My Profile to change your own account settings' }, { status: 400 })
   }
 
   const updateData: Partial<typeof adminUsers.$inferInsert> = {}
@@ -129,16 +129,31 @@ export async function PATCH(
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })
   }
 
+  let persistedServedDoctorIds: number[] = []
   if (nextRole !== 'sales') {
     await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.salesId, id))
   } else if (servedDoctorIds !== undefined) {
-    await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.salesId, id))
-    if (servedDoctorIds.length > 0) {
-      await db.insert(salesDoctorAssignments).values(servedDoctorIds.map((doctorId) => ({
+    const currentAssignments = await db
+      .select({ doctorId: salesDoctorAssignments.doctorId })
+      .from(salesDoctorAssignments)
+      .where(eq(salesDoctorAssignments.salesId, id))
+    const currentDoctorIds = new Set(currentAssignments.map((assignment) => assignment.doctorId))
+    const requestedDoctorIds = new Set(servedDoctorIds)
+    const doctorIdsToRemove = [...currentDoctorIds].filter((doctorId) => !requestedDoctorIds.has(doctorId))
+    const doctorIdsToAdd = servedDoctorIds.filter((doctorId) => !currentDoctorIds.has(doctorId))
+
+    if (doctorIdsToRemove.length > 0) {
+      await db.delete(salesDoctorAssignments).where(and(
+        eq(salesDoctorAssignments.salesId, id),
+        inArray(salesDoctorAssignments.doctorId, doctorIdsToRemove),
+      ))
+    }
+    if (doctorIdsToAdd.length > 0) {
+      await db.insert(salesDoctorAssignments).values(doctorIdsToAdd.map((doctorId) => ({
         salesId: id,
         doctorId,
         assignedBy: currentUserId,
-      })))
+      }))).onConflictDoNothing()
     }
   }
   if (nextRole !== 'doctor') {
@@ -151,9 +166,23 @@ export async function PATCH(
     await db.update(idesignOrders).set({ doctorAccountId: null, assignmentUpdatedBy: currentUserId, assignmentUpdatedAt: new Date() }).where(eq(idesignOrders.doctorAccountId, id))
   }
 
+  if (nextRole === 'sales') {
+    const persistedAssignments = await db
+      .select({ doctorId: salesDoctorAssignments.doctorId })
+      .from(salesDoctorAssignments)
+      .where(eq(salesDoctorAssignments.salesId, id))
+    persistedServedDoctorIds = persistedAssignments.map((assignment) => assignment.doctorId)
+    if (servedDoctorIds !== undefined && (
+      persistedServedDoctorIds.length !== servedDoctorIds.length
+      || servedDoctorIds.some((doctorId) => !persistedServedDoctorIds.includes(doctorId))
+    )) {
+      return NextResponse.json({ error: 'The served doctor scope could not be saved. Please try again.' }, { status: 500 })
+    }
+  }
+
   return NextResponse.json({
     success: true,
-    account: updated,
+    account: { ...updated, servedDoctorIds: persistedServedDoctorIds },
     temporaryPassword: body.password ?? undefined,
   })
 }

@@ -137,13 +137,19 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       setError(data.error ?? 'Failed to update served doctors')
       return
     }
+    const persistedIds = Array.isArray(data.account?.servedDoctorIds)
+      ? data.account.servedDoctorIds.map(Number)
+      : servedDoctorIds
+    setAccounts((current) => current.map((candidate) => candidate.id === account.id
+      ? { ...candidate, servedDoctorIds: persistedIds }
+      : candidate))
     setServedDoctorDrafts((current) => {
       const next = { ...current }
       delete next[account.id]
       return next
     })
     setToast('Served doctors updated')
-    fetchAccounts()
+    await fetchAccounts()
   }
 
   const resetPassword = async () => {
@@ -262,7 +268,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                     ) : acc.role === 'sales' ? (
                       <details className="group min-w-44">
                         <summary className="flex cursor-pointer list-none items-center justify-between rounded border border-border bg-surface px-2 py-1 text-xs [&::-webkit-details-marker]:hidden">
-                          <span>{acc.servedDoctorIds.length} served doctor{acc.servedDoctorIds.length === 1 ? '' : 's'}</span>
+                          <span>{(servedDoctorDrafts[acc.id] ?? acc.servedDoctorIds).length} served doctor{(servedDoctorDrafts[acc.id] ?? acc.servedDoctorIds).length === 1 ? '' : 's'}</span>
                           <ChevronDown className="h-3.5 w-3.5 text-text-muted transition-transform group-open:rotate-180" />
                         </summary>
                         <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded border border-border bg-surface p-2">
