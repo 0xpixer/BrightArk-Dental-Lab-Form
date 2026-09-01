@@ -47,7 +47,7 @@ interface Order {
   createdAt: string
 }
 
-export function OrderDetailView({ orderId, canUpdateStatus, canEdit, openMessages = false }: { orderId: string; canUpdateStatus: boolean; canEdit: boolean; openMessages?: boolean }) {
+export function OrderDetailView({ orderId, canUpdateStatus, canEdit, canEditPendingOrder = false, canUploadProductionFiles, openMessages = false }: { orderId: string; canUpdateStatus: boolean; canEdit: boolean; canEditPendingOrder?: boolean; canUploadProductionFiles: boolean; openMessages?: boolean }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
@@ -116,6 +116,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit, openMessage
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {canEditPendingOrder && order.status === 'pending' && <Link href={`/admin/submissions/${orderId}/edit`} className="inline-flex items-center gap-1 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600"><Pencil className="h-4 w-4" /> Edit Order</Link>}
           {canUpdateStatus && (
             <select
               value={order.status}
@@ -266,7 +267,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit, openMessage
             orderId={order.id}
             orderNo={order.orderNo}
             files={productionFileUrls}
-            canUpload
+            canUpload={canUploadProductionFiles}
             onFilesAdded={fetchOrder}
           />
         </div>

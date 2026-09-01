@@ -1,10 +1,11 @@
 import { and, asc, desc, eq, ilike, lte, notInArray, or } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin/session'
+import { requireDashboardUser } from '@/lib/admin/session'
 import { generateSubmissionsWorkbook } from '@/lib/admin/generateSubmissionsWorkbook'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { normalizeOrderStatusFilters, ORDER_STATUS_DUE_MS, ORDER_STATUS_LABELS, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
+import { getDashboardOrderAccessCondition } from '@/lib/sales/access'
 
 export const runtime = 'nodejs'
 
@@ -15,7 +16,7 @@ function formatExportDate(value: Date): string {
 }
 
 export async function GET(request: Request) {
-  const { error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const { searchParams } = new URL(request.url)
@@ -24,6 +25,8 @@ export async function GET(request: Request) {
   const sortBy = searchParams.get('sortBy') ?? 'createdAt'
   const sortDirection = searchParams.get('sortDir') === 'asc' ? asc : desc
   const conditions = []
+  const accessCondition = await getDashboardOrderAccessCondition(Number(session!.user.id), session!.user.role)
+  if (accessCondition) conditions.push(accessCondition)
   if (statuses.length > 0) {
     const statusConditions = statuses.map((status) => status === 'overdue'
       ? and(

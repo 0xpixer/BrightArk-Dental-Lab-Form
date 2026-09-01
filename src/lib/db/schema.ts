@@ -36,6 +36,16 @@ export const doctorClinics = pgTable('doctor_clinics', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const salesDoctorAssignments = pgTable('sales_doctor_assignments', {
+  salesId: integer('sales_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  doctorId: integer('doctor_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  assignedBy: integer('assigned_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.salesId, table.doctorId] }),
+  doctorIdx: index('sales_doctor_assignments_doctor_idx').on(table.doctorId),
+}))
+
 export const orders = pgTable('orders', {
   id: serial('id').primaryKey(),
   orderNo: text('order_no').notNull().unique(),
@@ -69,7 +79,9 @@ export const orders = pgTable('orders', {
   notes: text('notes'),
   statusUpdatedAt: timestamp('status_updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-})
+}, (table) => ({
+  submittedByIdx: index('orders_submitted_by_idx').on(table.submittedBy),
+}))
 
 export const idesignOrders = pgTable('idesign_orders', {
   id: serial('id').primaryKey(),
@@ -104,6 +116,8 @@ export const idesignOrders = pgTable('idesign_orders', {
   salesCommissionRate: text('sales_commission_rate'),
   attributedMonth: text('attributed_month'),
   salesCommission: text('sales_commission'),
+  assignmentUpdatedBy: integer('assignment_updated_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  assignmentUpdatedAt: timestamp('assignment_updated_at', { withTimezone: true, mode: 'date' }),
   createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
@@ -112,6 +126,8 @@ export const idesignOrders = pgTable('idesign_orders', {
   progressIdx: index('idesign_orders_progress_idx').on(table.latestProgress),
   doctorNameIdx: index('idesign_orders_doctor_name_idx').on(table.doctorName),
   createdOnIdx: index('idesign_orders_created_on_idx').on(table.sourceCreatedOn),
+  salesAccountIdx: index('idesign_orders_sales_account_idx').on(table.salesAccountId),
+  doctorAccountIdx: index('idesign_orders_doctor_account_idx').on(table.doctorAccountId),
 }))
 
 export const orderActivities = pgTable('order_activities', {
@@ -183,5 +199,6 @@ export type OrderMessageRead = typeof orderMessageReads.$inferSelect
 export type OrderActivity = typeof orderActivities.$inferSelect
 export type AdminUser = typeof adminUsers.$inferSelect
 export type DoctorClinic = typeof doctorClinics.$inferSelect
+export type SalesDoctorAssignment = typeof salesDoctorAssignments.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect
 export type LarkNotification = typeof larkNotifications.$inferSelect

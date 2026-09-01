@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin/session'
+import { requireDashboardUser } from '@/lib/admin/session'
 import { normalizeActorName } from '@/lib/admin/accountIdentity'
 import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 
 export async function GET() {
-  const { session, error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const userId = Number(session!.user.id)
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const { session, error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const parsedName = normalizeActorName((await request.json().catch(() => null))?.fullName)

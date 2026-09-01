@@ -27,6 +27,7 @@ const BUBBLE_STYLES: Record<MessageAuthor, string> = {
   Doctor: 'border-green-200 bg-green-100 text-green-950',
   Lab: 'border-orange-200 bg-orange-100 text-orange-950',
   Admin: 'border-blue-200 bg-blue-100 text-blue-950',
+  Sales: 'border-teal-200 bg-teal-100 text-teal-950',
 }
 
 export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: number; orderNo: string; onClose: () => void }) {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { and, eq, desc } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers } from '@/lib/db/schema'
+import { adminUsers, salesDoctorAssignments } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
@@ -14,6 +14,7 @@ export async function GET() {
   const db = getDb()
   const users = await db.select().from(adminUsers).orderBy(desc(adminUsers.createdAt))
   const visibleUsers = users.filter((user) => canViewAccount(session!.user.username, user.username))
+  const salesAssignments = await db.select().from(salesDoctorAssignments)
   const usernameById = new Map(visibleUsers.map((user) => [user.id, user.username]))
 
   return NextResponse.json({
@@ -25,6 +26,7 @@ export async function GET() {
       clinicName: u.clinicName,
       role: u.role,
       linkedDoctorId: u.linkedDoctorId,
+      servedDoctorIds: salesAssignments.filter((assignment) => assignment.salesId === u.id).map((assignment) => assignment.doctorId),
       isActive: u.isActive,
       createdBy: u.createdBy && usernameById.has(u.createdBy) ? u.createdBy : null,
       createdByUsername: u.createdBy ? usernameById.get(u.createdBy) ?? null : null,

@@ -5,9 +5,10 @@ import { adminUsers, orderActivities, orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert } from '@/lib/transformOrder'
 import { parseOrderSubmission } from '@/lib/orderSubmission'
 import { requireAdmin, requireSession } from '@/lib/admin/session'
-import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
+import { isAdminRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { getOrderActivityActorName } from '@/lib/orderActivityActor'
+import { isDoctorAssignedToSales } from '@/lib/sales/access'
 
 function todayOrderPrefix(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
       if (!ownerId) {
         return NextResponse.json({ success: false, error: 'Clinic staff must be linked to a doctor before submitting orders' }, { status: 403 })
       }
-    } else if (isAdminRole(session!.user.role)) {
+    } else if (isAdminRole(session!.user.role) || isSalesRole(session!.user.role)) {
       const doctorId = Number(parsed.values.submittedForDoctorId)
       if (!Number.isInteger(doctorId) || doctorId <= 0) {
         return NextResponse.json({ success: false, error: 'Select the doctor this case is for' }, { status: 400 })
@@ -81,6 +82,9 @@ export async function POST(request: Request) {
         .limit(1)
       if (!doctor) {
         return NextResponse.json({ success: false, error: 'Selected doctor is unavailable' }, { status: 400 })
+      }
+      if (isSalesRole(session!.user.role) && !await isDoctorAssignedToSales(Number(session!.user.id), doctor.id)) {
+        return NextResponse.json({ success: false, error: 'This doctor is not assigned to your Sales account' }, { status: 403 })
       }
       ownerId = doctor.id
     } else {

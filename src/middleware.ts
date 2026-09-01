@@ -38,7 +38,7 @@ export default auth((req) => {
 
   if (
     pathname.startsWith('/admin/idesign') &&
-    req.auth.user?.role !== 'superadmin'
+    !['superadmin', 'sales'].includes(req.auth.user?.role ?? '')
   ) {
     return NextResponse.redirect(new URL('/admin/overview', req.url))
   }

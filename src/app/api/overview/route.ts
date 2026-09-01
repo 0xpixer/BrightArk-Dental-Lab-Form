@@ -3,10 +3,11 @@ import { and, asc, desc, eq, isNull, or } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, orders } from '@/lib/db/schema'
 import { requireSession } from '@/lib/admin/session'
-import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
+import { isAdminRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { buildOverviewMetrics, type OverviewGranularity } from '@/lib/overviewMetrics'
 import { latestOrderMessageAt, unreadLatestOrderMessageCondition } from '@/lib/orderUnread'
+import { getSalesDoctors, getSalesOrderAccessCondition } from '@/lib/sales/access'
 
 function doctorOrderCondition(doctorId: number, email?: string | null) {
   return email
@@ -49,6 +50,18 @@ export async function GET(request: Request) {
       accessCondition = doctorOrderCondition(doctor.id, doctor.email)
       scopeLabel = `${doctor.fullName || doctor.username}'s orders`
     }
+  } else if (isSalesRole(role)) {
+    const salesDoctors = await getSalesDoctors(userId)
+    accessCondition = await getSalesOrderAccessCondition(userId)
+    scopeLabel = 'Orders for your served doctors'
+    const requestedDoctorId = Number(searchParams.get('doctorId'))
+    if (Number.isInteger(requestedDoctorId) && requestedDoctorId > 0) {
+      const doctor = salesDoctors.find((candidate) => candidate.id === requestedDoctorId)
+      if (!doctor) return NextResponse.json({ error: 'Selected doctor is unavailable' }, { status: 400 })
+      selectedDoctorId = doctor.id
+      accessCondition = and(accessCondition, doctorOrderCondition(doctor.id, doctor.email))
+      scopeLabel = `${doctor.fullName || doctor.email || 'Doctor'}'s orders`
+    }
   } else {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
@@ -65,7 +78,9 @@ export async function GET(request: Request) {
           .from(adminUsers)
           .where(and(eq(adminUsers.role, 'doctor'), eq(adminUsers.isActive, true)))
           .orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
-      : Promise.resolve([]),
+      : isSalesRole(role)
+        ? getSalesDoctors(userId)
+        : Promise.resolve([]),
     db
       .select({
         orderId: orders.id,
@@ -81,9 +96,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     metrics: buildOverviewMetrics(rows, granularity),
     scopeLabel,
-    canFilterDoctors: role === 'superadmin',
+    canFilterDoctors: role === 'superadmin' || isSalesRole(role),
     selectedDoctorId,
-    doctors: doctorRows.map((doctor) => ({ id: doctor.id, name: doctor.fullName || doctor.username })),
+    doctors: doctorRows.map((doctor) => ({ id: doctor.id, name: doctor.fullName || ('username' in doctor ? doctor.username : doctor.email) || 'Doctor' })),
     newMessages,
     generatedAt: new Date().toISOString(),
   })

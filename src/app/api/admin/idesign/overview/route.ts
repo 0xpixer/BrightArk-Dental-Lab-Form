@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server'
 import { and, asc, eq } from 'drizzle-orm'
-import { requireSuperadmin } from '@/lib/admin/session'
+import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignOrders } from '@/lib/db/schema'
 import { buildIDesignMetrics } from '@/lib/idesign/metrics'
+import { getIDesignAccessCondition } from '@/lib/idesign/access'
+import { isSalesRole } from '@/lib/admin/roles'
 
 export async function GET(request: Request) {
-  const { error } = await requireSuperadmin()
+  const { session, error } = await requireSession()
   if (error) return error
+  if (session!.user.role !== 'superadmin' && !isSalesRole(session!.user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { searchParams } = new URL(request.url)
   const category = searchParams.get('category') || 'iAlign'
   const salesperson = searchParams.get('salesperson')?.trim()
   const doctor = searchParams.get('doctor')?.trim()
   const conditions = []
+  const accessCondition = await getIDesignAccessCondition(Number(session!.user.id), session!.user.role)
+  if (accessCondition) conditions.push(accessCondition)
   if (category !== 'all') conditions.push(eq(idesignOrders.category, category))
   if (salesperson) conditions.push(eq(idesignOrders.salespersonName, salesperson))
   if (doctor) conditions.push(eq(idesignOrders.doctorName, doctor))
@@ -27,8 +34,8 @@ export async function GET(request: Request) {
       paymentStatus: idesignOrders.paymentStatus,
       category: idesignOrders.category,
     }).from(idesignOrders).where(where),
-    db.selectDistinct({ name: idesignOrders.salespersonName }).from(idesignOrders).orderBy(asc(idesignOrders.salespersonName)),
-    db.selectDistinct({ name: idesignOrders.doctorName }).from(idesignOrders).orderBy(asc(idesignOrders.doctorName)),
+    db.selectDistinct({ name: idesignOrders.salespersonName }).from(idesignOrders).where(accessCondition).orderBy(asc(idesignOrders.salespersonName)),
+    db.selectDistinct({ name: idesignOrders.doctorName }).from(idesignOrders).where(accessCondition).orderBy(asc(idesignOrders.doctorName)),
   ])
 
   return NextResponse.json({

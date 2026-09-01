@@ -2,17 +2,18 @@ import { NextResponse } from 'next/server'
 import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { larkNotifications, orderActivities, orders, sharedLinks } from '@/lib/db/schema'
-import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
+import { requireAdmin, requireDashboardUser, requireSuperadmin } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 import { ORDER_STATUS_VALUES } from '@/lib/orderStatus'
 import { normalizeOrderNote } from '@/lib/orderActivity'
 import { getOrderActivityActorName } from '@/lib/orderActivityActor'
+import { getAccessibleDashboardOrder } from '@/lib/sales/access'
 
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { session, error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -21,14 +22,12 @@ export async function GET(
   }
 
   const db = getDb()
-  const [[order], activities] = await Promise.all([
-    db.select().from(orders).where(eq(orders.id, id)).limit(1),
-    db.select().from(orderActivities).where(eq(orderActivities.orderId, id)).orderBy(desc(orderActivities.createdAt)),
-  ])
+  const order = await getAccessibleDashboardOrder(id, Number(session!.user.id), session!.user.role)
 
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
+  const activities = await db.select().from(orderActivities).where(eq(orderActivities.orderId, id)).orderBy(desc(orderActivities.createdAt))
 
   return NextResponse.json({
     order: session!.user.role === 'admin' ? redactOrderForLabAdmin(order) : order,

@@ -127,6 +127,20 @@
       "when": 1788242973547,
       "tag": "0017_warm_donald_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788246439445,
+      "tag": "0018_colossal_lilith",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788246923676,
+      "tag": "0019_mature_khan",
+      "breakpoints": true
     }
   ]
 }

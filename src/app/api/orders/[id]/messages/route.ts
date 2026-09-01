@@ -1,11 +1,12 @@
 import { asc, eq, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
-import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
+import { isAdminRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getDb } from '@/lib/db/client'
 import { orderMessageReads, orderMessages, orders, type OrderMessage } from '@/lib/db/schema'
 import { getMessageAuthor, parseOrderMessagePayload } from '@/lib/orderMessages'
 import { getAccessiblePortalOrder } from '@/lib/portal/orderAccess'
+import { getAccessibleDashboardOrder } from '@/lib/sales/access'
 
 function serializeMessage(message: OrderMessage, viewerId: number) {
   return {
@@ -25,6 +26,7 @@ async function canAccessOrder(orderId: number, userId: number, role: string) {
     const [order] = await db.select({ id: orders.id }).from(orders).where(eq(orders.id, orderId)).limit(1)
     return Boolean(order)
   }
+  if (isSalesRole(role)) return Boolean(await getAccessibleDashboardOrder(orderId, userId, role))
   if (isPortalRole(role)) return Boolean(await getAccessiblePortalOrder(orderId, userId, role))
   return false
 }

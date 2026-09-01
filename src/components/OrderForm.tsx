@@ -39,10 +39,12 @@ interface OrderFormProps {
   initialValues?: OrderFormValues
   initialFileUrls?: Record<string, string>
   account?: { username: string; role: string }
+  embedded?: boolean
 }
 
-function OrderFormShell({ account, children }: { account?: OrderFormProps['account']; children: ReactNode }) {
-  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin'
+function OrderFormShell({ account, embedded, children }: { account?: OrderFormProps['account']; embedded?: boolean; children: ReactNode }) {
+  if (embedded) return <>{children}</>
+  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin' || account?.role === 'sales'
   const isPortal = account?.role === 'doctor' || account?.role === 'clinic_staff'
 
   return (
@@ -57,7 +59,7 @@ function OrderFormShell({ account, children }: { account?: OrderFormProps['accou
   )
 }
 
-export default function OrderForm({ orderId, draftId, initialValues, initialFileUrls = {}, account }: OrderFormProps) {
+export default function OrderForm({ orderId, draftId, initialValues, initialFileUrls = {}, account, embedded = false }: OrderFormProps) {
   const [uploadFolderId] = useState(() => generateUploadFolderId())
   const [files, setFiles] = useState<FilesState>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -349,7 +351,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
 
   if (submitted) {
     return (
-      <OrderFormShell account={account}>
+      <OrderFormShell account={account} embedded={embedded}>
         <main className="mx-auto w-full max-w-form px-4 py-8 md:px-6">
           <SuccessCard orderNo={submittedOrderNo} />
           <button
@@ -372,7 +374,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
   }
 
   return (
-    <OrderFormShell account={account}>
+    <OrderFormShell account={account} embedded={embedded}>
       {authModalOpen && (
         <AuthModal
           onClose={() => setAuthModalOpen(false)}

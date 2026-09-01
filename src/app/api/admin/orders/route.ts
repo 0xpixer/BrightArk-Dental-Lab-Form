@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { desc, eq, or, ilike, and, count, getTableColumns, lte, notInArray } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
-import { requireAdmin } from '@/lib/admin/session'
+import { requireDashboardUser } from '@/lib/admin/session'
 import { redactOrderForLabAdmin } from '@/lib/admin/orderVisibility'
 import { hasUnreadOrderMessage } from '@/lib/orderUnread'
 import { normalizeOrderStatusFilters, ORDER_STATUS_DUE_MS, ORDER_TERMINAL_STATUSES } from '@/lib/orderStatus'
+import { getDashboardOrderAccessCondition } from '@/lib/sales/access'
 
 export async function GET(request: Request) {
-  const { session, error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const { searchParams } = new URL(request.url)
@@ -21,6 +22,9 @@ export async function GET(request: Request) {
   const sortDir = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc'
 
   const conditions = []
+  const userId = Number(session!.user.id)
+  const accessCondition = await getDashboardOrderAccessCondition(userId, session!.user.role)
+  if (accessCondition) conditions.push(accessCondition)
   if (statuses.length > 0) {
     const statusConditions = statuses.map((status) => status === 'overdue'
       ? and(
@@ -44,8 +48,6 @@ export async function GET(request: Request) {
   const where = conditions.length > 0 ? and(...conditions) : undefined
 
   const db = getDb()
-  const userId = Number(session!.user.id)
-
   const sortColumn =
     sortBy === 'orderNo'
       ? orders.orderNo

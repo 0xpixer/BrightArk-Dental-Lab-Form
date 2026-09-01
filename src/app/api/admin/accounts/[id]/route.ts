@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers } from '@/lib/db/schema'
+import { adminUsers, idesignOrders, salesDoctorAssignments } from '@/lib/db/schema'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
@@ -87,7 +87,29 @@ export async function PATCH(
   }
 
   if (Object.keys(updateData).length === 0) {
-    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    if (body.servedDoctorIds === undefined) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+  }
+
+  let servedDoctorIds: number[] | undefined
+  if (body.servedDoctorIds !== undefined) {
+    if (nextRole !== 'sales' || !Array.isArray(body.servedDoctorIds)) {
+      return NextResponse.json({ error: 'Served doctors can only be assigned to Sales accounts' }, { status: 400 })
+    }
+    const parsedServedDoctorIds = [
+      ...new Set<number>(body.servedDoctorIds.map((value: unknown) => Number(value))),
+    ]
+    if (parsedServedDoctorIds.some((doctorId) => !Number.isInteger(doctorId) || doctorId <= 0)) {
+      return NextResponse.json({ error: 'Invalid served doctor list' }, { status: 400 })
+    }
+    servedDoctorIds = parsedServedDoctorIds
+    if (parsedServedDoctorIds.length > 0) {
+      const doctors = await db.select({ id: adminUsers.id }).from(adminUsers).where(and(inArray(adminUsers.id, parsedServedDoctorIds), eq(adminUsers.role, 'doctor'), eq(adminUsers.isActive, true)))
+      if (doctors.length !== parsedServedDoctorIds.length) {
+        return NextResponse.json({ error: 'One or more served doctors are unavailable' }, { status: 400 })
+      }
+    }
   }
 
   const [updated] = await db
@@ -105,6 +127,28 @@ export async function PATCH(
 
   if (!updated) {
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+  }
+
+  if (nextRole !== 'sales') {
+    await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.salesId, id))
+  } else if (servedDoctorIds !== undefined) {
+    await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.salesId, id))
+    if (servedDoctorIds.length > 0) {
+      await db.insert(salesDoctorAssignments).values(servedDoctorIds.map((doctorId) => ({
+        salesId: id,
+        doctorId,
+        assignedBy: currentUserId,
+      })))
+    }
+  }
+  if (nextRole !== 'doctor') {
+    await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.doctorId, id))
+  }
+  if (existing.role === 'sales' && nextRole !== 'sales') {
+    await db.update(idesignOrders).set({ salesAccountId: null, assignmentUpdatedBy: currentUserId, assignmentUpdatedAt: new Date() }).where(eq(idesignOrders.salesAccountId, id))
+  }
+  if (existing.role === 'doctor' && nextRole !== 'doctor') {
+    await db.update(idesignOrders).set({ doctorAccountId: null, assignmentUpdatedBy: currentUserId, assignmentUpdatedAt: new Date() }).where(eq(idesignOrders.doctorAccountId, id))
   }
 
   return NextResponse.json({

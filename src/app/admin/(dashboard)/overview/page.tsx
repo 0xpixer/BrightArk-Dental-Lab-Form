@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default async function AdminOverviewPage({ searchParams }: { searchParams?: { view?: string } }) {
   const session = await auth()
-  const canViewAligners = session?.user.role === 'superadmin'
+  const canViewAligners = session?.user.role === 'superadmin' || session?.user.role === 'sales'
   const view = canViewAligners && searchParams?.view === 'aligners' ? 'aligners' : 'dental-lab'
 
   return <div className="space-y-5">

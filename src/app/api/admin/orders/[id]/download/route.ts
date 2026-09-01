@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
-import { eq } from 'drizzle-orm'
-import { getDb } from '@/lib/db/client'
-import { orders } from '@/lib/db/schema'
-import { requireAdmin } from '@/lib/admin/session'
+import { requireDashboardUser } from '@/lib/admin/session'
 import { buildOrderZip } from '@/lib/admin/buildOrderZip'
+import { getAccessibleDashboardOrder } from '@/lib/sales/access'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -17,8 +15,7 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })
   }
 
-  const db = getDb()
-  const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1)
+  const order = await getAccessibleDashboardOrder(id, Number(session!.user.id), session!.user.role)
 
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })

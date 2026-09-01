@@ -15,18 +15,18 @@ interface AdminSidebarProps {
 
 const NAV_GROUPS = [
   { label: null, items: [
-    { href: '/admin/overview', label: 'Overview', icon: LayoutDashboard, roles: ['admin', 'superadmin'] },
+    { href: '/admin/overview', label: 'Overview', icon: LayoutDashboard, roles: ['admin', 'superadmin', 'sales'] },
   ] },
   { label: 'Dental Lab Orders', items: [
-    { href: '/admin/submissions', label: 'Submissions', icon: ClipboardList, roles: ['admin', 'superadmin'] },
-    { href: '/', label: 'New Order', icon: Plus, roles: ['admin', 'superadmin'] },
+    { href: '/admin/submissions', label: 'Submissions', icon: ClipboardList, roles: ['admin', 'superadmin', 'sales'] },
+    { href: '/', label: 'New Order', icon: Plus, roles: ['admin', 'superadmin', 'sales'] },
   ] },
   { label: 'iDesign', items: [
-    { href: '/admin/idesign/orders', label: 'Orders', icon: ScanLine, roles: ['superadmin'] },
+    { href: '/admin/idesign/orders', label: 'Orders', icon: ScanLine, roles: ['superadmin', 'sales'] },
   ] },
   { label: 'Administration', items: [
     { href: '/admin/accounts', label: 'Accounts', icon: Users, roles: ['superadmin'] },
-    { href: '/admin/profile', label: 'My Profile', icon: UserCircle, roles: ['admin', 'superadmin'] },
+    { href: '/admin/profile', label: 'My Profile', icon: UserCircle, roles: ['admin', 'superadmin', 'sales'] },
   ] },
 ]
 

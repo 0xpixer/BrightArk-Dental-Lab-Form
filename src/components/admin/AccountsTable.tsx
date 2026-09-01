@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { KeyRound, Save } from 'lucide-react'
+import { ChevronDown, KeyRound, Save } from 'lucide-react'
 import { Toast } from './Toast'
 import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
 
@@ -12,6 +12,7 @@ interface Account {
   fullName: string | null
   role: string
   linkedDoctorId: number | null
+  servedDoctorIds: number[]
   isActive: boolean
   createdBy: number | null
   createdByUsername: string | null
@@ -30,6 +31,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const [error, setError] = useState<string | null>(null)
   const [pendingAccountId, setPendingAccountId] = useState<number | null>(null)
   const [actorNameDrafts, setActorNameDrafts] = useState<Record<number, string>>({})
+  const [servedDoctorDrafts, setServedDoctorDrafts] = useState<Record<number, number[]>>({})
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
@@ -120,6 +122,30 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     fetchAccounts()
   }
 
+  const updateServedDoctors = async (account: Account) => {
+    const servedDoctorIds = servedDoctorDrafts[account.id] ?? account.servedDoctorIds
+    setPendingAccountId(account.id)
+    setError(null)
+    const res = await fetch(`/api/admin/accounts/${account.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ servedDoctorIds }),
+    })
+    const data = await res.json()
+    setPendingAccountId(null)
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to update served doctors')
+      return
+    }
+    setServedDoctorDrafts((current) => {
+      const next = { ...current }
+      delete next[account.id]
+      return next
+    })
+    setToast('Served doctors updated')
+    fetchAccounts()
+  }
+
   const resetPassword = async () => {
     if (!resetModal || !newPassword) return
     setError(null)
@@ -164,7 +190,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
         <table className="w-full min-w-[1080px]">
           <thead className="border-b border-border bg-bg">
             <tr>
-              {['Username', 'Actor Name', 'Role', 'Linked Doctor', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
+              {['Username', 'Actor Name', 'Role', 'Account Scope', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">
                   {h}
                 </th>
@@ -233,6 +259,26 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                         <option value="">Select doctor</option>
                         {doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}
                       </select>
+                    ) : acc.role === 'sales' ? (
+                      <details className="group min-w-44">
+                        <summary className="flex cursor-pointer list-none items-center justify-between rounded border border-border bg-surface px-2 py-1 text-xs [&::-webkit-details-marker]:hidden">
+                          <span>{acc.servedDoctorIds.length} served doctor{acc.servedDoctorIds.length === 1 ? '' : 's'}</span>
+                          <ChevronDown className="h-3.5 w-3.5 text-text-muted transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded border border-border bg-surface p-2">
+                          {doctors.map((doctor) => {
+                            const selected = (servedDoctorDrafts[acc.id] ?? acc.servedDoctorIds).includes(doctor.id)
+                            return <label key={doctor.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs hover:bg-bg">
+                              <input type="checkbox" checked={selected} onChange={() => setServedDoctorDrafts((current) => {
+                                const values = current[acc.id] ?? acc.servedDoctorIds
+                                return { ...current, [acc.id]: selected ? values.filter((id) => id !== doctor.id) : [...values, doctor.id] }
+                              })} className="h-3.5 w-3.5 accent-text" />
+                              <span className="truncate">{doctor.name}</span>
+                            </label>
+                          })}
+                          <button type="button" disabled={pendingAccountId === acc.id || servedDoctorDrafts[acc.id] === undefined} onClick={() => updateServedDoctors(acc)} className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded bg-text px-2 py-1.5 text-xs font-medium text-white disabled:opacity-30"><Save className="h-3 w-3" /> Save scope</button>
+                        </div>
+                      </details>
                     ) : <span className="text-text-muted">—</span>}
                   </td>
                   <td className="px-4 py-3">

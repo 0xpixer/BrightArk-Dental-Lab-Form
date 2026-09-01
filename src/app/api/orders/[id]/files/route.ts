@@ -1,11 +1,12 @@
 import { eq, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
-import { isAdminRole, isPortalRole } from '@/lib/admin/roles'
+import { isAdminRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { parseNewOrderFileUrls } from '@/lib/orderFiles'
 import { getAccessiblePortalOrder } from '@/lib/portal/orderAccess'
+import { getAccessibleDashboardOrder } from '@/lib/sales/access'
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const { session, error } = await requireSession()
@@ -27,6 +28,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const db = getDb()
   const order = isAdminRole(role)
     ? (await db.select().from(orders).where(eq(orders.id, id)).limit(1))[0]
+    : isSalesRole(role)
+      ? await getAccessibleDashboardOrder(id, userId, role)
     : isPortalRole(role)
       ? await getAccessiblePortalOrder(id, userId, role)
       : null

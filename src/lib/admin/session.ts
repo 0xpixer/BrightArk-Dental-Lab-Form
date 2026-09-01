@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
-import { isAdminRole, isPortalRole } from './roles'
+import { isAdminRole, isDashboardRole, isPortalRole } from './roles'
 
 export async function requireSession() {
   const session = await auth()
@@ -26,6 +26,15 @@ export async function requireAdmin() {
   const result = await requireSession()
   if (result.error) return result
   if (!isAdminRole(result.session!.user.role)) {
+    return { session: null, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+  }
+  return result
+}
+
+export async function requireDashboardUser() {
+  const result = await requireSession()
+  if (result.error) return result
+  if (!isDashboardRole(result.session!.user.role)) {
     return { session: null, error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
   }
   return result

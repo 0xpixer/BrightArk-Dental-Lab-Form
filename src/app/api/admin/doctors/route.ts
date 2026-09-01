@@ -1,14 +1,18 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin/session'
+import { requireDashboardUser } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, doctorClinics } from '@/lib/db/schema'
+import { isSalesRole } from '@/lib/admin/roles'
+import { getSalesDoctorIds } from '@/lib/sales/access'
 
 export async function GET() {
-  const { error } = await requireAdmin()
+  const { session, error } = await requireDashboardUser()
   if (error) return error
 
   const db = getDb()
+  const salesDoctorIds = isSalesRole(session!.user.role) ? await getSalesDoctorIds(Number(session!.user.id)) : null
+  if (salesDoctorIds?.length === 0) return NextResponse.json({ doctors: [] })
   const doctors = await db
     .select({
       id: adminUsers.id,
@@ -18,7 +22,11 @@ export async function GET() {
       address: adminUsers.address,
     })
     .from(adminUsers)
-    .where(and(eq(adminUsers.role, 'doctor'), eq(adminUsers.isActive, true)))
+    .where(and(
+      eq(adminUsers.role, 'doctor'),
+      eq(adminUsers.isActive, true),
+      salesDoctorIds ? inArray(adminUsers.id, salesDoctorIds) : undefined,
+    ))
 
   const clinics = doctors.length > 0
     ? await db
