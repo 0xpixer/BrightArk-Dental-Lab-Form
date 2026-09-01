@@ -112,18 +112,27 @@ export async function PATCH(
     }
   }
 
-  const [updated] = await db
-    .update(adminUsers)
-    .set(updateData)
-    .where(eq(adminUsers.id, id))
-    .returning({
-      id: adminUsers.id,
-      username: adminUsers.username,
-      fullName: adminUsers.fullName,
-      role: adminUsers.role,
-      linkedDoctorId: adminUsers.linkedDoctorId,
-      isActive: adminUsers.isActive,
-    })
+  const updated = Object.keys(updateData).length > 0
+    ? (await db
+      .update(adminUsers)
+      .set(updateData)
+      .where(eq(adminUsers.id, id))
+      .returning({
+        id: adminUsers.id,
+        username: adminUsers.username,
+        fullName: adminUsers.fullName,
+        role: adminUsers.role,
+        linkedDoctorId: adminUsers.linkedDoctorId,
+        isActive: adminUsers.isActive,
+      }))[0]
+    : {
+      id: existing.id,
+      username: existing.username,
+      fullName: existing.fullName,
+      role: existing.role,
+      linkedDoctorId: existing.linkedDoctorId,
+      isActive: existing.isActive,
+    }
 
   if (!updated) {
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })

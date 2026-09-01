@@ -20,6 +20,16 @@ interface Account {
   lastLoginAt: string | null
 }
 
+async function readResponseJson(response: Response): Promise<Record<string, any>> {
+  const text = await response.text()
+  if (!text) return { error: response.ok ? 'The server returned an empty response' : `Request failed (${response.status})` }
+  try {
+    return JSON.parse(text) as Record<string, any>
+  } catch {
+    return { error: response.ok ? 'The server returned an invalid response' : `Request failed (${response.status})` }
+  }
+}
+
 export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [doctors, setDoctors] = useState<{ id: number; name: string }[]>([])
@@ -37,7 +47,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     setLoading(true)
     setError(null)
     const res = await fetch('/api/admin/accounts')
-    const data = await res.json()
+    const data = await readResponseJson(res)
     if (!res.ok) {
       setError(data.error ?? 'Failed to load accounts')
       setAccounts([])
@@ -59,7 +69,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !isActive }),
     })
-    const data = await res.json()
+    const data = await readResponseJson(res)
     setPendingAccountId(null)
     if (!res.ok) {
       setError(data.error ?? 'Failed to update account')
@@ -77,7 +87,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role }),
     })
-    const data = await res.json()
+    const data = await readResponseJson(res)
     setPendingAccountId(null)
     if (!res.ok) {
       setError(data.error ?? 'Failed to update role')
@@ -91,7 +101,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const updateLinkedDoctor = async (id: number, linkedDoctorId: string) => {
     setPendingAccountId(id)
     const res = await fetch(`/api/admin/accounts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ linkedDoctorId }) })
-    const data = await res.json()
+    const data = await readResponseJson(res)
     setPendingAccountId(null)
     if (!res.ok) { setError(data.error ?? 'Failed to link doctor'); return }
     setToast('Linked doctor updated')
@@ -107,7 +117,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fullName }),
     })
-    const data = await res.json()
+    const data = await readResponseJson(res)
     setPendingAccountId(null)
     if (!res.ok) {
       setError(data.error ?? 'Failed to update actor name')
@@ -131,7 +141,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ servedDoctorIds }),
     })
-    const data = await res.json()
+    const data = await readResponseJson(res)
     setPendingAccountId(null)
     if (!res.ok) {
       setError(data.error ?? 'Failed to update served doctors')
@@ -160,7 +170,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: newPassword }),
     })
-    const data = await res.json()
+    const data = await readResponseJson(res)
     if (res.ok) {
       setTempPassword(data.temporaryPassword ?? newPassword)
       setNewPassword('')
