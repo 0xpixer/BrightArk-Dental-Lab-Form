@@ -8,6 +8,7 @@ type LarkWebhookResponse = {
 export interface LarkOrder {
   id: number
   orderNo: string
+  patientName: string
   clinic: string
   treatmentType: string | null
   createdAt: Date
@@ -28,6 +29,7 @@ export async function notifyLarkOfOrder(order: LarkOrder, options: LarkDeliveryO
     const text = [
       'New BrightArk case submitted',
       `Order: ${order.orderNo}`,
+      `Patient: ${order.patientName.trim() || 'Not provided'}`,
       `Clinic: ${order.clinic}`,
       `Treatment: ${order.treatmentType ?? 'Not selected'}`,
       `Submitted: ${order.createdAt.toLocaleString('en-AU', { timeZone: 'Asia/Jakarta' })} WIB`,

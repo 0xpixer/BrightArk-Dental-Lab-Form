@@ -105,6 +105,7 @@ export async function POST(request: Request) {
     const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({
       id: orders.id,
       orderNo: orders.orderNo,
+      patientName: orders.patientName,
       clinic: orders.clinic,
       treatmentType: orders.treatmentType,
       createdAt: orders.createdAt,

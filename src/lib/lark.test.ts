@@ -19,6 +19,7 @@ test('rejects an unrecognized success-shaped response', () => {
 const order: LarkOrder = {
   id: 42,
   orderNo: '2026091701',
+  patientName: 'Test Patient',
   clinic: 'Test Clinic',
   treatmentType: null,
   createdAt: new Date('2026-09-17T01:00:00Z'),
@@ -50,6 +51,7 @@ test('sends the new order once with an absolute case link and records the acknow
     const payload = JSON.parse(String(init?.body))
     assert.equal(payload.msg_type, 'text')
     assert.match(payload.content.text, /Order: 2026091701/)
+    assert.match(payload.content.text, /Patient: Test Patient/)
     assert.match(payload.content.text, /Treatment: Not selected/)
     assert.match(payload.content.text, /https:\/\/brightark.example.test\/admin\/submissions\/42/)
     assert.equal(delivered.length, 0)
@@ -59,6 +61,15 @@ test('sends the new order once with an absolute case link and records the acknow
   assert.equal(calls, 1)
   assert.deepEqual(delivered, [42])
   assert.deepEqual(errors, [])
+})
+
+test('shows a clear fallback when the optional patient name is blank', async () => {
+  const { options } = deliveryOptions(async (_url, init) => {
+    const payload = JSON.parse(String(init?.body))
+    assert.match(payload.content.text, /Patient: Not provided/)
+    return Response.json({ code: 0 })
+  })
+  assert.equal(await notifyLarkOfOrder({ ...order, patientName: '  ' }, options), true)
 })
 
 test('HTTP errors, Lark rejections, and invalid responses are logged without marking delivery or retrying', async () => {
