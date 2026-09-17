@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { and, desc, eq, getTableColumns, isNull, or } from 'drizzle-orm'
+import { desc, getTableColumns } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
 import { requirePortalUser } from '@/lib/admin/session'
-import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
+import { getOrderOwnerId } from '@/lib/portal/access'
+import { doctorOrderScope } from '@/lib/portal/orderScope'
 import { hasUnreadOrderMessage } from '@/lib/orderUnread'
 
 export async function GET() {
@@ -12,12 +13,8 @@ export async function GET() {
   const userId = parseInt(session!.user.id, 10)
   const ownerId = await getOrderOwnerId(userId, session!.user.role)
   if (!ownerId) return NextResponse.json({ error: 'Clinic staff is not linked to a doctor' }, { status: 403 })
-  const doctor = await getDoctorProfile(ownerId)
-
   const db = getDb()
-  const accessCondition = doctor?.email
-    ? or(eq(orders.submittedBy, ownerId), and(isNull(orders.submittedBy), eq(orders.email, doctor.email)))
-    : eq(orders.submittedBy, ownerId)
+  const accessCondition = doctorOrderScope([ownerId])
   const rows = await db
     .select({ ...getTableColumns(orders), hasUnreadMessage: hasUnreadOrderMessage(userId) })
     .from(orders)

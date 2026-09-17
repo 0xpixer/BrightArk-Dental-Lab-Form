@@ -1,7 +1,8 @@
-import { and, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm'
+import { and, eq, sql, type SQL } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, orders, salesDoctorAssignments } from '@/lib/db/schema'
 import { isAdminRole, isSalesRole } from '@/lib/admin/roles'
+import { doctorOrderScope } from '@/lib/portal/orderScope'
 
 async function getAssignedDoctors(salesId: number, activeOnly: boolean) {
   return getDb()
@@ -41,15 +42,7 @@ export async function isDoctorAssignedToSales(salesId: number, doctorId: number)
 
 export async function getSalesOrderAccessCondition(salesId: number): Promise<SQL> {
   const doctors = await getAssignedDoctors(salesId, false)
-  if (doctors.length === 0) return sql`false`
-
-  const doctorIds = doctors.map((doctor) => doctor.id)
-  const doctorEmails = doctors.flatMap((doctor) => doctor.email ? [doctor.email] : [])
-  const legacyEmailCondition = doctorEmails.length > 0
-    ? and(isNull(orders.submittedBy), inArray(orders.email, doctorEmails))
-    : undefined
-
-  return or(inArray(orders.submittedBy, doctorIds), legacyEmailCondition) ?? sql`false`
+  return doctorOrderScope(doctors.map((doctor) => doctor.id))
 }
 
 export async function getDashboardOrderAccessCondition(userId: number, role: string): Promise<SQL | undefined> {

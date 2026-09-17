@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { and, asc, desc, eq, isNull, or } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, orders } from '@/lib/db/schema'
 import { requireSession } from '@/lib/admin/session'
@@ -8,12 +8,7 @@ import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { buildOverviewMetrics, type OverviewGranularity } from '@/lib/overviewMetrics'
 import { latestOrderMessageAt, unreadLatestOrderMessageCondition } from '@/lib/orderUnread'
 import { getSalesDoctors, getSalesOrderAccessCondition } from '@/lib/sales/access'
-
-function doctorOrderCondition(doctorId: number, email?: string | null) {
-  return email
-    ? or(eq(orders.submittedBy, doctorId), and(isNull(orders.submittedBy), eq(orders.email, email)))
-    : eq(orders.submittedBy, doctorId)
-}
+import { doctorOrderScope } from '@/lib/portal/orderScope'
 
 export async function GET(request: Request) {
   const { session, error } = await requireSession()
@@ -25,7 +20,7 @@ export async function GET(request: Request) {
   const userId = Number(session!.user.id)
   const db = getDb()
 
-  let accessCondition: ReturnType<typeof doctorOrderCondition> | undefined
+  let accessCondition: ReturnType<typeof doctorOrderScope> | undefined
   let scopeLabel = 'All lab orders'
   let selectedDoctorId: number | null = null
 
@@ -35,7 +30,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Clinic staff is not linked to a doctor' }, { status: 403 })
     }
     const doctor = await getDoctorProfile(ownerId)
-    accessCondition = doctorOrderCondition(ownerId, doctor?.email)
+    accessCondition = doctorOrderScope([ownerId])
     scopeLabel = doctor?.fullName ? `${doctor.fullName}'s orders` : 'Your clinic orders'
   } else if (isAdminRole(role)) {
     const requestedDoctorId = Number(searchParams.get('doctorId'))
@@ -47,7 +42,7 @@ export async function GET(request: Request) {
         .limit(1)
       if (!doctor) return NextResponse.json({ error: 'Selected doctor is unavailable' }, { status: 400 })
       selectedDoctorId = doctor.id
-      accessCondition = doctorOrderCondition(doctor.id, doctor.email)
+      accessCondition = doctorOrderScope([doctor.id])
       scopeLabel = `${doctor.fullName || doctor.username}'s orders`
     }
   } else if (isSalesRole(role)) {
@@ -59,7 +54,7 @@ export async function GET(request: Request) {
       const doctor = salesDoctors.find((candidate) => candidate.id === requestedDoctorId)
       if (!doctor) return NextResponse.json({ error: 'Selected doctor is unavailable' }, { status: 400 })
       selectedDoctorId = doctor.id
-      accessCondition = and(accessCondition, doctorOrderCondition(doctor.id, doctor.email))
+      accessCondition = and(accessCondition, doctorOrderScope([doctor.id]))
       scopeLabel = `${doctor.fullName || doctor.email || 'Doctor'}'s orders`
     }
   } else {

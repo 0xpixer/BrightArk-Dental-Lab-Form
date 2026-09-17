@@ -29,7 +29,7 @@ export async function PATCH(
   if (!existing || !canViewAccount(session!.user.username, existing.username)) {
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })
   }
-  if (isSelf && Object.keys(body).some((field) => !['fullName', 'servedDoctorIds'].includes(field))) {
+  if (isSelf && Object.keys(body).some((field) => field !== 'fullName')) {
     return NextResponse.json({ error: 'Use My Profile to change your own account settings' }, { status: 400 })
   }
 

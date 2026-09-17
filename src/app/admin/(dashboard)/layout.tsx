@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { isDashboardRole } from '@/lib/admin/roles'
 
 export default async function AdminDashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default async function AdminDashboardLayout({
   if (!session?.user) {
     redirect('/admin/login')
   }
+  if (!isDashboardRole(session.user.role)) redirect('/portal/overview')
 
   return (
     <div className="flex min-h-screen bg-bg">

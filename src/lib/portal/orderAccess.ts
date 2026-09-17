@@ -1,16 +1,14 @@
-import { and, eq, isNull, or } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
-import { getDoctorProfile, getOrderOwnerId } from './access'
+import { getOrderOwnerId } from './access'
+import { doctorOrderScope } from './orderScope'
 
 export async function getAccessiblePortalOrder(id: number, userId: number, role: string) {
   const ownerId = await getOrderOwnerId(userId, role)
   if (!ownerId) return null
 
-  const doctor = await getDoctorProfile(ownerId)
-  const accessCondition = doctor?.email
-    ? or(eq(orders.submittedBy, ownerId), and(isNull(orders.submittedBy), eq(orders.email, doctor.email)))
-    : eq(orders.submittedBy, ownerId)
+  const accessCondition = doctorOrderScope([ownerId])
   const db = getDb()
   const [order] = await db
     .select()

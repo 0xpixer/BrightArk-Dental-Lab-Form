@@ -1,4 +1,4 @@
-name: Lark Order Notifications
+name: Complete Delivered Orders
 
 on:
   schedule:
@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  notify-lark:
+  complete-delivered-orders:
     runs-on: ubuntu-latest
     steps:
-      - name: Notify Lark about newly submitted orders
+      - name: Complete orders delivered for 14 days
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           curl --fail-with-body --silent --show-error \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            "https://bright-ark-dental-lab-form.vercel.app/api/cron/lark-orders"
+            "https://bright-ark-dental-lab-form.vercel.app/api/cron/complete-delivered-orders"

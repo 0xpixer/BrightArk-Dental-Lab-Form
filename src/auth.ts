@@ -6,6 +6,7 @@ import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { checkLoginRateLimit, clearLoginRateLimit } from '@/lib/admin/rateLimit'
 import { authConfig } from './auth.config'
+import { createCurrentAccountJwtCallback } from '@/lib/admin/currentAccountSession'
 
 declare module 'next-auth' {
   interface User {
@@ -33,6 +34,19 @@ declare module '@auth/core/jwt' {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    jwt: createCurrentAccountJwtCallback(async (id) => {
+      const [account] = await getDb().select({
+        id: adminUsers.id,
+        username: adminUsers.username,
+        fullName: adminUsers.fullName,
+        role: adminUsers.role,
+        isActive: adminUsers.isActive,
+      }).from(adminUsers).where(eq(adminUsers.id, id)).limit(1)
+      return account ?? null
+    }),
+  },
   providers: [
     Credentials({
       credentials: {

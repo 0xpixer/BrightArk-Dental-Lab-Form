@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@neondatabase/serverless": "^0.10.4",
     "@vercel/blob": "^2.4.0",
+    "@vercel/functions": "^3.9.8",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.38.3",
     "jszip": "^3.10.1",

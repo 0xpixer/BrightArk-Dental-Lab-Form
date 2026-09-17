@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { and, eq, desc, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, orderActivities, orders } from '@/lib/db/schema'
+import { adminUsers, larkNotifications, orderActivities, orders } from '@/lib/db/schema'
 import { mapPayloadToOrderInsert } from '@/lib/transformOrder'
 import { parseOrderSubmission } from '@/lib/orderSubmission'
 import { requireAdmin, requireSession } from '@/lib/admin/session'
@@ -9,6 +10,10 @@ import { isAdminRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { getOrderActivityActorName } from '@/lib/orderActivityActor'
 import { isDoctorAssignedToSales } from '@/lib/sales/access'
+import { notifyLarkOfOrder } from '@/lib/lark'
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 function todayOrderPrefix(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -100,6 +105,9 @@ export async function POST(request: Request) {
     const [inserted] = await db.insert(orders).values({ ...orderData, submittedBy: ownerId }).returning({
       id: orders.id,
       orderNo: orders.orderNo,
+      clinic: orders.clinic,
+      treatmentType: orders.treatmentType,
+      createdAt: orders.createdAt,
     })
     const actorId = Number(session!.user.id)
     const actorName = await getOrderActivityActorName(actorId, session!.user.username || 'User')
@@ -111,6 +119,14 @@ export async function POST(request: Request) {
       actorRole: session!.user.role,
       actorName,
     })
+
+    waitUntil(notifyLarkOfOrder(inserted, {
+      webhookUrl: process.env.LARK_WEBHOOK_URL,
+      appUrl: process.env.APP_URL || new URL(request.url).origin,
+      recordDelivery: async (orderId) => {
+        await db.insert(larkNotifications).values({ orderId }).onConflictDoNothing()
+      },
+    }))
 
     return NextResponse.json(
       { success: true, orderNo: inserted.orderNo },

@@ -25,7 +25,11 @@ CRON_SECRET=use-a-long-random-secret
 
 On Vercel, these are auto-injected when you connect Neon Postgres and Blob storage.
 
-`APP_URL`, `LARK_WEBHOOK_URL`, and `CRON_SECRET` must be set manually in Vercel. The matching `CRON_SECRET` must also be set as a GitHub Actions repository secret. GitHub Actions runs every three hours and calls the notification route for each newly submitted order.
+`APP_URL`, `LARK_WEBHOOK_URL`, and `CRON_SECRET` must be set manually in Vercel. The matching `CRON_SECRET` must also be set as a GitHub Actions repository secret for automatic order completion.
+
+Lark notifications start immediately after a successful order submission, using Vercel's `waitUntil` to keep the background send running without delaying the response. Each send has a ten-second timeout; successful sends are recorded in `lark_notifications`. Notification failures are logged in Vercel and do not fail the saved order. There is no scheduled notification scan, retry, or backfill for older orders.
+
+The separate **Complete Delivered Orders** GitHub Actions workflow runs every three hours to change orders that have been Delivered for 14 days to Completed. It does not send any Lark messages. The former `/api/cron/lark-orders` route has been removed.
 
 ## Development
 
