@@ -69,6 +69,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
   const [draftSaved, setDraftSaved] = useState(false)
   const [activeStep, setActiveStep] = useState<number | null>(1)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [canUpload, setCanUpload] = useState(Boolean(account))
   const [clinics, setClinics] = useState<ClinicOption[]>([])
   const [doctors, setDoctors] = useState<DoctorOption[]>([])
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false)
@@ -131,6 +132,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
     const loadAccountContext = async () => {
       const profileResponse = await fetch('/api/portal/profile')
       if (profileResponse.ok) {
+        setCanUpload(true)
         const data = await profileResponse.json()
         setCanAutosaveToDashboard(true)
         setIsAdminSubmitting(false)
@@ -148,6 +150,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
 
       const doctorsResponse = await fetch('/api/admin/doctors')
       if (doctorsResponse.ok) {
+        setCanUpload(true)
         const data = await doctorsResponse.json()
         setDoctors((data.doctors ?? []) as DoctorOption[])
         setIsAdminSubmitting(true)
@@ -379,6 +382,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
         <AuthModal
           onClose={() => setAuthModalOpen(false)}
           onSignedIn={() => {
+            setCanUpload(true)
             setCanAutosaveToDashboard(true)
             lastSavedPayload.current = null
             setAuthModalOpen(false)
@@ -418,6 +422,8 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
                   {step.id === 'tooth-selector' && <ToothSelectorSection register={register} errors={errors} watch={watch} setValue={setFormValue} onTitleClick={foldActiveStep} />}
                   {step.id === 'file-upload' && (
                     <FileUploadSection
+                      canUpload={canUpload}
+                      onRequireSignIn={() => setAuthModalOpen(true)}
                       orderNo={uploadFolderId}
                       files={files}
                       reservedSlotIds={Object.keys(initialFileUrls)}

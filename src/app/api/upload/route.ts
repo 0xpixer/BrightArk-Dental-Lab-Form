@@ -21,9 +21,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
 
       onBeforeGenerateToken: async (pathname) => {
+        const session = await auth()
+        if (!session?.user) throw new Error('Please sign in before uploading files.')
         if (pathname.split('/').includes('messages')) {
-          const session = await auth()
-          if (!session?.user) throw new Error('Unauthorized')
           return {
             allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
             maximumSizeInBytes: 15 * 1024 * 1024,
@@ -31,8 +31,6 @@ export async function POST(request: Request): Promise<NextResponse> {
           }
         }
 
-        // No auth check needed here — the form is public-facing.
-        // Add session validation here in the future if required.
         return {
           // Accept photos, PDFs, compressed case packages, and binary scan files.
           allowedContentTypes: [

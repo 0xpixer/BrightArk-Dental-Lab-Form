@@ -23,13 +23,16 @@ interface FileUploadSectionProps {
   setValue: UseFormSetValue<OrderFormValues>
   error?: FieldError['message']
   onTitleClick?: () => void
+  onRequireSignIn?: () => void
+  canUpload?: boolean
 }
 
-export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFilesChange, register, watch, setValue, error, onTitleClick }: FileUploadSectionProps) {
+export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFilesChange, register, watch, setValue, error, onTitleClick, onRequireSignIn, canUpload = true }: FileUploadSectionProps) {
   const [activeTab, setActiveTab] = useState<'files' | 'links'>('files')
   const [isDragging, setIsDragging] = useState(false)
   const [bulkUploadError, setBulkUploadError] = useState<string | null>(null)
   const bulkInputRef = useRef<HTMLInputElement>(null)
+  const pendingFiles = useRef<File[]>([])
   const cloudLinks = watch('cloudDriveLinks') ?? ['']
 
   const uploadFile = useCallback(async (slotId: FileSlotId, file: File) => {
@@ -87,6 +90,11 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
   }
 
   const addBulkFiles = (selectedFiles: File[]) => {
+    if (!canUpload) {
+      pendingFiles.current = [...pendingFiles.current, ...selectedFiles]
+      onRequireSignIn?.()
+      return
+    }
     const supportedFiles = selectedFiles.filter(isSupportedCaseFile)
     const rejectedCount = selectedFiles.length - supportedFiles.length
     setBulkUploadError(rejectedCount > 0
@@ -103,6 +111,15 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
       uploadFile(slotId, file)
     })
   }
+
+  useEffect(() => {
+    if (!canUpload || !pendingFiles.current.length) return
+    const queued = pendingFiles.current
+    pendingFiles.current = []
+    addBulkFiles(queued)
+  // Upload the queued drop only when sign-in completes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canUpload])
 
   const uploadedFiles = Object.entries(files)
     .filter(([, slotFile]) => Boolean(slotFile)) as Array<[FileSlotId, SlotFile]>
@@ -137,11 +154,12 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
           <div
             role="button"
             tabIndex={0}
-            onClick={() => bulkInputRef.current?.click()}
+            onClick={() => canUpload ? bulkInputRef.current?.click() : onRequireSignIn?.()}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault()
-                bulkInputRef.current?.click()
+                if (canUpload) bulkInputRef.current?.click()
+                else onRequireSignIn?.()
               }
             }}
             onDragEnter={(event) => { event.preventDefault(); setIsDragging(true) }}

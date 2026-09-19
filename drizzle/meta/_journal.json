@@ -141,6 +141,13 @@
       "when": 1788246923676,
       "tag": "0019_mature_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789831942762,
+      "tag": "0020_signup_protection",
+      "breakpoints": true
     }
   ]
 }

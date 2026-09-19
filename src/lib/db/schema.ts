@@ -26,7 +26,27 @@ export const adminUsers = pgTable('admin_users', {
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true, mode: 'date' }),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true, mode: 'date' }),
 })
+
+export const pendingRegistrations = pgTable('pending_registrations', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull(),
+  passwordHash: text('password_hash').notNull(),
+  fullName: text('full_name').notNull(),
+  clinicName: text('clinic_name').notNull(),
+  address: text('address').notNull(),
+  phone: text('phone'),
+  codeHash: text('code_hash').notNull(),
+  attempts: integer('attempts').default(0).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+}, (table) => ({ expiresIdx: index('pending_registrations_expires_idx').on(table.expiresAt) }))
+
+export const signupRateLimits = pgTable('signup_rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+}, (table) => ({ expiresIdx: index('signup_rate_limits_expires_idx').on(table.expiresAt) }))
 
 export const doctorClinics = pgTable('doctor_clinics', {
   id: serial('id').primaryKey(),
