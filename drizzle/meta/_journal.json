@@ -148,6 +148,13 @@
       "when": 1789831942762,
       "tag": "0020_signup_protection",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789914392014,
+      "tag": "0021_lethal_night_nurse",
+      "breakpoints": true
     }
   ]
 }

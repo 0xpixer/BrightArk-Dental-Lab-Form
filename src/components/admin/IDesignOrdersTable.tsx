@@ -1,8 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { ChevronLeft, ChevronRight, Link2, Plus, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Link2, Search } from 'lucide-react'
 import {
   IDESIGN_CATEGORIES,
   IDESIGN_COUNTRIES,
@@ -115,15 +114,12 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
+    <section className="space-y-4 border-t border-border pt-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text">iDesign Orders</h1>
-          <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} records across aligners, scanners, and other products`}</p>
+          <h2 className="text-lg font-semibold text-text">Imported Order Records</h2>
+          <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} legacy records across aligners, scanners, and other products`}</p>
         </div>
-        {canManage && <Link href="/admin/idesign/orders/new" className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-primary/30">
-          <Plus className="h-4 w-4" aria-hidden /> Add Record
-        </Link>}
       </header>
 
       <section className="rounded-card border border-border bg-surface p-3">
@@ -197,7 +193,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
           </div>
         </footer>
       </section>
-    </div>
+    </section>
   )
 }
 

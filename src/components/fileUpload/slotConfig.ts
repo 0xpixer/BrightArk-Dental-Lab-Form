@@ -1,7 +1,7 @@
 import type { FileSlotId } from '../../types/orderForm'
 
 export interface FileSlotConfig {
-  id: FileSlotId
+  id: string
   label: string
   required?: boolean
   accept: string

@@ -17,6 +17,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const jsonResponse = await handleUpload({
+      token: process.env.UPLOADS_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN,
       body,
       request,
 
@@ -55,6 +56,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             'application/x-tgif',
             'application/sla',
             'application/vnd.ms-pki.stl',
+            'application/dicom',
           ],
           maximumSizeInBytes: 500 * 1024 * 1024, // 500 MB
           addRandomSuffix: false,                 // keep our organised folder path

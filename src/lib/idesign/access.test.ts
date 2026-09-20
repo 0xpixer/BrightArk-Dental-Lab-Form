@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { PgDialect } from 'drizzle-orm/pg-core'
-import { canViewIDesign, getIDesignAccessCondition } from './access'
+import { canViewIDesign, getIDesignAccessCondition, getIDesignCaseAccessCondition } from './access'
 
 const dialect = new PgDialect()
 
@@ -21,4 +21,15 @@ test('only Superadmin receives an unrestricted iDesign scope', async () => {
     assert.equal(canViewIDesign(role), false)
     assert.equal(dialect.sqlToQuery((await getIDesignAccessCondition(4, role))!).sql, 'false')
   }
+})
+
+test('new clinical cases use the same Doctor and Sales ownership rules', async () => {
+  for (const [role, column] of [['sales', 'sales_account_id'], ['doctor', 'doctor_account_id']]) {
+    const condition = await getIDesignCaseAccessCondition(7, role)
+    assert.ok(condition)
+    const query = dialect.sqlToQuery(condition)
+    assert.equal(query.sql, `"idesign_cases"."${column}" = $1`)
+    assert.deepEqual(query.params, [7])
+  }
+  assert.equal(await getIDesignCaseAccessCondition(1, 'superadmin'), undefined)
 })

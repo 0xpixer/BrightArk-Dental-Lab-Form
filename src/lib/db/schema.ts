@@ -150,6 +150,40 @@ export const idesignOrders = pgTable('idesign_orders', {
   doctorAccountIdx: index('idesign_orders_doctor_account_idx').on(table.doctorAccountId),
 }))
 
+export const idesignCases = pgTable('idesign_cases', {
+  id: serial('id').primaryKey(),
+  orderNo: text('order_no').notNull().unique(),
+  orderType: text('order_type').default('clear_aligner').notNull(),
+  patientName: text('patient_name').notNull(),
+  gender: text('gender').notNull(),
+  dateOfBirth: date('date_of_birth', { mode: 'string' }).notNull(),
+  fileUrls: jsonb('file_urls').notNull().default({}),
+  dentitionStage: text('dentition_stage'),
+  extractionTeeth: jsonb('extraction_teeth').notNull().default([]),
+  lockedTeeth: jsonb('locked_teeth').notNull().default([]),
+  attachmentRestrictedTeeth: jsonb('attachment_restricted_teeth').notNull().default([]),
+  iprRestrictedTeeth: jsonb('ipr_restricted_teeth').notNull().default([]),
+  reserveSpaceTeeth: jsonb('reserve_space_teeth').notNull().default([]),
+  maxillaryMidline: text('maxillary_midline'),
+  mandibularMidline: text('mandibular_midline'),
+  leftRelationship: text('left_relationship'),
+  rightRelationship: text('right_relationship'),
+  posteriorExpansionNotAllowed: jsonb('posterior_expansion_not_allowed').notNull().default({}),
+  iprNotAllowed: jsonb('ipr_not_allowed').notNull().default({}),
+  molarDistalizationNotAllowed: jsonb('molar_distalization_not_allowed').notNull().default({}),
+  remarks: text('remarks'),
+  latestProgress: text('latest_progress').default('Entering Info').notNull(),
+  createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  doctorAccountId: integer('doctor_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  salesAccountId: integer('sales_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  doctorAccountIdx: index('idesign_cases_doctor_account_idx').on(table.doctorAccountId),
+  salesAccountIdx: index('idesign_cases_sales_account_idx').on(table.salesAccountId),
+  createdAtIdx: index('idesign_cases_created_at_idx').on(table.createdAt),
+}))
+
 export const orderActivities = pgTable('order_activities', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
@@ -213,6 +247,8 @@ export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type IDesignOrder = typeof idesignOrders.$inferSelect
 export type NewIDesignOrder = typeof idesignOrders.$inferInsert
+export type IDesignCase = typeof idesignCases.$inferSelect
+export type NewIDesignCase = typeof idesignCases.$inferInsert
 export type OrderDraft = typeof orderDrafts.$inferSelect
 export type OrderMessage = typeof orderMessages.$inferSelect
 export type OrderMessageRead = typeof orderMessageReads.$inferSelect

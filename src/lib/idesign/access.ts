@@ -1,5 +1,5 @@
 import { eq, sql, type SQL } from 'drizzle-orm'
-import { idesignOrders } from '@/lib/db/schema'
+import { idesignCases, idesignOrders } from '@/lib/db/schema'
 import { isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
 
@@ -9,6 +9,16 @@ export async function getIDesignAccessCondition(userId: number, role: string): P
   if (isPortalRole(role)) {
     const ownerId = await getOrderOwnerId(userId, role)
     return ownerId ? eq(idesignOrders.doctorAccountId, ownerId) : sql`false`
+  }
+  return sql`false`
+}
+
+export async function getIDesignCaseAccessCondition(userId: number, role: string): Promise<SQL | undefined> {
+  if (role === 'superadmin') return undefined
+  if (isSalesRole(role)) return eq(idesignCases.salesAccountId, userId)
+  if (isPortalRole(role)) {
+    const ownerId = await getOrderOwnerId(userId, role)
+    return ownerId ? eq(idesignCases.doctorAccountId, ownerId) : sql`false`
   }
   return sql`false`
 }
