@@ -6,6 +6,7 @@ export interface FileSlotConfig {
   required?: boolean
   accept: string
   icon: 'scan' | 'photo' | 'intraoral' | 'buccal'
+  illustrationSrc?: string
   formatBadge?: string
 }
 

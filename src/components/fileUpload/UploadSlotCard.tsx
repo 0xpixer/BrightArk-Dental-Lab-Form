@@ -154,7 +154,15 @@ export function UploadSlotCard({
         </div>
       ) : (
         <>
-          <SlotIcon type={slot.icon} />
+          {slot.illustrationSrc ? (
+            <img
+              src={slot.illustrationSrc}
+              alt=""
+              className="h-24 w-full object-contain"
+            />
+          ) : (
+            <SlotIcon type={slot.icon} />
+          )}
           <p className="mt-2 text-center text-xs font-medium text-text">
             {slot.label}
             {slot.required && <span className="text-red-500"> *</span>}
