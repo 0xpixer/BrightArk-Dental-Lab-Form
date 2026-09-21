@@ -5,13 +5,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ClipboardList, LayoutDashboard, List, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine, UserCircle, Users } from 'lucide-react'
+import { ChevronDown, ClipboardList, Database, LayoutDashboard, List, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine, ShieldCheck, UserCircle, Users, type LucideIcon } from 'lucide-react'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 
 interface AdminSidebarProps { username: string; role: string }
 
-const MODULES = [
+interface NavItem { href: string; label: string; icon: LucideIcon; roles?: string[] }
+interface NavModule { id: string; label: string; icon: LucideIcon; roles: string[]; items: NavItem[] }
+
+const MODULES: NavModule[] = [
   { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ScanLine, roles: ['superadmin', 'sales'], items: [
     { href: '/admin/idesign/orders', label: 'My Orders', icon: List },
     { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus },
@@ -20,13 +23,17 @@ const MODULES = [
     { href: '/admin/submissions', label: 'Submissions', icon: List },
     { href: '/', label: 'New Order', icon: Plus },
   ] },
+  { id: 'admin', label: 'Admin', icon: ShieldCheck, roles: ['admin', 'superadmin'], items: [
+    { href: '/admin/imported-orders', label: 'Imported Order Records', icon: Database },
+    { href: '/admin/accounts', label: 'Accounts', icon: Users, roles: ['superadmin'] },
+  ] },
 ]
 
 export function AdminSidebar({ username, role }: AdminSidebarProps) {
   const pathname = usePathname()
   const { collapsed, toggleCollapsed } = useSidebarCollapse()
   const showLabels = !collapsed
-  const activeModule = MODULES.find((module) => module.items.some((item) => isActive(pathname, item.href)))?.id ?? null
+  const activeModule = MODULES.find((module) => module.items.some((item) => (!item.roles || item.roles.includes(role)) && isActive(pathname, item.href)))?.id ?? null
   const [openModule, setOpenModule] = useState<string | null>(activeModule)
 
   useEffect(() => { if (activeModule) setOpenModule(activeModule) }, [activeModule])
@@ -46,11 +53,10 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
           <button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${activeModule === module.id ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}>
             <ModuleIcon className="h-[18px] w-[18px] shrink-0" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><ChevronDown className={`hidden h-4 w-4 shrink-0 transition-transform md:block ${open ? 'rotate-180' : ''}`} /></>}
           </button>
-          {open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}
+          {open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.filter((item) => !item.roles || item.roles.includes(role)).map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}
         </div>
       })}
-      <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Administration</p> : <div className="mx-2 mb-2 border-t border-border" />}
-        {role === 'superadmin' && <NavLink href="/admin/accounts" label="Accounts" icon={Users} active={pathname.startsWith('/admin/accounts')} showLabels={showLabels} />}
+      <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}
         <NavLink href="/admin/profile" label="My Profile" icon={UserCircle} active={pathname.startsWith('/admin/profile')} showLabels={showLabels} />
       </div>
     </nav>
@@ -65,6 +71,6 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href)
 }
 
-function NavLink({ href, label, icon: Icon, active, showLabels, child = false }: { href: string; label: string; icon: typeof LayoutDashboard; active: boolean; showLabels: boolean; child?: boolean }) {
+function NavLink({ href, label, icon: Icon, active, showLabels, child = false }: { href: string; label: string; icon: LucideIcon; active: boolean; showLabels: boolean; child?: boolean }) {
   return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><Icon className={`${child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} shrink-0`} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link>
 }

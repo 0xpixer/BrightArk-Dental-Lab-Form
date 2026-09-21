@@ -114,10 +114,10 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
   }
 
   return (
-    <section className="space-y-4 border-t border-border pt-8">
+    <section className="space-y-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-text">Imported Order Records</h2>
+          <h1 className="text-xl font-semibold text-text">Imported Order Records</h1>
           <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} legacy records across aligners, scanners, and other products`}</p>
         </div>
       </header>
