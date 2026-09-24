@@ -1,6 +1,7 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
+import { getUploadStoreToken } from '@/lib/uploads/storeToken'
 
 // This route only handles the TOKEN HANDSHAKE (tiny JSON payloads).
 // The actual file bytes travel directly from the browser to Vercel Blob
@@ -17,7 +18,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const jsonResponse = await handleUpload({
-      token: process.env.UPLOADS_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN,
+      token: getUploadStoreToken(body),
       body,
       request,
 
