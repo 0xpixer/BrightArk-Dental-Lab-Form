@@ -15,7 +15,7 @@ const MODULES = [
   ] },
   { id: 'dental', label: 'Dental Lab Orders', icon: ClipboardList, items: [
     { href: '/portal/orders', label: 'Orders', icon: List },
-    { href: '/', label: 'New Order', icon: Plus },
+    { href: '/portal/orders/new', label: 'New Order', icon: Plus },
   ] },
 ]
 
@@ -38,5 +38,9 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
   </aside>
 }
 
-function isActive(pathname: string, href: string) { if (href === '/') return pathname === '/'; if (href.endsWith('/idesign/orders')) return pathname === href; return pathname.startsWith(href) }
+function isActive(pathname: string, href: string) {
+  if (href.endsWith('/idesign/orders')) return pathname === href
+  if (href === '/portal/orders') return pathname !== '/portal/orders/new' && pathname.startsWith(href)
+  return pathname.startsWith(href)
+}
 function NavLink({ href, label, icon: Icon, active, showLabels, child = false }: { href: string; label: string; icon: typeof LayoutDashboard; active: boolean; showLabels: boolean; child?: boolean }) { return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><Icon className={`${child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} shrink-0`} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link> }

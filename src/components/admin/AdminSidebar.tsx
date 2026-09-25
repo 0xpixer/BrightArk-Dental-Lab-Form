@@ -21,7 +21,7 @@ const MODULES: NavModule[] = [
   ] },
   { id: 'dental', label: 'Dental Lab Orders', icon: ClipboardList, roles: ['admin', 'superadmin', 'sales'], items: [
     { href: '/admin/submissions', label: 'Submissions', icon: List },
-    { href: '/', label: 'New Order', icon: Plus },
+    { href: '/admin/orders/new', label: 'New Order', icon: Plus },
   ] },
   { id: 'admin', label: 'Admin', icon: ShieldCheck, roles: ['admin', 'superadmin'], items: [
     { href: '/admin/imported-orders', label: 'Imported Order Records', icon: Database },
@@ -66,7 +66,6 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
 }
 
 function isActive(pathname: string, href: string) {
-  if (href === '/') return pathname === '/'
   if (href.endsWith('/idesign/orders')) return pathname === href
   return pathname.startsWith(href)
 }
