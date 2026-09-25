@@ -6,11 +6,11 @@ import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
+import { getSafeLoginCallback } from '@/lib/siteRouting'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/admin/submissions'
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -36,7 +36,8 @@ function LoginForm() {
       return
     }
 
-    router.push(callbackUrl)
+    const callbackUrl = getSafeLoginCallback(searchParams.get('callbackUrl'), window.location.host)
+    router.replace(callbackUrl)
     router.refresh()
   }
 
