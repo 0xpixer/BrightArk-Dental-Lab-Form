@@ -43,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         fullName: adminUsers.fullName,
         role: adminUsers.role,
         isActive: adminUsers.isActive,
+        passwordChangedAt: adminUsers.passwordChangedAt,
       }).from(adminUsers).where(eq(adminUsers.id, id)).limit(1)
       return account ?? null
     }),

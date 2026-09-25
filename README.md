@@ -35,7 +35,7 @@ The separate **Complete Delivered Orders** GitHub Actions workflow runs every th
 
 Public signup now requires Turnstile and email verification. **Configure the following in Vercel and redeploy to enable new signups.** Missing configuration fails closed; existing accounts can still sign in. No existing accounts are deleted or retroactively verified. Admin-created accounts remain a trusted, separate path.
 
-1. In [Cloudflare Turnstile](https://dash.cloudflare.com/), add a Managed widget and allow the site's production hostnames (including its `vercel.app` hostname if used).
+1. In [Cloudflare Turnstile](https://dash.cloudflare.com/), add a Managed widget and allow the site's production hostnames (including `idesign.thebrightark.com` and its `vercel.app` hostname if used).
 2. Add `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` to Vercel from that widget. Only the site key is public.
 3. Set `TURNSTILE_ALLOWED_HOSTNAMES` to the same comma-separated hostnames, without `https://` or paths. If omitted, the server allows only the hostname of `APP_URL`.
 4. In [Resend](https://resend.com/domains), verify a sender domain using its DNS records and create a sending API key. Set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel. Example sender: `BrightArk <verify@your-verified-domain.com>`.
@@ -46,6 +46,8 @@ Doctors receive a six-digit code and enter it in the same registration window. T
 Postgres-backed atomic limits apply across all Vercel instances: 10 signup attempts per IP/hour, one email per mailbox/minute, three per mailbox/hour, and 30 verification attempts per IP/hour. Gmail dot and plus aliases share a mailbox quota. The server trusts IP forwarding headers only on Vercel; other hosting needs an explicitly trusted ingress adaptation and otherwise shares the `unknown` quota. Rate-limit identities and verification codes are HMAC-hashed; passwords use bcrypt. Expired temporary records are cleaned in small indexed batches on subsequent successful signup requests, with no scheduled job. Codes, passwords, and raw signup database errors must not be logged.
 
 Verification emails use Resend, with a timeout and an idempotency key. Delivery errors leave no usable account. A user can request another code after completing a fresh security check and waiting for the mailbox limit. Earlier unexpired codes remain tied to their original registration details; they cannot overwrite an existing account.
+
+The login page offers an email-code password reset after a failed sign-in. Reset requests use the same Turnstile and Resend configuration, return a generic response that does not disclose whether an account exists, and apply per-IP and per-mailbox limits. Codes expire after 15 minutes, allow five attempts, and are replaced when a new code is requested. A successful reset invalidates older sessions and clears the failed-login limit for that account.
 
 Local checks: `npx tsx --test src/lib/signup/*.test.ts` uses mocked providers and an isolated in-memory Postgres engine, never the production database or real email. `npx next build` checks the app without running migrations. For a live smoke test after configuration, register one approved test mailbox, verify receipt, confirm wrong-code rejection, then verify successfully and check the new Doctor account. Review existing suspicious accounts separately; these protections are not a cleanup operation.
 

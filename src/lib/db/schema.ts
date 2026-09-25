@@ -8,6 +8,7 @@ import {
   jsonb,
   integer,
   index,
+  uniqueIndex,
   primaryKey,
 } from 'drizzle-orm/pg-core'
 
@@ -27,6 +28,7 @@ export const adminUsers = pgTable('admin_users', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true, mode: 'date' }),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true, mode: 'date' }),
+  passwordChangedAt: timestamp('password_changed_at', { withTimezone: true, mode: 'date' }),
 })
 
 export const pendingRegistrations = pgTable('pending_registrations', {
@@ -47,6 +49,17 @@ export const signupRateLimits = pgTable('signup_rate_limits', {
   count: integer('count').notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
 }, (table) => ({ expiresIdx: index('signup_rate_limits_expires_idx').on(table.expiresAt) }))
+
+export const pendingPasswordResets = pgTable('pending_password_resets', {
+  id: text('id').primaryKey(),
+  userId: integer('user_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  codeHash: text('code_hash').notNull(),
+  attempts: integer('attempts').default(0).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+}, (table) => ({
+  userIdx: uniqueIndex('pending_password_resets_user_idx').on(table.userId),
+  expiresIdx: index('pending_password_resets_expires_idx').on(table.expiresAt),
+}))
 
 export const doctorClinics = pgTable('doctor_clinics', {
   id: serial('id').primaryKey(),

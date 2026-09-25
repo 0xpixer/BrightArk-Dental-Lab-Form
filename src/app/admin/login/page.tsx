@@ -7,6 +7,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 import { getSafeLoginCallback } from '@/lib/siteRouting'
+import { PasswordResetForm } from '@/components/auth/PasswordResetForm'
 
 function LoginForm() {
   const router = useRouter()
@@ -16,11 +17,15 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [loginFailed, setLoginFailed] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setNotice(null)
     setLoading(true)
 
     const result = await signIn('credentials', {
@@ -33,6 +38,7 @@ function LoginForm() {
 
     if (result?.error) {
       setError('Invalid username or password.')
+      setLoginFailed(true)
       return
     }
 
@@ -49,7 +55,18 @@ function LoginForm() {
           <h1 className="text-xl font-semibold text-text">BrightArk Portal</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {resetOpen ? <PasswordResetForm
+          initialEmail={username}
+          onCancel={() => setResetOpen(false)}
+          onComplete={(email) => {
+            setUsername(email)
+            setPassword('')
+            setError(null)
+            setLoginFailed(false)
+            setResetOpen(false)
+            setNotice('Password updated. Sign in with your new password.')
+          }}
+        /> : <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="mb-1 block text-xs font-medium text-text">
               Email or Username
@@ -97,6 +114,8 @@ function LoginForm() {
             </p>
           )}
 
+          {notice && <p role="status" className="text-sm text-green-700">{notice}</p>}
+
           <button
             type="submit"
             disabled={loading}
@@ -104,11 +123,12 @@ function LoginForm() {
           >
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
-        </form>
+          {loginFailed && <button type="button" onClick={() => setResetOpen(true)} className="w-full text-sm font-medium text-text underline underline-offset-2">Forgot your password?</button>}
+        </form>}
 
-        <p className="mt-4 text-center text-xs text-text-muted">
+        {!resetOpen && <p className="mt-4 text-center text-xs text-text-muted">
           Doctors can <Link href="/register" className="font-medium text-text hover:underline">create an account</Link> to submit and manage orders.
-        </p>
+        </p>}
       </div>
     </div>
   )

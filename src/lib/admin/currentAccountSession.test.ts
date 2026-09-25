@@ -7,7 +7,7 @@ import { createCurrentAccountJwtCallback } from './currentAccountSession'
 
 const secret = 'local-session-regression-test-only-never-a-production-secret'
 const cookieName = 'authjs.session-token'
-const activeAccount = { id: 4, username: 'sales-test', fullName: 'Sales Test', role: 'sales', isActive: true }
+const activeAccount = { id: 4, username: 'sales-test', fullName: 'Sales Test', role: 'sales', isActive: true, passwordChangedAt: null }
 
 async function readSession(
   cookie: string,
@@ -61,4 +61,14 @@ test('invalid account IDs fail closed without a database lookup', async () => {
     const cookie = await encode({ secret, salt: cookieName, token: { id, role: 'superadmin' } })
     assert.equal(await readSession(cookie, async () => { throw new Error('Unexpected account lookup') }), null)
   }
+})
+
+test('password changes revoke older sessions without rejecting a fresh login callback', async () => {
+  const cookie = await encode({ secret, salt: cookieName, token: { id: '4', role: 'superadmin' } })
+  const changedAccount = { ...activeAccount, passwordChangedAt: new Date(Date.now() + 5_000) }
+  assert.equal(await readSession(cookie, async () => changedAccount), null)
+
+  const callback = createCurrentAccountJwtCallback(async () => changedAccount)
+  const token = await callback({ token: { id: '4' }, user: { id: '4' } } as never)
+  assert.equal(token?.id, '4')
 })

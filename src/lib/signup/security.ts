@@ -57,7 +57,7 @@ export function createVerification(secret: string) {
   return { id, code, codeHash: secretHash(secret, id, code) }
 }
 
-export async function checkTurnstile(token: string, config: { secret: string; hosts: string[] }, fetcher = fetch) {
+export async function checkTurnstile(token: string, config: { secret: string; hosts: string[] }, fetcher = fetch, action = 'signup') {
   let response: Response
   try {
     response = await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -67,7 +67,7 @@ export async function checkTurnstile(token: string, config: { secret: string; ho
   } catch { throw new SignupError('The security check is unavailable. Please try again.', 503) }
   if (!response.ok) throw new SignupError('The security check is unavailable. Please try again.', 503)
   const result = await response.json().catch(() => null)
-  if (result?.success !== true || result.action !== 'signup' || !config.hosts.includes(result.hostname)) {
+  if (result?.success !== true || result.action !== action || !config.hosts.includes(result.hostname)) {
     throw new SignupError('Please complete the security check again.', 400)
   }
 }

@@ -18,6 +18,20 @@ test('Turnstile requires success, the signup action, and an allowed hostname', a
   await assert.rejects(checkTurnstile('token', config, async () => { throw new Error('timeout') }), { status: 503 })
 })
 
+test('Turnstile supports a distinct password reset action', async () => {
+  const config = { secret: 'local-test', hosts: ['brightark.example.test'] }
+  await checkTurnstile('token', config, async () => Response.json({
+    success: true,
+    action: 'password-reset',
+    hostname: config.hosts[0],
+  }), 'password-reset')
+  await assert.rejects(checkTurnstile('token', config, async () => Response.json({
+    success: true,
+    action: 'signup',
+    hostname: config.hosts[0],
+  }), 'password-reset'), SignupError)
+})
+
 test('registration validates bounded input, strips roles, and requires a captcha token', () => {
   const body = { email: ' Doctor@Example.test ', password: '12345678', fullName: 'Doctor', clinicName: 'Clinic', turnstileToken: 'test', role: 'superadmin', isActive: true }
   const parsed = registrationSchema.parse(body)

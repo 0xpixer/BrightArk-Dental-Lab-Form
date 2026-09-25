@@ -7,6 +7,7 @@ interface CurrentAccount {
   fullName: string | null
   role: string
   isActive: boolean
+  passwordChangedAt: Date | null
 }
 
 type JwtCallback = NonNullable<NonNullable<NextAuthConfig['callbacks']>['jwt']>
@@ -21,6 +22,8 @@ export function createCurrentAccountJwtCallback(
     // Roles in existing cookies may predate an account change or deactivation.
     const account = await loadAccount(id)
     if (!account?.isActive || !isAccountRole(account.role)) return null
+    const issuedAt = typeof token.iat === 'number' ? token.iat * 1000 : 0
+    if (!user && account.passwordChangedAt && account.passwordChangedAt.getTime() > issuedAt + 1000) return null
 
     return {
       ...token,

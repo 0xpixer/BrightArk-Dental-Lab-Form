@@ -10,7 +10,7 @@ type TurnstileApi = {
 
 declare global { interface Window { turnstile?: TurnstileApi } }
 
-export function Turnstile({ onToken }: { onToken: (token: string) => void }) {
+export function Turnstile({ onToken, action = 'signup' }: { onToken: (token: string) => void; action?: string }) {
   const container = useRef<HTMLDivElement>(null)
   const callback = useRef(onToken)
   callback.current = onToken
@@ -23,15 +23,15 @@ export function Turnstile({ onToken }: { onToken: (token: string) => void }) {
     const api = window.turnstile
     if (!ready || !api || !container.current || !sitekey) return
     const id = api.render(container.current, {
-      sitekey, action: 'signup', theme: 'light', size: container.current.clientWidth < 300 ? 'compact' : 'flexible',
+      sitekey, action, theme: 'light', size: container.current.clientWidth < 300 ? 'compact' : 'flexible',
       callback: (token: string) => { setFailed(false); callback.current(token) },
       'expired-callback': () => callback.current(''),
       'error-callback': () => { callback.current(''); setFailed(true) },
     })
     return () => { api.remove(id); callback.current('') }
-  }, [ready, sitekey, retry])
+  }, [action, ready, sitekey, retry])
 
-  if (!sitekey) return <p role="alert" className="text-sm text-text-muted">New account registration is temporarily unavailable. Please contact BrightArk.</p>
+  if (!sitekey) return <p role="alert" className="text-sm text-text-muted">The security check is temporarily unavailable. Please contact BrightArk.</p>
   return <div className="min-w-0 space-y-2">
     <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" onReady={() => setReady(true)} onError={() => setFailed(true)} />
     <div ref={container} className="min-h-16" />
