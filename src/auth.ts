@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
-import { eq } from 'drizzle-orm'
+import { eq, or, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers } from '@/lib/db/schema'
 import { checkLoginRateLimit, clearLoginRateLimit } from '@/lib/admin/rateLimit'
@@ -60,14 +60,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!username || !password) return null
 
-        const { allowed } = checkLoginRateLimit(username)
+        const login = username.trim().toLowerCase()
+        if (!login) return null
+
+        const { allowed } = checkLoginRateLimit(login)
         if (!allowed) return null
 
         const db = getDb()
         const [user] = await db
           .select()
           .from(adminUsers)
-          .where(eq(adminUsers.username, username))
+          .where(or(
+            sql`lower(${adminUsers.username}) = ${login}`,
+            sql`lower(${adminUsers.email}) = ${login}`,
+          ))
           .limit(1)
 
         if (!user || !user.isActive) return null
@@ -75,7 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash)
         if (!valid) return null
 
-        clearLoginRateLimit(username)
+        clearLoginRateLimit(login)
 
         await db
           .update(adminUsers)
