@@ -5,10 +5,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ChevronUp, CirclePlus, ClipboardCheck, ClipboardList, Database, DatabaseZap, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine, ScanSearch, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
+import { ChevronDown, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
 
 interface AdminSidebarProps { username: string; role: string }
 
@@ -16,11 +17,11 @@ interface NavItem { href: string; label: string; icon: IconNode; hoverIcon: Icon
 interface NavModule { id: string; label: string; icon: IconNode; hoverIcon: IconNode; roles: string[]; items: NavItem[] }
 
 const MODULES: NavModule[] = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ScanLine, hoverIcon: ScanSearch, roles: ['superadmin', 'sales'], items: [
+  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'sales'], items: [
     { href: '/admin/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
   ] },
-  { id: 'dental', label: 'Dental Lab Orders', icon: ClipboardList, hoverIcon: ClipboardCheck, roles: ['admin', 'superadmin', 'sales'], items: [
+  { id: 'dental', label: 'Dental Lab Orders', icon: ToothIcon, hoverIcon: ToothPolishedIcon, roles: ['admin', 'superadmin', 'sales'], items: [
     { href: '/admin/submissions', label: 'Submissions', icon: List, hoverIcon: ListChecks },
     { href: '/admin/orders/new', label: 'New Order', icon: Plus, hoverIcon: CirclePlus },
   ] },

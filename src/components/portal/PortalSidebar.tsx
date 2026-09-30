@@ -5,16 +5,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ChevronUp, CirclePlus, ClipboardCheck, ClipboardList, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine, ScanSearch, UserCircle, UserRoundCog, type IconNode } from 'lucide'
+import { ChevronDown, ChevronUp, CirclePlus, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, UserCircle, UserRoundCog, type IconNode } from 'lucide'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
 
 const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: IconNode; items: Array<{ href: string; label: string; icon: IconNode; hoverIcon: IconNode }> }> = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ScanLine, hoverIcon: ScanSearch, items: [
+  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, items: [
     { href: '/portal/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/portal/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
   ] },
-  { id: 'dental', label: 'Dental Lab Orders', icon: ClipboardList, hoverIcon: ClipboardCheck, items: [
+  { id: 'dental', label: 'Dental Lab Orders', icon: ToothIcon, hoverIcon: ToothPolishedIcon, items: [
     { href: '/portal/orders', label: 'Orders', icon: List, hoverIcon: ListChecks },
     { href: '/portal/orders/new', label: 'New Order', icon: Plus, hoverIcon: CirclePlus },
   ] },
