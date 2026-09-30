@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Link2, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Link2, Search } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import {
   IDESIGN_CATEGORIES,
   IDESIGN_COUNTRIES,
@@ -126,7 +127,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           <label className="relative">
             <span className="sr-only">Search iDesign orders</span>
-            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-text-muted" aria-hidden />
+            <span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span>
             <input type="search" value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder="Search patient, case, doctor or sales" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" />
           </label>
           <FilterSelect label="Category" value={category} onChange={(value) => updateFilter(setCategory, value)} options={IDESIGN_CATEGORIES} />
@@ -141,7 +142,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
         <div><h2 className="text-sm font-semibold text-text">Assign filtered orders</h2><p className="mt-1 text-xs text-text-muted">{salesperson || doctor ? `${total} records in the selected scope` : 'Select a Sales or Doctor scope'}</p></div>
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
           <label><span className="sr-only">Assignment account</span><select value={assignmentAccountId} onChange={(event) => setAssignmentAccountId(event.target.value)} className="h-10 min-w-56 rounded-card border border-border bg-surface px-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Select account</option>{options.assignableAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} ({account.role === 'sales' ? 'Sales' : 'Doctor'})</option>)}</select></label>
-          <button type="button" onClick={assignFilteredOrders} disabled={assigning || !assignmentAccountId || (!salesperson && !doctor)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-text px-4 text-sm font-semibold text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-35"><Link2 className="h-4 w-4" />{assigning ? 'Assigning...' : `Assign ${total} matching`}</button>
+          <button type="button" onClick={assignFilteredOrders} disabled={assigning || !assignmentAccountId || (!salesperson && !doctor)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-text px-4 text-sm font-semibold text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-35"><MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-4 w-4" />{assigning ? 'Assigning...' : `Assign ${total} matching`}</button>
         </div>
       </section>}
 
@@ -188,8 +189,8 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
         <footer className="flex items-center justify-between border-t border-border px-4 py-3">
           <p className="text-xs text-text-muted">Page {page} of {totalPages}</p>
           <div className="flex gap-1">
-            <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Previous page"><ChevronLeft className="h-4 w-4" /><span className="sr-only">Previous page</span></button>
-            <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Next page"><ChevronRight className="h-4 w-4" /><span className="sr-only">Next page</span></button>
+            <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Previous page"><MorphIcon icon={ChevronLeft} hoverIcon={ChevronsLeft} className="h-4 w-4" /><span className="sr-only">Previous page</span></button>
+            <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Next page"><MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4" /><span className="sr-only">Next page</span></button>
           </div>
         </footer>
       </section>

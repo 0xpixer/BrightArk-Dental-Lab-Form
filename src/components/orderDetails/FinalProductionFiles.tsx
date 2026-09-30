@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Download, ExternalLink, FileIcon, X } from 'lucide-react'
+import { CircleX, CloudDownload, Download, ExternalLink, File, FileCheck, Link2, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import { getFilenameFromUrl } from '@/lib/admin/fileSlots'
 import { AddOrderFiles } from './AddOrderFiles'
 
@@ -44,15 +45,15 @@ export function FinalProductionFiles({ orderId, orderNo, files, canUpload, onFil
 
           return image ? (
             <button key={slotId} type="button" onClick={() => setPreview({ url, filename })} className={rowClass}>
-              <FileIcon className="h-4 w-4 shrink-0" aria-hidden />
+              <MorphIcon icon={File} hoverIcon={FileCheck} className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{filename}</span>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <MorphIcon icon={ExternalLink} hoverIcon={Link2} className="h-3.5 w-3.5 shrink-0" />
             </button>
           ) : (
             <a key={slotId} href={url} target="_blank" rel="noopener noreferrer" className={rowClass}>
-              <FileIcon className="h-4 w-4 shrink-0" aria-hidden />
+              <MorphIcon icon={File} hoverIcon={FileCheck} className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{filename}</span>
-              <Download className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-3.5 w-3.5 shrink-0" />
             </a>
           )
         })}
@@ -84,11 +85,11 @@ export function FinalProductionFiles({ orderId, orderNo, files, canUpload, onFil
               <p className="truncate text-sm font-semibold text-text">{preview.filename}</p>
               <div className="flex shrink-0 items-center gap-2">
                 <a href={preview.url} target="_blank" rel="noopener noreferrer" className="rounded p-2 text-text hover:bg-bg" title="Download file">
-                  <Download className="h-4 w-4" />
+                  <MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-4 w-4" />
                   <span className="sr-only">Download {preview.filename}</span>
                 </a>
                 <button type="button" onClick={() => setPreview(null)} className="rounded p-2 text-text-muted hover:bg-bg hover:text-text" title="Close preview">
-                  <X className="h-4 w-4" />
+                  <MorphIcon icon={X} hoverIcon={CircleX} className="h-4 w-4" />
                   <span className="sr-only">Close preview</span>
                 </button>
               </div>

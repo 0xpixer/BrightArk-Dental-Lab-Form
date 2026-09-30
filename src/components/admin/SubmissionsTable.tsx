@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronDown, Download, Link2, Eye, ChevronLeft, ChevronRight, FileSpreadsheet, Save, Trash2 } from 'lucide-react'
+import { BadgeCheck, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronsDown, ChevronsLeft, ChevronsRight, CircleX, CloudDownload, Download, ExternalLink, Eye, FileSpreadsheet, Link2, Save, ScanEye, Sheet, Trash2 } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ShareLinkModal } from './ShareLinkModal'
 import { isOrderStatusOverdue, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS, ORDER_STATUS_STYLES } from '@/lib/orderStatus'
 import { ORDER_NOTE_MAX_LENGTH } from '@/lib/orderActivity'
@@ -195,7 +196,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
         <h1 className="text-xl font-semibold text-text">Submissions</h1>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={exportSubmissions} className="inline-flex items-center gap-2 rounded-card border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100">
-            <FileSpreadsheet className="h-4 w-4" /> Export Excel
+            <MorphIcon icon={FileSpreadsheet} hoverIcon={Sheet} className="h-4 w-4" /> Export Excel
           </button>
           <input
             type="search"
@@ -228,13 +229,13 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                   <details className="group relative w-full min-w-36 normal-case">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-text outline-none focus:ring-2 focus:ring-text/10 [&::-webkit-details-marker]:hidden">
                       <span className="truncate">{statusFilterLabel}</span>
-                      <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+                      <MorphIcon icon={ChevronDown} hoverIcon={ChevronsDown} className="h-3.5 w-3.5 shrink-0" />
                     </summary>
                     <div className="absolute left-0 top-full z-30 mt-1 w-52 rounded-card border border-border bg-surface p-1.5 text-xs font-normal text-text">
                       <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 hover:bg-bg">
                         <input type="checkbox" checked={statuses.length === 0} onChange={() => { setStatuses([]); setPage(1) }} className="sr-only" />
                         <span className={`grid h-4 w-4 place-items-center rounded border ${statuses.length === 0 ? 'border-text bg-text text-white' : 'border-border'}`}>
-                          {statuses.length === 0 && <Check className="h-3 w-3" aria-hidden />}
+                          {statuses.length === 0 && <MorphIcon icon={Check} className="h-3 w-3" />}
                         </span>
                         All statuses
                       </label>
@@ -245,7 +246,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                           <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 hover:bg-bg">
                             <input type="checkbox" checked={checked} onChange={() => toggleStatusFilter(option.value)} className="sr-only" />
                             <span className={`grid h-4 w-4 place-items-center rounded border ${checked ? 'border-text bg-text text-white' : 'border-border'}`}>
-                              {checked && <Check className="h-3 w-3" aria-hidden />}
+                              {checked && <MorphIcon icon={Check} className="h-3 w-3" />}
                             </span>
                             {option.label}
                           </label>
@@ -324,7 +325,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                             className="grid h-7 w-7 shrink-0 place-items-center rounded text-text hover:bg-bg disabled:pointer-events-none disabled:opacity-20"
                             title="Save note"
                           >
-                            <Save className="h-3.5 w-3.5" />
+                            <MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-3.5 w-3.5" />
                             <span className="sr-only">Save note for order {order.orderNo}</span>
                           </button>
                         </form>
@@ -340,7 +341,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                           className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-neutral-400 hover:text-text"
                           title="Download ZIP"
                         >
-                          <Download className="h-3.5 w-3.5" />
+                          <MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-3.5 w-3.5" />
                           ZIP
                         </button>
                         <button
@@ -349,7 +350,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                           className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-accent hover:text-accent"
                           title="Share link"
                         >
-                          <Link2 className="h-3.5 w-3.5" />
+                          <MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-3.5 w-3.5" />
                           Link
                         </button>
                       </div>
@@ -360,7 +361,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                           href={`/admin/submissions/${order.id}`}
                           className="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-text hover:bg-neutral-200"
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <MorphIcon icon={Eye} hoverIcon={ScanEye} className="h-3.5 w-3.5" />
                           View
                         </Link>
                         {canDelete && (
@@ -371,7 +372,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                             className="inline-flex items-center gap-1 rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
                             title="Delete order"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <MorphIcon icon={Trash2} hoverIcon={CircleX} className="h-3.5 w-3.5" />
                             Delete
                           </button>
                         )}
@@ -391,7 +392,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
             onClick={() => setPage((p) => p - 1)}
             className="inline-flex items-center gap-1 rounded border border-border px-3 py-1 text-xs disabled:opacity-40"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <MorphIcon icon={ChevronLeft} hoverIcon={ChevronsLeft} className="h-4 w-4" />
             Previous
           </button>
           <span className="text-xs text-text-muted">
@@ -404,7 +405,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
             className="inline-flex items-center gap-1 rounded border border-border px-3 py-1 text-xs disabled:opacity-40"
           >
             Next
-            <ChevronRight className="h-4 w-4" />
+            <MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4" />
           </button>
         </div>
       </div>

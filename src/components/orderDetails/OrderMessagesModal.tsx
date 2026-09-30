@@ -2,7 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { upload } from '@vercel/blob/client'
-import { ImagePlus, LoaderCircle, MessageCircle, Send, X } from 'lucide-react'
+import { CircleX, ImagePlus, Images, LoaderCircle, MessageCircle, MessagesSquare, Send, SendHorizontal, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import type { MessageAuthor } from '@/lib/orderMessages'
 
 interface MessageItem {
@@ -152,7 +153,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
-              <MessageCircle className="h-4 w-4" aria-hidden />
+              <MorphIcon icon={MessageCircle} hoverIcon={MessagesSquare} className="h-4 w-4" />
             </span>
             <div className="min-w-0">
               <h2 id="order-messages-title" className="text-sm font-semibold text-text">Messages</h2>
@@ -160,7 +161,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
             </div>
           </div>
           <button type="button" onClick={onClose} className="rounded p-2 text-text-muted hover:bg-bg hover:text-text" title="Close messages">
-            <X className="h-4 w-4" />
+            <MorphIcon icon={X} hoverIcon={CircleX} className="h-4 w-4" />
             <span className="sr-only">Close messages</span>
           </button>
         </div>
@@ -170,7 +171,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
             <p className="py-8 text-center text-sm text-text-muted">Loading messages...</p>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <MessageCircle className="mb-2 h-7 w-7 text-text-muted" aria-hidden />
+              <MorphIcon icon={MessageCircle} className="mb-2 h-7 w-7 text-text-muted" />
               <p className="text-sm font-medium text-text">No messages yet</p>
               <p className="mt-1 text-xs text-text-muted">Start the conversation about this order.</p>
             </div>
@@ -219,7 +220,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
                 <p className="text-[10px] text-text-muted">{(pendingImage.file.size / 1024 / 1024).toFixed(1)} MB</p>
               </div>
               <button type="button" onClick={() => setPendingImage(null)} disabled={sending} className="rounded p-1.5 text-text-muted hover:bg-surface hover:text-red-600" title="Remove image">
-                <X className="h-3.5 w-3.5" />
+                <MorphIcon icon={X} hoverIcon={CircleX} className="h-3.5 w-3.5" />
                 <span className="sr-only">Remove image</span>
               </button>
             </div>
@@ -232,7 +233,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border text-green-700 hover:border-green-500 hover:bg-green-50 disabled:opacity-50"
               title="Attach picture"
             >
-              <ImagePlus className="h-4 w-4" />
+              <MorphIcon icon={ImagePlus} hoverIcon={Images} className="h-4 w-4" />
               <span className="sr-only">Attach picture</span>
             </button>
             <textarea
@@ -256,7 +257,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-600 text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               title="Send message"
             >
-              {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sending ? <MorphIcon icon={LoaderCircle} className="h-4 w-4 animate-spin" /> : <MorphIcon icon={Send} hoverIcon={SendHorizontal} className="h-4 w-4" />}
               <span className="sr-only">Send message</span>
             </button>
           </div>
@@ -278,7 +279,7 @@ export function OrderMessagesModal({ orderId, orderNo, onClose }: { orderId: num
           <div className="relative max-h-[92vh] max-w-5xl">
             <img src={previewImage.url} alt={previewImage.name} className="max-h-[88vh] max-w-full object-contain" />
             <button type="button" onClick={() => setPreviewImage(null)} className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white hover:bg-black" title="Close image preview">
-              <X className="h-5 w-5" />
+              <MorphIcon icon={X} hoverIcon={CircleX} className="h-5 w-5" />
               <span className="sr-only">Close image preview</span>
             </button>
           </div>

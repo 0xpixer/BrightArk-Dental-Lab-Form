@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Boxes, CheckCircle2, ClipboardEdit, Factory, PackageCheck, RefreshCw, Send, WalletCards } from 'lucide-react'
+import { BadgeCheck, Boxes, CheckCircle2, ClipboardCheck, ClipboardEdit, Factory, PackageCheck, PackageOpen, RefreshCcw, RefreshCw, Send, SendHorizontal, Wallet, WalletCards } from 'lucide'
+import type { IconNode } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import {
   IDESIGN_CATEGORIES,
   IDESIGN_PROGRESS_COLORS,
@@ -71,15 +73,15 @@ export function AlignerOverviewDashboard({ canOpenImportedOrders = false }: { ca
         </div>
       </header>
 
-      {error && <div role="alert" className="flex items-center justify-between rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>{error}</span><button type="button" onClick={load} title="Retry" className="rounded p-1.5 hover:bg-red-100"><RefreshCw className="h-4 w-4" /><span className="sr-only">Retry</span></button></div>}
+      {error && <div role="alert" className="flex items-center justify-between rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>{error}</span><button type="button" onClick={load} title="Retry" className="rounded p-1.5 hover:bg-red-100"><MorphIcon icon={RefreshCw} hoverIcon={RefreshCcw} className="h-4 w-4" /><span className="sr-only">Retry</span></button></div>}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <OverviewCard label="All Cases" value={data?.metrics.total} icon={Boxes} loading={loading} href={canOpenImportedOrders ? '/admin/imported-orders' : undefined} />
-        <OverviewCard label="Entering Info" value={data?.metrics.statusCounts['Entering Info']} icon={ClipboardEdit} loading={loading} href={canOpenImportedOrders ? progressHref('Entering Info') : undefined} />
-        <OverviewCard label="Awaiting Review" value={data?.metrics.statusCounts['Awaiting Clin. Review']} icon={Send} loading={loading} href={canOpenImportedOrders ? progressHref('Awaiting Clin. Review') : undefined} />
-        <OverviewCard label="In Production" value={data?.metrics.statusCounts['In Production']} icon={Factory} loading={loading} href={canOpenImportedOrders ? progressHref('In Production') : undefined} />
-        <OverviewCard label="Produced" value={data?.metrics.statusCounts.Produced} icon={PackageCheck} loading={loading} href={canOpenImportedOrders ? progressHref('Produced') : undefined} />
-        <OverviewCard label="Completed" value={data?.metrics.statusCounts.Completed} icon={CheckCircle2} loading={loading} href={canOpenImportedOrders ? progressHref('Completed') : undefined} />
+        <OverviewCard label="All Cases" value={data?.metrics.total} icon={Boxes} hoverIcon={PackageOpen} loading={loading} href={canOpenImportedOrders ? '/admin/imported-orders' : undefined} />
+        <OverviewCard label="Entering Info" value={data?.metrics.statusCounts['Entering Info']} icon={ClipboardEdit} hoverIcon={ClipboardCheck} loading={loading} href={canOpenImportedOrders ? progressHref('Entering Info') : undefined} />
+        <OverviewCard label="Awaiting Review" value={data?.metrics.statusCounts['Awaiting Clin. Review']} icon={Send} hoverIcon={SendHorizontal} loading={loading} href={canOpenImportedOrders ? progressHref('Awaiting Clin. Review') : undefined} />
+        <OverviewCard label="In Production" value={data?.metrics.statusCounts['In Production']} icon={Factory} hoverIcon={Boxes} loading={loading} href={canOpenImportedOrders ? progressHref('In Production') : undefined} />
+        <OverviewCard label="Produced" value={data?.metrics.statusCounts.Produced} icon={PackageCheck} hoverIcon={PackageOpen} loading={loading} href={canOpenImportedOrders ? progressHref('Produced') : undefined} />
+        <OverviewCard label="Completed" value={data?.metrics.statusCounts.Completed} icon={CheckCircle2} hoverIcon={BadgeCheck} loading={loading} href={canOpenImportedOrders ? progressHref('Completed') : undefined} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.75fr)]">
@@ -123,12 +125,12 @@ function OverviewFilter({ label, value, onChange, options, allLabel }: { label: 
   return <label><span className="mb-1 block text-[11px] font-medium text-text-muted">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10">{label !== 'Category' && <option value="">{allLabel}</option>}{options.map((option) => <option key={option} value={option}>{option === 'all' ? allLabel : option}</option>)}</select></label>
 }
 
-function OverviewCard({ label, value, icon: Icon, loading, href }: { label: string; value?: number; icon: typeof Boxes; loading: boolean; href?: string }) {
-  const content = <><div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><Icon className="h-4 w-4" /></div><p className="truncate text-xs font-medium text-text-muted">{label}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p></>
+function OverviewCard({ label, value, icon, hoverIcon, loading, href }: { label: string; value?: number; icon: IconNode; hoverIcon: IconNode; loading: boolean; href?: string }) {
+  const content = <><div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><MorphIcon icon={icon} hoverIcon={hoverIcon} className="h-4 w-4" /></div><p className="truncate text-xs font-medium text-text-muted">{label}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p></>
   const className = "rounded-card border border-border bg-surface p-4"
   return href ? <Link href={href} className={`${className} transition-colors hover:border-neutral-400 hover:bg-bg focus:outline-none focus:ring-2 focus:ring-text/10`}>{content}</Link> : <div className={className}>{content}</div>
 }
 
-function SmallMetric({ label, value, icon: Icon, loading }: { label: string; value?: number; icon: typeof WalletCards; loading: boolean }) {
-  return <div className="rounded-card border border-border bg-bg p-3"><Icon className="mb-2 h-4 w-4 text-text-muted" /><p className="text-xs text-text-muted">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p></div>
+function SmallMetric({ label, value, icon, loading }: { label: string; value?: number; icon: IconNode; loading: boolean }) {
+  return <div className="rounded-card border border-border bg-bg p-3"><MorphIcon icon={icon} hoverIcon={Wallet} className="mb-2 h-4 w-4 text-text-muted" /><p className="text-xs text-text-muted">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p></div>
 }

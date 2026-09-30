@@ -1,4 +1,5 @@
-import { Loader2 } from 'lucide-react'
+import { LoaderCircle } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 interface SubmitSectionProps {
   isSubmitting: boolean
@@ -17,7 +18,7 @@ export function SubmitSection({ isSubmitting, isUploading = false, onSaveDraft, 
           disabled={isSubmitting || isUploading}
           className="flex w-full items-center justify-center gap-2 rounded-card bg-primary py-3.5 text-sm font-semibold text-white transition-colors duration-brand hover:bg-[#e06d15] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {(isSubmitting || isUploading) && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+          {(isSubmitting || isUploading) && <MorphIcon icon={LoaderCircle} className="h-4 w-4 animate-spin" />}
           {isSubmitting ? 'Saving…' : isUploading ? 'Uploading files…' : submitLabel}
         </button>
       </div>

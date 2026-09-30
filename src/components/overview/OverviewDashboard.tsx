@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Clock3, ClockAlert, Factory, MessageCircle, PackageSearch, RefreshCw, RotateCcw, Truck } from 'lucide-react'
+import { Boxes, ChevronRight, ChevronsRight, Clock3, ClockAlert, Factory, MessageCircle, PackageSearch, RefreshCcw, RefreshCw, RotateCcw, Truck } from 'lucide'
+import type { IconNode } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import {
   ORDER_STATUS_CHART_COLORS,
   ORDER_STATUS_LABELS,
@@ -117,15 +119,15 @@ export function OverviewDashboard({ ordersPath, title = 'Overview' }: { ordersPa
       {error && (
         <div role="alert" className="flex items-center justify-between gap-4 rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <span>{error}</span>
-          <button type="button" onClick={load} className="rounded p-1.5 hover:bg-red-100" title="Retry"><RefreshCw className="h-4 w-4" /><span className="sr-only">Retry</span></button>
+          <button type="button" onClick={load} className="rounded p-1.5 hover:bg-red-100" title="Retry"><MorphIcon icon={RefreshCw} hoverIcon={RefreshCcw} className="h-4 w-4" /><span className="sr-only">Retry</span></button>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="All Orders" value={totals?.all} icon={PackageSearch} loading={loading} href={ordersPath} />
-        <MetricCard label="Overdue" value={totals?.overdue} icon={ClockAlert} loading={loading} href={`${ordersPath}?status=overdue`} />
-        <MetricCard label="Pending" value={statusCounts?.pending} icon={Clock3} loading={loading} href={`${ordersPath}?status=pending`} />
-        <MetricCard label="In Production" value={statusCounts?.in_production} icon={Factory} loading={loading} href={`${ordersPath}?status=in_production`} />
+        <MetricCard label="All Orders" value={totals?.all} icon={PackageSearch} hoverIcon={Boxes} loading={loading} href={ordersPath} />
+        <MetricCard label="Overdue" value={totals?.overdue} icon={ClockAlert} hoverIcon={Clock3} loading={loading} href={`${ordersPath}?status=overdue`} />
+        <MetricCard label="Pending" value={statusCounts?.pending} icon={Clock3} hoverIcon={ClockAlert} loading={loading} href={`${ordersPath}?status=pending`} />
+        <MetricCard label="In Production" value={statusCounts?.in_production} icon={Factory} hoverIcon={Boxes} loading={loading} href={`${ordersPath}?status=in_production`} />
         <SplitMetricCard
           label="Shipped / Delivered"
           first={{ label: 'Shipped', value: statusCounts?.shipped, href: `${ordersPath}?status=shipped` }}
@@ -133,7 +135,7 @@ export function OverviewDashboard({ ordersPath, title = 'Overview' }: { ordersPa
           icon={Truck}
           loading={loading}
         />
-        <MetricCard label="Re-Do" value={statusCounts?.redo} icon={RotateCcw} loading={loading} href={`${ordersPath}?status=redo`} />
+        <MetricCard label="Re-Do" value={statusCounts?.redo} icon={RotateCcw} hoverIcon={RefreshCw} loading={loading} href={`${ordersPath}?status=redo`} />
       </div>
 
       <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(300px,0.9fr)_minmax(0,1.35fr)_minmax(250px,0.8fr)]">
@@ -244,7 +246,7 @@ export function OverviewDashboard({ ordersPath, title = 'Overview' }: { ordersPa
             ) : (data?.newMessages.length ?? 0) === 0 ? (
               <div className="grid h-full place-items-center px-4 text-center">
                 <div>
-                  <MessageCircle className="mx-auto h-6 w-6 text-text-muted" aria-hidden />
+                  <MorphIcon icon={MessageCircle} className="h-6 w-6 text-text-muted" wrapperClassName="mx-auto" />
                   <p className="mt-2 text-sm font-medium text-text">No new messages</p>
                   <p className="mt-1 text-xs text-text-muted">You are up to date.</p>
                 </div>
@@ -265,7 +267,7 @@ export function OverviewDashboard({ ordersPath, title = 'Overview' }: { ordersPa
                         </p>
                         <p className="mt-1 truncate pl-4 text-xs text-text-muted">{order.patientName}</p>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-text-muted" aria-hidden />
+                      <MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4 text-text-muted" />
                     </Link>
                   </li>
                 ))}
@@ -282,26 +284,26 @@ export function OverviewDashboard({ ordersPath, title = 'Overview' }: { ordersPa
 
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * 70
 
-function MetricCard({ label, value, icon: Icon, loading, href }: { label: string; value?: number; icon: typeof PackageSearch; loading: boolean; href: string }) {
+function MetricCard({ label, value, icon, hoverIcon, loading, href }: { label: string; value?: number; icon: IconNode; hoverIcon: IconNode; loading: boolean; href: string }) {
   return (
     <Link href={href} aria-label={label === 'All Orders' ? 'View all orders' : `View ${label} orders`} className="rounded-card border border-border bg-surface p-4 transition-colors hover:border-neutral-400 hover:bg-bg focus:outline-none focus:ring-2 focus:ring-text/10">
-      <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><Icon className="h-4 w-4" aria-hidden /></div>
+      <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><MorphIcon icon={icon} hoverIcon={hoverIcon} className="h-4 w-4" /></div>
       <p className="text-xs font-medium text-text-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-text">{loading ? '—' : value ?? 0}</p>
     </Link>
   )
 }
 
-function SplitMetricCard({ label, first, second, icon: Icon, loading }: {
+function SplitMetricCard({ label, first, second, icon, loading }: {
   label: string
   first: { label: string; value?: number; href: string }
   second: { label: string; value?: number; href: string }
-  icon: typeof PackageSearch
+  icon: IconNode
   loading: boolean
 }) {
   return (
     <section className="rounded-card border border-border bg-surface p-4">
-      <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><Icon className="h-4 w-4" aria-hidden /></div>
+      <div className="mb-3 grid h-8 w-8 place-items-center rounded bg-bg text-text"><MorphIcon icon={icon} className="h-4 w-4" /></div>
       <p className="truncate text-xs font-medium text-text-muted">{label}</p>
       <div className="mt-1 grid grid-cols-2 gap-2">
         {[first, second].map((item) => (

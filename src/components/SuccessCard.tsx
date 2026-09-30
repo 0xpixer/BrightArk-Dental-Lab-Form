@@ -1,4 +1,5 @@
-import { CheckCircle2 } from 'lucide-react'
+import { BadgeCheck } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 interface SuccessCardProps {
   orderNo: string
@@ -10,7 +11,7 @@ export function SuccessCard({ orderNo }: SuccessCardProps) {
       role="status"
       className="rounded-card border border-green-200 bg-green-50 p-6 text-center"
     >
-      <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-600" aria-hidden />
+      <MorphIcon icon={BadgeCheck} wrapperClassName="mx-auto mb-3" className="h-12 w-12 text-green-600" />
       <h2 className="text-lg font-semibold text-green-800">Order submitted successfully!</h2>
       <p className="mt-2 text-sm text-green-700">
         BrightArk will review and confirm your order shortly.

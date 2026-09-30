@@ -5,17 +5,18 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ClipboardList, LayoutDashboard, List, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine, UserCircle } from 'lucide-react'
+import { ChevronDown, ChevronUp, CirclePlus, ClipboardCheck, ClipboardList, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ScanLine, ScanSearch, UserCircle, UserRoundCog, type IconNode } from 'lucide'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
-const MODULES = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ScanLine, items: [
-    { href: '/portal/idesign/orders', label: 'My Orders', icon: List },
-    { href: '/portal/idesign/orders/new', label: 'New Orders', icon: Plus },
+const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: IconNode; items: Array<{ href: string; label: string; icon: IconNode; hoverIcon: IconNode }> }> = [
+  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ScanLine, hoverIcon: ScanSearch, items: [
+    { href: '/portal/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
+    { href: '/portal/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
   ] },
-  { id: 'dental', label: 'Dental Lab Orders', icon: ClipboardList, items: [
-    { href: '/portal/orders', label: 'Orders', icon: List },
-    { href: '/portal/orders/new', label: 'New Order', icon: Plus },
+  { id: 'dental', label: 'Dental Lab Orders', icon: ClipboardList, hoverIcon: ClipboardCheck, items: [
+    { href: '/portal/orders', label: 'Orders', icon: List, hoverIcon: ListChecks },
+    { href: '/portal/orders/new', label: 'New Order', icon: Plus, hoverIcon: CirclePlus },
   ] },
 ]
 
@@ -28,13 +29,13 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
   useEffect(() => { if (activeModule) setOpenModule(activeModule) }, [activeModule])
 
   return <aside className={`sticky top-0 flex h-screen w-16 shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-brand ${collapsed ? 'md:w-16' : 'md:w-60'}`}>
-    <div className="flex h-16 items-center justify-between border-b border-border px-3"><div className={`flex min-w-0 items-center ${showLabels ? 'md:gap-2' : ''}`}><Image src="/BrightArk icon.PNG" alt="BrightArk" width={32} height={32} className="h-8 w-8 md:hidden" />{showLabels && <Image src="/Logo-SVG.svg" alt="BrightArk" width={120} height={32} className="hidden h-8 w-auto md:block" />}</div><button type="button" onClick={toggleCollapsed} className={`hidden h-8 w-8 shrink-0 place-items-center rounded-card text-text-muted hover:bg-bg hover:text-text md:grid ${collapsed ? 'mx-auto' : ''}`} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'} aria-expanded={!collapsed}>{collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</button></div>
+    <div className="flex h-16 items-center justify-between border-b border-border px-3"><div className={`flex min-w-0 items-center ${showLabels ? 'md:gap-2' : ''}`}><Image src="/BrightArk icon.PNG" alt="BrightArk" width={32} height={32} className="h-8 w-8 md:hidden" />{showLabels && <Image src="/Logo-SVG.svg" alt="BrightArk" width={120} height={32} className="hidden h-8 w-auto md:block" />}</div><button type="button" onClick={toggleCollapsed} className={`hidden h-8 w-8 shrink-0 place-items-center rounded-card text-text-muted hover:bg-bg hover:text-text md:grid ${collapsed ? 'mx-auto' : ''}`} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'} aria-expanded={!collapsed}><MorphIcon icon={collapsed ? PanelLeftOpen : PanelLeftClose} className="h-4 w-4" /></button></div>
     <nav className="flex-1 space-y-2 overflow-y-auto p-2">
-      <NavLink href="/portal/overview" label="Overview" icon={LayoutDashboard} active={pathname.startsWith('/portal/overview')} showLabels={showLabels} />
-      {MODULES.map((module) => { const open = openModule === module.id; const ModuleIcon = module.icon; return <div key={module.id}><button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${activeModule === module.id ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}><ModuleIcon className="h-[18px] w-[18px] shrink-0" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><ChevronDown className={`hidden h-4 w-4 shrink-0 transition-transform md:block ${open ? 'rotate-180' : ''}`} /></>}</button>{open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}</div> })}
-      <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}<NavLink href="/portal/profile" label="My Profile" icon={UserCircle} active={pathname.startsWith('/portal/profile')} showLabels={showLabels} /></div>
+      <NavLink href="/portal/overview" label="Overview" icon={LayoutDashboard} hoverIcon={LayoutGrid} active={pathname.startsWith('/portal/overview')} showLabels={showLabels} />
+      {MODULES.map((module) => { const open = openModule === module.id; return <div key={module.id}><button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${activeModule === module.id ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}><MorphIcon icon={module.icon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><span className="hidden md:inline-flex"><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span></>}</button>{open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}</div> })}
+      <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}<NavLink href="/portal/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/portal/profile')} showLabels={showLabels} /></div>
     </nav>
-    <div className="border-t border-border p-2">{showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><p className="text-xs capitalize text-text-muted">{role.replace('_', ' ')}</p></div>}<button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} title="Sign out" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`}><LogOut className="h-4 w-4" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button></div>
+    <div className="border-t border-border p-2">{showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><p className="text-xs capitalize text-text-muted">{role.replace('_', ' ')}</p></div>}<button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} title="Sign out" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`}><MorphIcon icon={LogOut} hoverIcon={DoorOpen} className="h-4 w-4" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button></div>
   </aside>
 }
 
@@ -43,4 +44,4 @@ function isActive(pathname: string, href: string) {
   if (href === '/portal/orders') return pathname !== '/portal/orders/new' && pathname.startsWith(href)
   return pathname.startsWith(href)
 }
-function NavLink({ href, label, icon: Icon, active, showLabels, child = false }: { href: string; label: string; icon: typeof LayoutDashboard; active: boolean; showLabels: boolean; child?: boolean }) { return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><Icon className={`${child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} shrink-0`} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link> }
+function NavLink({ href, label, icon, hoverIcon, active, showLabels, child = false }: { href: string; label: string; icon: IconNode; hoverIcon: IconNode; active: boolean; showLabels: boolean; child?: boolean }) { return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><MorphIcon icon={icon} hoverIcon={hoverIcon} className={child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link> }

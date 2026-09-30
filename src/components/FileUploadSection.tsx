@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { upload } from '@vercel/blob/client'
-import { Check, FileIcon, Link2, Plus, RotateCcw, UploadCloud, X } from 'lucide-react'
+import { Check, CirclePlus, CircleX, CloudUpload, ExternalLink, File, FileCheck, Link2, Plus, RefreshCcw, RotateCcw, UploadCloud, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import type { FieldError, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 import { type FileSlotId, type OrderFormValues } from '@/types/orderForm'
 import { SectionCard } from './ui/SectionCard'
@@ -130,12 +131,11 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
       <div className="space-y-5">
         <div className="grid grid-cols-2 border-b border-border" role="tablist" aria-label="File upload options">
           {[
-            { id: 'files', label: 'Files', icon: FileIcon },
-            { id: 'links', label: 'Cloud Links', icon: Link2 },
+            { id: 'files', label: 'Files', icon: File, hoverIcon: FileCheck },
+            { id: 'links', label: 'Cloud Links', icon: Link2, hoverIcon: ExternalLink },
           ].map((tab) => {
-            const Icon = tab.icon
             const selected = activeTab === tab.id
-            return <button key={tab.id} type="button" role="tab" aria-selected={selected} onClick={() => setActiveTab(tab.id as typeof activeTab)} className={`flex items-center justify-center gap-1.5 border-b-2 px-2 py-2.5 text-xs font-semibold ${selected ? 'border-text text-text' : 'border-transparent text-text-muted hover:text-text'}`}><Icon className="h-3.5 w-3.5" />{tab.label}</button>
+            return <button key={tab.id} type="button" role="tab" aria-selected={selected} onClick={() => setActiveTab(tab.id as typeof activeTab)} className={`flex items-center justify-center gap-1.5 border-b-2 px-2 py-2.5 text-xs font-semibold ${selected ? 'border-text text-text' : 'border-transparent text-text-muted hover:text-text'}`}><MorphIcon icon={tab.icon} hoverIcon={tab.hoverIcon} className="h-3.5 w-3.5" />{tab.label}</button>
           })}
         </div>
 
@@ -176,7 +176,7 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
             aria-label="Upload case files"
             className={`flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed px-5 py-8 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-text/10 ${isDragging ? 'border-text bg-neutral-100' : 'border-border bg-bg hover:border-neutral-400 hover:bg-neutral-50'}`}
           >
-            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-neutral-200 text-text"><UploadCloud className="h-6 w-6" aria-hidden /></span>
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-neutral-200 text-text"><MorphIcon icon={UploadCloud} hoverIcon={CloudUpload} className="h-6 w-6" /></span>
             <p className="text-sm font-semibold text-text">Drop all case files here</p>
             <p className="mt-1 text-xs text-text-muted">or click to select multiple files at once</p>
             <p className="mt-3 max-w-lg text-[11px] text-text-muted">{CASE_FILE_FORMAT_DESCRIPTION}</p>
@@ -194,14 +194,14 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
                 const isUploading = slotFile.status === 'uploading'
                 const isSuccess = slotFile.status === 'success'
                 return <div key={slotId} className="flex min-w-0 items-center gap-3 px-3 py-2.5">
-                  {slotFile.previewUrl ? <img src={slotFile.previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover" /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-bg text-text-muted"><FileIcon className="h-4 w-4" aria-hidden /></span>}
+                  {slotFile.previewUrl ? <img src={slotFile.previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover" /> : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-bg text-text-muted"><MorphIcon icon={File} className="h-4 w-4" /></span>}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2"><p className="truncate text-xs font-medium text-text">{slotFile.file.name}</p>{isSuccess && <Check className="h-3.5 w-3.5 shrink-0 text-green-600" aria-label="Uploaded" />}</div>
+                    <div className="flex items-center gap-2"><p className="truncate text-xs font-medium text-text">{slotFile.file.name}</p>{isSuccess && <MorphIcon icon={Check} className="h-3.5 w-3.5 shrink-0 text-green-600" label="Uploaded" />}</div>
                     {isUploading && <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-border"><div className="h-full bg-primary transition-all" style={{ width: `${slotFile.progress}%` }} /></div>}
                     {slotFile.status === 'error' && <p className="mt-1 truncate text-[10px] text-red-600">{slotFile.error ?? 'Upload failed'}</p>}
                   </div>
-                  {slotFile.status === 'error' && <button type="button" onClick={() => uploadFile(slotId, slotFile.file)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card text-text hover:bg-bg" title="Retry upload"><RotateCcw className="h-3.5 w-3.5" /><span className="sr-only">Retry {slotFile.file.name}</span></button>}
-                  {!isUploading && <button type="button" onClick={() => removeFile(slotId)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card text-text-muted hover:bg-red-50 hover:text-red-600" title="Remove file"><X className="h-3.5 w-3.5" /><span className="sr-only">Remove {slotFile.file.name}</span></button>}
+                  {slotFile.status === 'error' && <button type="button" onClick={() => uploadFile(slotId, slotFile.file)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card text-text hover:bg-bg" title="Retry upload"><MorphIcon icon={RotateCcw} hoverIcon={RefreshCcw} className="h-3.5 w-3.5" /><span className="sr-only">Retry {slotFile.file.name}</span></button>}
+                  {!isUploading && <button type="button" onClick={() => removeFile(slotId)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card text-text-muted hover:bg-red-50 hover:text-red-600" title="Remove file"><MorphIcon icon={X} hoverIcon={CircleX} className="h-3.5 w-3.5" /><span className="sr-only">Remove {slotFile.file.name}</span></button>}
                 </div>
               })}
             </div>
@@ -210,9 +210,9 @@ export function FileUploadSection({ orderNo, files, reservedSlotIds = [], onFile
 
         {activeTab === 'links' && <div className="space-y-3">
           <p className="text-sm text-text-muted">Add shared download links from Google Drive, Dropbox, OneDrive, WeTransfer, or another cloud service.</p>
-          {cloudLinks.map((link, index) => <div key={index} className="flex gap-2"><input type="url" placeholder="https://..." value={link} {...register(`cloudDriveLinks.${index}`)} onChange={(event) => updateCloudLink(index, event.target.value)} className={inputClassName(Boolean(error))} />{cloudLinks.length > 1 && <button type="button" onClick={() => setValue('cloudDriveLinks', cloudLinks.filter((_, linkIndex) => linkIndex !== index), { shouldDirty: true, shouldValidate: true })} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card border border-border text-text-muted hover:border-red-300 hover:text-red-600" title="Remove link"><X className="h-4 w-4" /></button>}</div>)}
+          {cloudLinks.map((link, index) => <div key={index} className="flex gap-2"><input type="url" placeholder="https://..." value={link} {...register(`cloudDriveLinks.${index}`)} onChange={(event) => updateCloudLink(index, event.target.value)} className={inputClassName(Boolean(error))} />{cloudLinks.length > 1 && <button type="button" onClick={() => setValue('cloudDriveLinks', cloudLinks.filter((_, linkIndex) => linkIndex !== index), { shouldDirty: true, shouldValidate: true })} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card border border-border text-text-muted hover:border-red-300 hover:text-red-600" title="Remove link"><MorphIcon icon={X} hoverIcon={CircleX} className="h-4 w-4" /></button>}</div>)}
           {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
-          <button type="button" onClick={() => setValue('cloudDriveLinks', [...cloudLinks, ''], { shouldDirty: true })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-text hover:text-text-muted"><Plus className="h-4 w-4" />Add another link</button>
+          <button type="button" onClick={() => setValue('cloudDriveLinks', [...cloudLinks, ''], { shouldDirty: true })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-text hover:text-text-muted"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />Add another link</button>
         </div>}
       </div>
     </SectionCard>

@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { upload } from '@vercel/blob/client'
-import { Check, FileIcon, RotateCcw, UploadCloud, X } from 'lucide-react'
+import { Check, CircleX, CloudUpload, File, FileCheck, RefreshCcw, RotateCcw, UploadCloud, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import { CASE_FILE_ACCEPT, CASE_FILE_FORMAT_DESCRIPTION, isSupportedCaseFile } from '@/components/fileUpload/fileTypes'
 
 interface QueueFile {
@@ -148,26 +149,26 @@ export function AddOrderFiles({
         }}
         className={`flex min-h-28 flex-col items-center justify-center rounded-card border-2 border-dashed px-3 py-4 text-center focus:outline-none focus:ring-2 focus:ring-text/10 ${isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'} ${isDragging ? 'border-text bg-neutral-50' : 'border-border bg-bg hover:border-neutral-400'}`}
       >
-        <UploadCloud className="h-5 w-5 text-text" aria-hidden />
+        <MorphIcon icon={UploadCloud} hoverIcon={CloudUpload} className="h-5 w-5 text-text" />
         <p className="mt-1.5 text-xs font-semibold text-text">{label}</p>
         <p className="mt-0.5 text-[10px] text-text-muted">Drop files here or browse</p>
         <p className="mt-1.5 text-[9px] leading-4 text-text-muted">{CASE_FILE_FORMAT_DESCRIPTION}</p>
       </div>
 
       {selectionError && <p role="alert" className="mt-2 text-[10px] text-red-600">{selectionError}</p>}
-      {message && <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-green-700"><Check className="h-3 w-3" />{message}</p>}
+      {message && <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-green-700"><MorphIcon icon={Check} className="h-3 w-3" />{message}</p>}
 
       {queue.length > 0 && <div className="mt-3 space-y-2">
         {queue.map((entry) => <div key={entry.slotId} className="flex min-w-0 items-center gap-2 rounded border border-border px-2 py-2">
-          <FileIcon className="h-3.5 w-3.5 shrink-0 text-text-muted" aria-hidden />
+          <MorphIcon icon={File} hoverIcon={FileCheck} className="h-3.5 w-3.5 shrink-0 text-text-muted" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[10px] font-medium text-text">{entry.file.name}</p>
             {entry.status === 'uploading' && <div className="mt-1 h-1 overflow-hidden rounded-full bg-border"><div className="h-full bg-primary transition-all" style={{ width: `${entry.progress}%` }} /></div>}
             {entry.status === 'error' && <p className="mt-0.5 truncate text-[9px] text-red-600">{entry.error}</p>}
           </div>
           {entry.status === 'error' && <>
-            <button type="button" onClick={() => void uploadEntries([entry])} className="text-text" title="Retry"><RotateCcw className="h-3.5 w-3.5" /><span className="sr-only">Retry {entry.file.name}</span></button>
-            <button type="button" onClick={() => setQueue((current) => current.filter((item) => item.slotId !== entry.slotId))} className="text-text-muted hover:text-red-600" title="Remove"><X className="h-3.5 w-3.5" /><span className="sr-only">Remove {entry.file.name}</span></button>
+            <button type="button" onClick={() => void uploadEntries([entry])} className="text-text" title="Retry"><MorphIcon icon={RotateCcw} hoverIcon={RefreshCcw} className="h-3.5 w-3.5" /><span className="sr-only">Retry {entry.file.name}</span></button>
+            <button type="button" onClick={() => setQueue((current) => current.filter((item) => item.slotId !== entry.slotId))} className="text-text-muted hover:text-red-600" title="Remove"><MorphIcon icon={X} hoverIcon={CircleX} className="h-3.5 w-3.5" /><span className="sr-only">Remove {entry.file.name}</span></button>
           </>}
         </div>)}
       </div>}

@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+'use client'
+
+import { useState, type ReactNode } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 interface SectionCardProps {
   title: string
@@ -30,7 +33,7 @@ export function SectionCard({ title, children, id, className = '', onTitleClick,
             aria-expanded
           >
             <span>{title}</span>
-            <ChevronUp className="h-4 w-4 text-text-muted" aria-hidden />
+            <MorphIcon icon={ChevronUp} hoverIcon={ChevronDown} className="h-4 w-4 text-text-muted" />
           </button>
         ) : (
           title
@@ -50,15 +53,18 @@ export function TreatmentColumn({
   children: ReactNode
   defaultOpen?: boolean
 }) {
+  const [open, setOpen] = useState(defaultOpen)
+
   return (
     <details
       className="group rounded-card border border-border bg-surface md:open:rounded-card"
-      open={defaultOpen}
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary className="cursor-pointer list-none rounded-t-card border-b border-border bg-[#fafafa] px-3 py-2 text-sm font-semibold text-text marker:content-none [&::-webkit-details-marker]:hidden">
         <span className="flex items-center justify-between">
           {title}
-          <ChevronDown className="h-4 w-4 text-text-muted transition-transform group-open:rotate-180" aria-hidden />
+          <MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4 text-text-muted" />
         </span>
       </summary>
       <div className="space-y-3 p-3">{children}</div>

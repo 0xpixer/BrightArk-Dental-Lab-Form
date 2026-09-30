@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { X } from 'lucide-react'
+import { CircleX, X } from 'lucide'
 import { DoctorRegistration } from './auth/DoctorRegistration'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 export function AuthModal({ onClose, onSignedIn }: { onClose: () => void; onSignedIn: () => void }) {
   const [mode, setMode] = useState<'signin' | 'register'>('signin')
@@ -36,7 +37,7 @@ export function AuthModal({ onClose, onSignedIn }: { onClose: () => void; onSign
       <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-card border border-border bg-surface p-6">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div><h2 id="account-modal-title" className="text-lg font-semibold text-text">{mode === 'signin' ? 'Sign in to submit your order' : 'Create your doctor account'}</h2><p className="mt-1 text-sm text-text-muted">Your completed order will stay here while you sign in.</p></div>
-          <button type="button" onClick={onClose} className="rounded p-1 text-text-muted hover:bg-bg hover:text-text" aria-label="Close sign in"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} className="rounded p-1 text-text-muted hover:bg-bg hover:text-text" aria-label="Close sign in"><MorphIcon icon={X} hoverIcon={CircleX} className="h-5 w-5" /></button>
         </div>
         {mode === 'register' ? <DoctorRegistration compact onVerified={async (credentials) => {
           setEmail(credentials.email)

@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
-import { Download, RotateCcw, X } from 'lucide-react'
+import { CircleX, CloudDownload, Download, RefreshCcw, RotateCcw, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import type { FilePreviewKind } from '@/lib/filePreview'
 
 const StlViewer = dynamic(() => import('./StlViewer'), {
@@ -48,16 +49,16 @@ export function FilePreviewModal({ file, onClose }: { file: PreviewFile; onClose
           <div className="flex shrink-0 items-center gap-1">
             {file.kind === 'stl' && (
               <button type="button" onClick={() => setResetSignal((value) => value + 1)} className="rounded p-2 text-text-muted hover:bg-bg hover:text-text" title="Reset 3D view">
-                <RotateCcw className="h-4 w-4" aria-hidden />
+                <MorphIcon icon={RotateCcw} hoverIcon={RefreshCcw} className="h-4 w-4" />
                 <span className="sr-only">Reset 3D view</span>
               </button>
             )}
             <a href={file.url} target="_blank" rel="noopener noreferrer" className="rounded p-2 text-text hover:bg-bg" title="Download file">
-              <Download className="h-4 w-4" aria-hidden />
+              <MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-4 w-4" />
               <span className="sr-only">Download {file.filename}</span>
             </a>
             <button ref={closeButtonRef} type="button" onClick={onClose} className="rounded p-2 text-text-muted hover:bg-bg hover:text-text" title="Close preview">
-              <X className="h-4 w-4" aria-hidden />
+              <MorphIcon icon={X} hoverIcon={CircleX} className="h-4 w-4" />
               <span className="sr-only">Close preview</span>
             </button>
           </div>

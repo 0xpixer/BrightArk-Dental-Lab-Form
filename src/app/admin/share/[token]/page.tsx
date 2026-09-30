@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { Download } from 'lucide-react'
+import { CloudDownload, Download } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 export default function ShareDownloadPage({ params }: { params: { token: string } }) {
   const [order, setOrder] = useState<{ orderNo: string; patientName: string; dateSent: string } | null>(null)
@@ -86,7 +87,7 @@ export default function ShareDownloadPage({ params }: { params: { token: string 
           disabled={downloading}
           className="inline-flex w-full items-center justify-center gap-2 rounded-card bg-primary py-4 text-base font-semibold text-white hover:bg-[#e06d15] disabled:opacity-60"
         >
-          <Download className="h-5 w-5" />
+          <MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-5 w-5" />
           {downloading ? 'Preparing download…' : 'Download Files'}
         </button>
 

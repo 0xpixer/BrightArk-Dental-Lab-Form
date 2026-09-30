@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Copy, Check } from 'lucide-react'
+import { Check, CircleX, ClipboardCheck, ClipboardCopy, Copy, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 interface ShareLinkModalProps {
   orderId: number
@@ -49,7 +50,7 @@ export function ShareLinkModal({ orderId, onClose }: ShareLinkModalProps) {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Shareable Download Link</h2>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-text">
-            <X className="h-5 w-5" />
+            <MorphIcon icon={X} hoverIcon={CircleX} className="h-5 w-5" />
           </button>
         </div>
 
@@ -97,7 +98,7 @@ export function ShareLinkModal({ orderId, onClose }: ShareLinkModalProps) {
               onClick={copyLink}
               className="flex w-full items-center justify-center gap-2 rounded-card border border-secondary py-2.5 text-sm font-semibold text-secondary hover:bg-secondary/5"
             >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              <MorphIcon icon={copied ? Check : Copy} hoverIcon={copied ? ClipboardCheck : ClipboardCopy} className="h-4 w-4" />
               {copied ? 'Copied!' : 'Copy to Clipboard'}
             </button>
           </>

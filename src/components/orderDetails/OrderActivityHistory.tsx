@@ -1,6 +1,7 @@
-import { Clock3 } from 'lucide-react'
+import { Clock3 } from 'lucide'
 import { ORDER_STATUS_LABELS } from '@/lib/orderStatus'
 import type { OrderActivityItem } from '@/lib/orderActivity'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 export function OrderActivityHistory({ activities }: { activities: OrderActivityItem[] }) {
   return (
@@ -12,7 +13,7 @@ export function OrderActivityHistory({ activities }: { activities: OrderActivity
         <ol className="space-y-3">
           {activities.map((activity) => (
             <li key={activity.id} className="grid grid-cols-[18px_1fr] gap-2 text-sm">
-              <Clock3 className="mt-0.5 h-4 w-4 text-text-muted" aria-hidden />
+              <MorphIcon icon={Clock3} className="mt-0.5 h-4 w-4 text-text-muted" />
               <div className="min-w-0">
                 <p className="text-text">
                   <time className="font-medium tabular-nums">{formatActivityDate(activity.createdAt)}</time>

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronDown, KeyRound, Save } from 'lucide-react'
+import { BadgeCheck, ChevronDown, ChevronsDown, CirclePlus, Key, KeyRound, Plus, Save } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import { Toast } from './Toast'
 import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
 
@@ -198,7 +199,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
           href="/admin/accounts/new"
           className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15]"
         >
-          + Create Account
+          <MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" /> Create Account
         </Link>
       </div>
 
@@ -246,7 +247,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                         className="grid h-7 w-7 shrink-0 place-items-center rounded text-text hover:bg-bg disabled:pointer-events-none disabled:opacity-20"
                         title="Save actor name"
                       >
-                        <Save className="h-3.5 w-3.5" />
+                        <MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-3.5 w-3.5" />
                         <span className="sr-only">Save actor name for {acc.username}</span>
                       </button>
                     </form>
@@ -279,7 +280,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                       <details className="group min-w-44">
                         <summary className="flex cursor-pointer list-none items-center justify-between rounded border border-border bg-surface px-2 py-1 text-xs [&::-webkit-details-marker]:hidden">
                           <span>{(servedDoctorDrafts[acc.id] ?? acc.servedDoctorIds).length} served doctor{(servedDoctorDrafts[acc.id] ?? acc.servedDoctorIds).length === 1 ? '' : 's'}</span>
-                          <ChevronDown className="h-3.5 w-3.5 text-text-muted transition-transform group-open:rotate-180" />
+                          <MorphIcon icon={ChevronDown} hoverIcon={ChevronsDown} className="h-3.5 w-3.5 text-text-muted" />
                         </summary>
                         <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded border border-border bg-surface p-2">
                           {doctors.map((doctor) => {
@@ -292,7 +293,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                               <span className="truncate">{doctor.name}</span>
                             </label>
                           })}
-                          <button type="button" disabled={pendingAccountId === acc.id || servedDoctorDrafts[acc.id] === undefined} onClick={() => updateServedDoctors(acc)} className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded bg-text px-2 py-1.5 text-xs font-medium text-white disabled:opacity-30"><Save className="h-3 w-3" /> Save scope</button>
+                          <button type="button" disabled={pendingAccountId === acc.id || servedDoctorDrafts[acc.id] === undefined} onClick={() => updateServedDoctors(acc)} className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded bg-text px-2 py-1.5 text-xs font-medium text-white disabled:opacity-30"><MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-3 w-3" /> Save scope</button>
                         </div>
                       </details>
                     ) : <span className="text-text-muted">—</span>}
@@ -327,7 +328,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                           onClick={() => setResetModal({ id: acc.id, username: acc.username })}
                           className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs hover:border-secondary disabled:opacity-60"
                         >
-                          <KeyRound className="h-3 w-3" />
+                          <MorphIcon icon={KeyRound} hoverIcon={Key} className="h-3 w-3" />
                           Reset
                         </button>
                       </div>

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { upload } from '@vercel/blob/client'
-import { Eye, FileIcon, Plus, RotateCcw, X } from 'lucide-react'
+import { CirclePlus, CircleX, Eye, File, FileCheck, Plus, RefreshCcw, RotateCcw, ScanEye, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import { UploadSlotCard, type SlotFile } from '@/components/fileUpload/UploadSlotCard'
 import type { FileSlotConfig } from '@/components/fileUpload/slotConfig'
 import { FilePreviewModal, type PreviewFile } from '@/components/orderDetails/FilePreviewModal'
@@ -109,7 +110,7 @@ export function IDesignCaseUploads({ uploadId, value, onChange, errors = {} }: {
           const item = value[slot.id]?.[0]
           return <div key={slot.id} className="space-y-1.5">
             <UploadSlotCard slot={slot} slotFile={item} hasError={Boolean(errors[slot.id])} onSelect={(file) => uploadFile(slot.id, file, item?.id)} onRemove={() => item && remove(slot.id, item.id)} onRetry={() => item && uploadFile(slot.id, item.file, item.id)} />
-            {item?.status === 'success' && getFilePreviewKind(item.blobUrl || item.file.name) && <button type="button" onClick={() => openPreview(item)} className="inline-flex items-center gap-1 text-xs font-medium text-text-muted hover:text-text"><Eye className="h-3.5 w-3.5" />Preview</button>}
+            {item?.status === 'success' && getFilePreviewKind(item.blobUrl || item.file.name) && <button type="button" onClick={() => openPreview(item)} className="inline-flex items-center gap-1 text-xs font-medium text-text-muted hover:text-text"><MorphIcon icon={Eye} hoverIcon={ScanEye} className="h-3.5 w-3.5" />Preview</button>}
             {errors[slot.id] && <p role="alert" className="text-xs text-red-600">{errors[slot.id]}</p>}
           </div>
         })}
@@ -119,8 +120,8 @@ export function IDesignCaseUploads({ uploadId, value, onChange, errors = {} }: {
     <section>
       <div className="mb-3 flex items-baseline gap-2"><h3 className="text-sm font-semibold text-text">CBCT</h3><span className="text-xs text-text-muted">Optional, multiple files allowed</span></div>
       <input ref={cbctInput} type="file" multiple className="sr-only" accept=".dcm,.zip,.rar,.7z,application/dicom,application/zip,application/octet-stream" onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => uploadFile('cbct', file)); event.target.value = '' }} />
-      <button type="button" onClick={() => cbctInput.current?.click()} className="inline-flex h-10 items-center gap-2 rounded-card border border-border bg-surface px-3 text-sm font-medium text-text hover:bg-bg"><Plus className="h-4 w-4" />Add CBCT files</button>
-      {(value.cbct?.length ?? 0) > 0 && <div className="mt-3 divide-y divide-border overflow-hidden rounded-card border border-border">{value.cbct!.map((item) => <div key={item.id} className="flex items-center gap-3 px-3 py-2.5"><FileIcon className="h-4 w-4 shrink-0 text-text-muted" /><div className="min-w-0 flex-1"><p className="truncate text-xs font-medium text-text">{item.file.name}</p>{item.status === 'uploading' && <div className="mt-1 h-1 overflow-hidden rounded-full bg-border"><div className="h-full bg-primary" style={{ width: `${item.progress}%` }} /></div>}{item.status === 'error' && <p className="mt-1 text-xs text-red-600">{item.error}</p>}</div>{item.status === 'error' && <button type="button" title="Retry" onClick={() => uploadFile('cbct', item.file, item.id)} className="p-2 text-text-muted hover:text-text"><RotateCcw className="h-4 w-4" /></button>}<button type="button" title="Remove" onClick={() => remove('cbct', item.id)} className="p-2 text-text-muted hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>}
+      <button type="button" onClick={() => cbctInput.current?.click()} className="inline-flex h-10 items-center gap-2 rounded-card border border-border bg-surface px-3 text-sm font-medium text-text hover:bg-bg"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />Add CBCT files</button>
+      {(value.cbct?.length ?? 0) > 0 && <div className="mt-3 divide-y divide-border overflow-hidden rounded-card border border-border">{value.cbct!.map((item) => <div key={item.id} className="flex items-center gap-3 px-3 py-2.5"><MorphIcon icon={File} hoverIcon={FileCheck} className="h-4 w-4 shrink-0 text-text-muted" /><div className="min-w-0 flex-1"><p className="truncate text-xs font-medium text-text">{item.file.name}</p>{item.status === 'uploading' && <div className="mt-1 h-1 overflow-hidden rounded-full bg-border"><div className="h-full bg-primary" style={{ width: `${item.progress}%` }} /></div>}{item.status === 'error' && <p className="mt-1 text-xs text-red-600">{item.error}</p>}</div>{item.status === 'error' && <button type="button" title="Retry" onClick={() => uploadFile('cbct', item.file, item.id)} className="p-2 text-text-muted hover:text-text"><MorphIcon icon={RotateCcw} hoverIcon={RefreshCcw} className="h-4 w-4" /></button>}<button type="button" title="Remove" onClick={() => remove('cbct', item.id)} className="p-2 text-text-muted hover:text-red-600"><MorphIcon icon={X} hoverIcon={CircleX} className="h-4 w-4" /></button></div>)}</div>}
     </section>
     {preview && <FilePreviewModal file={preview} onClose={() => setPreview(null)} />}
   </div>

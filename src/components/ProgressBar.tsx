@@ -1,4 +1,5 @@
-import { Check } from 'lucide-react'
+import { Check } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 const STEPS = [
   { id: 1, label: 'Case Details' },
@@ -30,7 +31,7 @@ export function ProgressBar({ activeStep }: ProgressBarProps) {
                   }`}
                   aria-current={isActive ? 'step' : undefined}
                 >
-                  {isComplete ? <Check className="h-4 w-4" aria-hidden /> : step.id}
+                  {isComplete ? <MorphIcon icon={Check} className="h-4 w-4" /> : step.id}
                 </span>
                 <span
                   className={`text-center text-[10px] font-medium sm:text-left sm:text-xs ${

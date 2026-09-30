@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, Check, Save } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BadgeCheck, Check, MoveLeft, MoveRight, Save } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { FDIToothChart } from '@/components/idesign/FDIToothChart'
@@ -86,7 +87,7 @@ export function NewIDesignOrderForm() {
 
   return <div className="mx-auto max-w-6xl space-y-4">
     <header className="flex items-center gap-3">
-      <Link href={listHref} title="Back to iDesign orders" className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text"><ArrowLeft className="h-4 w-4" /><span className="sr-only">Back to iDesign orders</span></Link>
+      <Link href={listHref} title="Back to iDesign orders" className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /><span className="sr-only">Back to iDesign orders</span></Link>
       <div><h1 className="text-xl font-semibold text-text">New Clear Aligner Order</h1><p className="mt-1 text-sm text-text-muted">Enter the patient records and clinical design preferences.</p></div>
     </header>
 
@@ -107,7 +108,7 @@ export function NewIDesignOrderForm() {
           <SectionHeading number="1.2" title="Case Data" />
           <IDesignCaseUploads uploadId={uploadId} value={files} onChange={setFiles} errors={stepOneErrors} />
         </section>
-        <div className="flex justify-end p-4 sm:p-6"><button type="button" onClick={goNext} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600">Next <ArrowRight className="h-4 w-4" /></button></div>
+        <div className="flex justify-end p-4 sm:p-6"><button type="button" onClick={goNext} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600">Next <MorphIcon icon={ArrowRight} hoverIcon={MoveRight} className="h-4 w-4" /></button></div>
       </div> : <div>
         <section className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[180px_1fr]">
           <SectionHeading number="1.3" title="Clinical Info" />
@@ -131,14 +132,14 @@ export function NewIDesignOrderForm() {
             <ClinicalSection title="Other remarks and design instructions"><textarea value={remarks} maxLength={500} onChange={(event) => setRemarks(event.target.value)} placeholder="Please Enter Notes" rows={5} className={`${inputClass(false)} h-auto resize-y py-2.5`} /><p className="mt-1 text-right text-xs text-text-muted">{remarks.length} / 500</p></ClinicalSection>
           </div>
         </section>
-        <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-between sm:p-6"><button type="button" onClick={() => setStep(1)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg"><ArrowLeft className="h-4 w-4" />Previous</button><div className="flex gap-2"><Link href={listHref} className="inline-flex h-10 items-center rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg">Cancel</Link><button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"><Save className="h-4 w-4" />{saving ? 'Saving...' : 'Save'}</button></div></div>
+        <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-between sm:p-6"><button type="button" onClick={() => setStep(1)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" />Previous</button><div className="flex gap-2"><Link href={listHref} className="inline-flex h-10 items-center rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg">Cancel</Link><button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"><MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-4 w-4" />{saving ? 'Saving...' : 'Save'}</button></div></div>
       </div>}
     </form>
   </div>
 }
 
 function StepIndicator({ step }: { step: 1 | 2 }) { return <ol className="grid grid-cols-[1fr_auto_1fr] items-center rounded-card border border-border bg-surface px-4 py-3"><StepItem active={step === 1} complete={step > 1} number="1" label="Information Entry" /><div className="mx-3 h-px w-8 bg-border sm:w-20" /><StepItem active={step === 2} complete={false} number="2" label="Plan Design" /></ol> }
-function StepItem({ active, complete, number, label }: { active: boolean; complete: boolean; number: string; label: string }) { return <li className={`flex min-w-0 items-center gap-2 ${active ? 'text-text' : 'text-text-muted'}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-semibold ${active || complete ? 'border-text bg-text text-white' : 'border-border bg-surface'}`}>{complete ? <Check className="h-3.5 w-3.5" /> : number}</span><span className="truncate text-xs font-semibold sm:text-sm">{number}. {label}</span></li> }
+function StepItem({ active, complete, number, label }: { active: boolean; complete: boolean; number: string; label: string }) { return <li className={`flex min-w-0 items-center gap-2 ${active ? 'text-text' : 'text-text-muted'}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-semibold ${active || complete ? 'border-text bg-text text-white' : 'border-border bg-surface'}`}>{complete ? <MorphIcon icon={Check} className="h-3.5 w-3.5" /> : number}</span><span className="truncate text-xs font-semibold sm:text-sm">{number}. {label}</span></li> }
 function SectionHeading({ number, title }: { number: string; title: string }) { return <div><span className="text-xs font-semibold text-text-muted">{number}</span><h2 className="mt-1 text-base font-semibold text-text">{title}</h2></div> }
 function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) { return <label><span className="mb-1.5 block text-xs font-medium text-text-muted">{label}{required && <span className="text-red-500"> *</span>}</span>{children}{error && <span className="mt-1 block text-xs text-red-600">{error}</span>}</label> }
 function inputClass(error: boolean) { return `h-10 w-full rounded-card border bg-surface px-3 text-sm text-text outline-none focus:ring-2 focus:ring-text/10 ${error ? 'border-red-400' : 'border-border focus:border-text'}` }

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, Link2, MessageCircle, Pencil, Save, X } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, CircleX, CloudDownload, Download, ExternalLink, Link2, MessageCircle, MessagesSquare, MoveLeft, PenLine, Pencil, Save, X } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 import { StatusBadge } from './StatusBadge'
 import { ShareLinkModal } from './ShareLinkModal'
 import { Toast } from './Toast'
@@ -108,7 +109,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit, canEditPend
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/admin/submissions" className="text-text-muted hover:text-text">
-            <ArrowLeft className="h-5 w-5" />
+            <MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-5 w-5" />
           </Link>
           <div>
             <h1 className="text-xl font-semibold text-text">Order: {order.orderNo}</h1>
@@ -116,7 +117,7 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit, canEditPend
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {canEditPendingOrder && order.status === 'pending' && <Link href={`/admin/submissions/${orderId}/edit`} className="inline-flex items-center gap-1 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600"><Pencil className="h-4 w-4" /> Edit Order</Link>}
+          {canEditPendingOrder && order.status === 'pending' && <Link href={`/admin/submissions/${orderId}/edit`} className="inline-flex items-center gap-1 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Pencil} hoverIcon={PenLine} className="h-4 w-4" /> Edit Order</Link>}
           {canUpdateStatus && (
             <select
               value={order.status}
@@ -131,21 +132,21 @@ export function OrderDetailView({ orderId, canUpdateStatus, canEdit, canEditPend
             onClick={() => { window.location.href = `/api/admin/orders/${orderId}/download` }}
             className="inline-flex items-center gap-1 rounded-card border border-border px-3 py-2 text-sm hover:border-neutral-400"
           >
-            <Download className="h-4 w-4" /> ZIP
+            <MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-4 w-4" /> ZIP
           </button>
           <button
             type="button"
             onClick={() => setMessagesOpen(true)}
             className="inline-flex items-center gap-1 rounded-card bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
           >
-            <MessageCircle className="h-4 w-4" /> Message
+            <MorphIcon icon={MessageCircle} hoverIcon={MessagesSquare} className="h-4 w-4" /> Message
           </button>
           <button
             type="button"
             onClick={() => setShareOpen(true)}
             className="inline-flex items-center gap-1 rounded-card border border-border px-3 py-2 text-sm hover:border-accent"
           >
-            <Link2 className="h-4 w-4" /> Link
+            <MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-4 w-4" /> Link
           </button>
         </div>
       </div>
@@ -330,15 +331,15 @@ function SectionCard({
         <h2 className="text-sm font-semibold text-secondary">{title}</h2>
         {!hideEdit && !editing ? (
           <button type="button" onClick={onEdit} className="text-xs text-text hover:underline">
-            <Pencil className="inline h-3.5 w-3.5" /> Edit
+            <MorphIcon icon={Pencil} hoverIcon={PenLine} className="h-3.5 w-3.5" /> Edit
           </button>
         ) : !hideEdit && editing ? (
           <div className="flex gap-2">
             <button type="button" onClick={onSave} className="inline-flex items-center gap-1 text-xs text-green-600">
-              <Save className="h-3.5 w-3.5" /> Save
+              <MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-3.5 w-3.5" /> Save
             </button>
             <button type="button" onClick={onCancel} className="inline-flex items-center gap-1 text-xs text-text-muted">
-              <X className="h-3.5 w-3.5" /> Cancel
+              <MorphIcon icon={X} hoverIcon={CircleX} className="h-3.5 w-3.5" /> Cancel
             </button>
           </div>
         ) : null}

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { CirclePlus, CircleX, Plus, Trash2 } from 'lucide'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 type Clinic = { id?: number; name: string; address: string }
 type Profile = {
@@ -121,7 +122,7 @@ export function DoctorProfileForm() {
             </div>
             {clinicEditable && (
               <button type="button" onClick={addClinic} title="Add clinic" className="inline-flex h-8 w-8 items-center justify-center rounded-card border border-border text-text hover:border-neutral-400">
-                <Plus className="h-4 w-4" />
+                <MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -138,7 +139,7 @@ export function DoctorProfileForm() {
                 </label>
                 {clinicEditable && (
                   <button type="button" onClick={() => removeClinic(index)} disabled={profile.clinics.length === 1} title="Remove clinic" className="inline-flex h-9 w-9 items-center justify-center rounded-card border border-border text-text-muted hover:border-red-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40">
-                    <Trash2 className="h-4 w-4" />
+                    <MorphIcon icon={Trash2} hoverIcon={CircleX} className="h-4 w-4" />
                   </button>
                 )}
               </div>

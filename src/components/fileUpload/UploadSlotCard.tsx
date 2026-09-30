@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
-import { Check, X, RotateCcw } from 'lucide-react'
+import { Check, CircleX, RefreshCcw, RotateCcw, X } from 'lucide'
 import type { FileSlotConfig } from './slotConfig'
 import { SlotIcon } from './SlotIcon'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 export interface SlotFile {
   file: File
@@ -77,7 +78,7 @@ export function UploadSlotCard({
 
       {isSuccess && (
         <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white">
-          <Check className="h-3 w-3" aria-hidden />
+          <MorphIcon icon={Check} className="h-3 w-3" />
         </span>
       )}
 
@@ -123,7 +124,7 @@ export function UploadSlotCard({
               className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white transition-colors hover:bg-red-600"
               aria-label={`Remove ${slot.label}`}
             >
-              <X className="h-3.5 w-3.5" />
+              <MorphIcon icon={X} hoverIcon={CircleX} className="h-3.5 w-3.5" />
             </button>
           )}
           <p className="mt-2 truncate text-center text-[10px] text-text">{slotFile.file.name}</p>
@@ -146,7 +147,7 @@ export function UploadSlotCard({
                 }}
                 className="inline-flex items-center gap-1 rounded border border-red-300 px-2 py-0.5 text-[10px] font-medium text-red-600 transition-colors hover:bg-red-50"
               >
-                <RotateCcw className="h-3 w-3" aria-hidden />
+                <MorphIcon icon={RotateCcw} hoverIcon={RefreshCcw} className="h-3 w-3" />
                 Retry
               </button>
             </div>

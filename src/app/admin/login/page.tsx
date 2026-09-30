@@ -5,9 +5,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide'
 import { getSafeLoginCallback } from '@/lib/siteRouting'
 import { PasswordResetForm } from '@/components/auth/PasswordResetForm'
+import { MorphIcon } from '@/components/ui/MorphIcon'
 
 function LoginForm() {
   const router = useRouter()
@@ -103,7 +104,7 @@ function LoginForm() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <MorphIcon icon={showPassword ? EyeOff : Eye} className="h-4 w-4" />
               </button>
             </div>
           </div>
