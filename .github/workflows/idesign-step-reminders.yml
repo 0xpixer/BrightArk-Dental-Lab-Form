@@ -1,0 +1,18 @@
+name: iDesign Step Reminders
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-step-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send next-step reminders
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://idesign.thebrightark.com/api/cron/idesign-step-reminders"

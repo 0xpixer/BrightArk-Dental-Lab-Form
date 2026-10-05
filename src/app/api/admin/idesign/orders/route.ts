@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { idesignOrders } from '@/lib/db/schema'
+import { idesignCases, idesignOrders } from '@/lib/db/schema'
 import { applyIDesignOrderLogic, createIDesignOrderSchema } from '@/lib/idesign/orders'
 import { adminUsers } from '@/lib/db/schema'
+import { syncImportedIDesignCases } from '@/lib/idesign/importedCases'
 
 export async function GET(request: Request) {
   const { session, error } = await requireAdmin()
@@ -50,8 +51,12 @@ export async function GET(request: Request) {
   ])
 
   const total = totalRows[0]?.count ?? 0
+  const clinicalCases = rows.length
+    ? await db.select({ id: idesignCases.id, importedOrderId: idesignCases.importedOrderId }).from(idesignCases).where(inArray(idesignCases.importedOrderId, rows.map((row) => row.id)))
+    : []
+  const clinicalCaseIds = new Map(clinicalCases.map((caseRow) => [caseRow.importedOrderId, caseRow.id]))
   return NextResponse.json({
-    orders: rows,
+    orders: rows.map((row) => ({ ...row, clinicalCaseId: clinicalCaseIds.get(row.id) ?? null })),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     options: {
       salespeople: salespeople.map((row) => row.name),
@@ -76,6 +81,8 @@ export async function POST(request: Request) {
     .insert(idesignOrders)
     .values({ ...applyIDesignOrderLogic(parsed.data), createdBy: Number(session!.user.id) })
     .returning()
+
+  await syncImportedIDesignCases([order.id])
 
   return NextResponse.json({ order }, { status: 201 })
 }

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignOrders } from '@/lib/db/schema'
+import { syncImportedIDesignCases } from '@/lib/idesign/importedCases'
 
 export async function POST(request: Request) {
   const { session, error } = await requireSuperadmin()
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     ? { salesAccountId: account.id, assignmentUpdatedBy: Number(session!.user.id), assignmentUpdatedAt: new Date() }
     : { doctorAccountId: account.id, assignmentUpdatedBy: Number(session!.user.id), assignmentUpdatedAt: new Date() }
   const updated = await db.update(idesignOrders).set(assignment).where(and(...conditions)).returning({ id: idesignOrders.id })
+  await syncImportedIDesignCases(updated.map((order) => order.id))
   return NextResponse.json({ success: true, assigned: updated.length, assignmentRole: account.role })
 }
 

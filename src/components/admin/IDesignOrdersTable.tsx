@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Link2, Search } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import {
@@ -26,6 +27,7 @@ interface IDesignOrderRow {
   paymentStatus: string
   salesAccountId: number | null
   doctorAccountId: number | null
+  clinicalCaseId: number | null
 }
 
 interface AssignableAccount { id: number; name: string; role: 'sales' | 'doctor' }
@@ -163,13 +165,14 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3">Payment</th>
                 {canManage && <th className="px-4 py-3">Assigned Accounts</th>}
+                <th className="px-4 py-3">Case</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={canManage ? 9 : 8} className="px-4 py-12 text-center text-sm text-text-muted">Loading iDesign orders...</td></tr>
+                <tr><td colSpan={canManage ? 10 : 9} className="px-4 py-12 text-center text-sm text-text-muted">Loading iDesign orders...</td></tr>
               ) : orders.length === 0 ? (
-                <tr><td colSpan={canManage ? 9 : 8} className="px-4 py-12 text-center text-sm text-text-muted">No matching records</td></tr>
+                <tr><td colSpan={canManage ? 10 : 9} className="px-4 py-12 text-center text-sm text-text-muted">No matching records</td></tr>
               ) : orders.map((order) => (
                 <tr key={order.id} className="border-b border-border last:border-0 hover:bg-bg/60">
                   <td className="px-4 py-3"><p className="text-sm font-medium text-text">{order.patientName}</p><p className="mt-0.5 text-xs text-text-muted">{order.caseId || 'No case ID'}</p></td>
@@ -181,6 +184,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
                   <td className="px-4 py-3 text-sm text-text-muted">{formatDate(order.sourceCreatedOn)}</td>
                   <td className="px-4 py-3"><p className="text-sm text-text">{order.paymentStatus}</p><p className="mt-0.5 text-xs text-text-muted">{formatAmount(order.totalAmount, order.originalCurrency)}</p></td>
                   {canManage && <td className="px-4 py-3 text-xs text-text-muted"><p>Sales: {accountName(options.assignableAccounts, order.salesAccountId)}</p><p className="mt-1">Doctor: {accountName(options.assignableAccounts, order.doctorAccountId)}</p></td>}
+                  <td className="px-4 py-3">{order.clinicalCaseId ? <Link href={`/admin/idesign/orders/${order.clinicalCaseId}`} className="text-sm font-medium text-text underline-offset-4 hover:underline">Open</Link> : <span className="text-xs text-text-muted">Not available</span>}</td>
                 </tr>
               ))}
             </tbody>

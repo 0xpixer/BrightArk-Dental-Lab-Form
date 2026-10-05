@@ -1,8 +1,8 @@
-import { and, count, desc, ilike, inArray, or } from 'drizzle-orm'
+import { and, asc, count, desc, ilike, inArray, or } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, idesignCases } from '@/lib/db/schema'
+import { adminUsers, idesignCases, idesignTreatmentCourses, idesignTreatmentPlans } from '@/lib/db/schema'
 import { canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { createIDesignCaseOrderNo, createIDesignCaseSchema } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
@@ -34,6 +34,14 @@ export async function GET(request: Request) {
     ? await db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(inArray(adminUsers.id, accountIds))
     : []
   const accountNames = new Map(accounts.map((account) => [account.id, account.name || account.username]))
+  const caseIds = rows.map((row) => row.id)
+  const [plans, courses] = caseIds.length ? await Promise.all([
+    db.select({ caseId: idesignTreatmentPlans.caseId, versionNumber: idesignTreatmentPlans.versionNumber }).from(idesignTreatmentPlans).where(inArray(idesignTreatmentPlans.caseId, caseIds)).orderBy(asc(idesignTreatmentPlans.versionNumber)),
+    db.select({ caseId: idesignTreatmentCourses.caseId, status: idesignTreatmentCourses.status, currentStep: idesignTreatmentCourses.currentStep, totalSteps: idesignTreatmentCourses.totalSteps }).from(idesignTreatmentCourses).where(inArray(idesignTreatmentCourses.caseId, caseIds)),
+  ]) : [[], []]
+  const currentVersions = new Map<number, number>()
+  for (const plan of plans) currentVersions.set(plan.caseId, plan.versionNumber)
+  const coursesByCase = new Map(courses.map((course) => [course.caseId, course]))
   const total = totalRows[0]?.count ?? 0
 
   return NextResponse.json({
@@ -42,6 +50,8 @@ export async function GET(request: Request) {
       createdByName: row.createdBy ? accountNames.get(row.createdBy) ?? null : null,
       doctorName: row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null,
       salesName: row.salesAccountId ? accountNames.get(row.salesAccountId) ?? null : null,
+      currentPlanVersion: currentVersions.get(row.id) ?? null,
+      course: coursesByCase.get(row.id) ?? null,
     })),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
   })

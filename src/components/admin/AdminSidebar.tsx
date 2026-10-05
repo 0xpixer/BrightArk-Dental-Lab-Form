@@ -17,7 +17,7 @@ interface NavItem { href: string; label: string; icon: IconNode; hoverIcon: Icon
 interface NavModule { id: string; label: string; icon: IconNode; hoverIcon: IconNode; roles: string[]; items: NavItem[] }
 
 const MODULES: NavModule[] = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'sales'], items: [
+  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'admin', 'sales'], items: [
     { href: '/admin/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
   ] },

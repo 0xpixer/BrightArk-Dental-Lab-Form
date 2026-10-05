@@ -15,9 +15,11 @@ test('iDesign Sales and Doctors are restricted to their separately assigned orde
   }
 })
 
-test('only Superadmin receives an unrestricted iDesign scope', async () => {
+test('Superadmin and Lab Admin receive an unrestricted iDesign scope', async () => {
   assert.equal(await getIDesignAccessCondition(1, 'superadmin'), undefined)
-  for (const role of ['admin', 'unknown', '']) {
+  assert.equal(await getIDesignAccessCondition(2, 'admin'), undefined)
+  assert.equal(canViewIDesign('admin'), true)
+  for (const role of ['unknown', '']) {
     assert.equal(canViewIDesign(role), false)
     assert.equal(dialect.sqlToQuery((await getIDesignAccessCondition(4, role))!).sql, 'false')
   }

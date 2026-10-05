@@ -165,11 +165,12 @@ export const idesignOrders = pgTable('idesign_orders', {
 
 export const idesignCases = pgTable('idesign_cases', {
   id: serial('id').primaryKey(),
+  importedOrderId: integer('imported_order_id').references(() => idesignOrders.id, { onDelete: 'cascade' }),
   orderNo: text('order_no').notNull().unique(),
   orderType: text('order_type').default('clear_aligner').notNull(),
   patientName: text('patient_name').notNull(),
-  gender: text('gender').notNull(),
-  dateOfBirth: date('date_of_birth', { mode: 'string' }).notNull(),
+  gender: text('gender'),
+  dateOfBirth: date('date_of_birth', { mode: 'string' }),
   fileUrls: jsonb('file_urls').notNull().default({}),
   dentitionStage: text('dentition_stage'),
   extractionTeeth: jsonb('extraction_teeth').notNull().default([]),
@@ -185,6 +186,8 @@ export const idesignCases = pgTable('idesign_cases', {
   iprNotAllowed: jsonb('ipr_not_allowed').notNull().default({}),
   molarDistalizationNotAllowed: jsonb('molar_distalization_not_allowed').notNull().default({}),
   remarks: text('remarks'),
+  currentEditableUrl: text('current_editable_url'),
+  planReviewStatus: text('plan_review_status').default('no_plan').notNull(),
   latestProgress: text('latest_progress').default('Entering Info').notNull(),
   createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
   doctorAccountId: integer('doctor_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
@@ -192,9 +195,92 @@ export const idesignCases = pgTable('idesign_cases', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => ({
+  importedOrderIdx: uniqueIndex('idesign_cases_imported_order_idx').on(table.importedOrderId),
   doctorAccountIdx: index('idesign_cases_doctor_account_idx').on(table.doctorAccountId),
   salesAccountIdx: index('idesign_cases_sales_account_idx').on(table.salesAccountId),
   createdAtIdx: index('idesign_cases_created_at_idx').on(table.createdAt),
+}))
+
+export const idesignTreatmentPlans = pgTable('idesign_treatment_plans', {
+  id: serial('id').primaryKey(),
+  caseId: integer('case_id').references(() => idesignCases.id, { onDelete: 'cascade' }).notNull(),
+  versionNumber: integer('version_number').notNull(),
+  reviewUrl: text('review_url').notNull(),
+  summary: text('summary'),
+  status: text('status').default('published').notNull(),
+  createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  approvedBy: integer('approved_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  approvedAt: timestamp('approved_at', { withTimezone: true, mode: 'date' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  caseVersionIdx: uniqueIndex('idesign_treatment_plans_case_version_idx').on(table.caseId, table.versionNumber),
+  casePublishedIdx: index('idesign_treatment_plans_case_published_idx').on(table.caseId, table.publishedAt),
+}))
+
+export const idesignCaseActivities = pgTable('idesign_case_activities', {
+  id: serial('id').primaryKey(),
+  caseId: integer('case_id').references(() => idesignCases.id, { onDelete: 'cascade' }).notNull(),
+  eventType: text('event_type').notNull(),
+  detail: text('detail').notNull(),
+  actorId: integer('actor_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  actorRole: text('actor_role').notNull(),
+  actorName: text('actor_name').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  caseCreatedIdx: index('idesign_case_activities_case_created_idx').on(table.caseId, table.createdAt),
+}))
+
+export const idesignTreatmentCourses = pgTable('idesign_treatment_courses', {
+  id: serial('id').primaryKey(),
+  caseId: integer('case_id').references(() => idesignCases.id, { onDelete: 'cascade' }).notNull(),
+  startDate: date('start_date', { mode: 'string' }).notNull(),
+  totalSteps: integer('total_steps').notNull(),
+  defaultDurationDays: integer('default_duration_days').default(10).notNull(),
+  currentStep: integer('current_step').default(1).notNull(),
+  originalEstimatedFinish: date('original_estimated_finish', { mode: 'string' }).notNull(),
+  currentEstimatedFinish: date('current_estimated_finish', { mode: 'string' }).notNull(),
+  nextSuggestedChange: date('next_suggested_change', { mode: 'string' }),
+  timezone: text('timezone').default('Asia/Jakarta').notNull(),
+  status: text('status').default('active').notNull(),
+  createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  caseIdx: uniqueIndex('idesign_treatment_courses_case_idx').on(table.caseId),
+  reminderIdx: index('idesign_treatment_courses_reminder_idx').on(table.status, table.nextSuggestedChange),
+}))
+
+export const idesignTreatmentSteps = pgTable('idesign_treatment_steps', {
+  id: serial('id').primaryKey(),
+  courseId: integer('course_id').references(() => idesignTreatmentCourses.id, { onDelete: 'cascade' }).notNull(),
+  stepNumber: integer('step_number').notNull(),
+  durationDays: integer('duration_days').notNull(),
+  suggestedStartDate: date('suggested_start_date', { mode: 'string' }).notNull(),
+  suggestedEndDate: date('suggested_end_date', { mode: 'string' }).notNull(),
+  actualStartDate: date('actual_start_date', { mode: 'string' }),
+  status: text('status').default('scheduled').notNull(),
+  confirmedBy: integer('confirmed_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  confirmedAt: timestamp('confirmed_at', { withTimezone: true, mode: 'date' }),
+}, (table) => ({
+  courseStepIdx: uniqueIndex('idesign_treatment_steps_course_step_idx').on(table.courseId, table.stepNumber),
+}))
+
+export const idesignNotifications = pgTable('idesign_notifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  caseId: integer('case_id').references(() => idesignCases.id, { onDelete: 'cascade' }).notNull(),
+  eventType: text('event_type').notNull(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  dedupeKey: text('dedupe_key').notNull(),
+  readAt: timestamp('read_at', { withTimezone: true, mode: 'date' }),
+  emailSentAt: timestamp('email_sent_at', { withTimezone: true, mode: 'date' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  dedupeIdx: uniqueIndex('idesign_notifications_dedupe_idx').on(table.userId, table.dedupeKey),
+  userCreatedIdx: index('idesign_notifications_user_created_idx').on(table.userId, table.createdAt),
 }))
 
 export const orderActivities = pgTable('order_activities', {
@@ -262,6 +348,11 @@ export type IDesignOrder = typeof idesignOrders.$inferSelect
 export type NewIDesignOrder = typeof idesignOrders.$inferInsert
 export type IDesignCase = typeof idesignCases.$inferSelect
 export type NewIDesignCase = typeof idesignCases.$inferInsert
+export type IDesignTreatmentPlan = typeof idesignTreatmentPlans.$inferSelect
+export type IDesignCaseActivity = typeof idesignCaseActivities.$inferSelect
+export type IDesignTreatmentCourse = typeof idesignTreatmentCourses.$inferSelect
+export type IDesignTreatmentStep = typeof idesignTreatmentSteps.$inferSelect
+export type IDesignNotification = typeof idesignNotifications.$inferSelect
 export type OrderDraft = typeof orderDrafts.$inferSelect
 export type OrderMessage = typeof orderMessages.$inferSelect
 export type OrderMessageRead = typeof orderMessageReads.$inferSelect
