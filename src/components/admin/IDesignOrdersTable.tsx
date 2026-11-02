@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Link2, Search } from 'lucide'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, FileSpreadsheet, Link2, Search, Upload } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import {
   IDESIGN_CATEGORIES,
@@ -10,6 +10,7 @@ import {
   IDESIGN_PROGRESS_OPTIONS,
   IDESIGN_PROGRESS_STYLES,
 } from '@/lib/idesign/orders'
+import { IDesignImportDialog } from './IDesignImportDialog'
 
 interface IDesignOrderRow {
   id: number
@@ -49,6 +50,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -123,7 +125,10 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
           <h1 className="text-xl font-semibold text-text">Imported Order Records</h1>
           <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} legacy records across aligners, scanners, and other products`}</p>
         </div>
+        {canManage && <button type="button" onClick={() => setImportOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={FileSpreadsheet} hoverIcon={Upload} className="h-4 w-4" />Import Excel</button>}
       </header>
+
+      {canManage && <IDesignImportDialog open={importOpen} onClose={() => setImportOpen(false)} onApplied={(result) => { setNotice(`Excel import completed: ${result.created} new and ${result.updated} updated records`); void load() }} />}
 
       <section className="rounded-card border border-border bg-surface p-3">
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
