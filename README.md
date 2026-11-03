@@ -35,7 +35,7 @@ The separate **Complete Delivered Orders** GitHub Actions workflow runs every th
 
 Public signup now requires Turnstile and email verification. **Configure the following in Vercel and redeploy to enable new signups.** Missing configuration fails closed; existing accounts can still sign in. No existing accounts are deleted or retroactively verified. Admin-created accounts remain a trusted, separate path.
 
-1. In [Cloudflare Turnstile](https://dash.cloudflare.com/), add a Managed widget and allow the site's production hostnames (including `idesign.thebrightark.com` and its `vercel.app` hostname if used).
+1. In [Cloudflare Turnstile](https://dash.cloudflare.com/), add a Managed widget and allow the site's production hostnames (including `order.thebrightark.com`, the legacy `idesign.thebrightark.com` alias, and its `vercel.app` hostname if used).
 2. Add `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` to Vercel from that widget. Only the site key is public.
 3. Set `TURNSTILE_ALLOWED_HOSTNAMES` to the same comma-separated hostnames, without `https://` or paths. If omitted, the server allows only the hostname of `APP_URL`.
 4. In [Resend](https://resend.com/domains), verify a sender domain using its DNS records and create a sending API key. Set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel. Example sender: `BrightArk <verify@your-verified-domain.com>`.

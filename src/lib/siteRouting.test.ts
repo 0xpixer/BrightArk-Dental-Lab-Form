@@ -9,6 +9,8 @@ import {
 } from './siteRouting'
 
 test('recognizes the iDesign hostname with common proxy formatting', () => {
+  assert.equal(isIDesignHostname('order.thebrightark.com'), true)
+  assert.equal(isIDesignHostname('ORDER.THEBRIGHTARK.COM:443'), true)
   assert.equal(isIDesignHostname('idesign.thebrightark.com'), true)
   assert.equal(isIDesignHostname('IDESIGN.THEBRIGHTARK.COM:443'), true)
   assert.equal(isIDesignHostname('idesign.thebrightark.com, proxy.internal'), true)
@@ -32,16 +34,17 @@ test('encodes the full overview callback in the login URL', () => {
 })
 
 test('uses Overview as the default login destination', () => {
+  assert.equal(getDefaultOverviewPath('order.thebrightark.com'), '/admin/overview?view=aligners')
   assert.equal(getDefaultOverviewPath('idesign.thebrightark.com'), '/admin/overview?view=aligners')
   assert.equal(getDefaultOverviewPath('bright-ark-dental-lab-form.vercel.app'), '/admin/overview')
 })
 
 test('only accepts same-site callback paths', () => {
   assert.equal(
-    getSafeLoginCallback('/admin/overview?view=aligners', 'idesign.thebrightark.com'),
+    getSafeLoginCallback('/admin/overview?view=aligners', 'order.thebrightark.com'),
     '/admin/overview?view=aligners',
   )
-  assert.equal(getSafeLoginCallback(null, 'idesign.thebrightark.com'), '/admin/overview?view=aligners')
-  assert.equal(getSafeLoginCallback('https://attacker.test', 'idesign.thebrightark.com'), '/admin/overview?view=aligners')
+  assert.equal(getSafeLoginCallback(null, 'order.thebrightark.com'), '/admin/overview?view=aligners')
+  assert.equal(getSafeLoginCallback('https://attacker.test', 'order.thebrightark.com'), '/admin/overview?view=aligners')
   assert.equal(getSafeLoginCallback('//attacker.test', 'thebrightark.com'), '/admin/overview')
 })

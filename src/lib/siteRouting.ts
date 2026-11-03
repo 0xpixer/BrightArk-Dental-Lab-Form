@@ -1,11 +1,14 @@
 import { isPortalRole } from '@/lib/admin/roles'
 
-export const IDESIGN_HOSTNAME = 'idesign.thebrightark.com'
+export const IDESIGN_HOSTNAME = 'order.thebrightark.com'
+export const LEGACY_IDESIGN_HOSTNAME = 'idesign.thebrightark.com'
+
+const IDESIGN_HOSTNAMES = new Set([IDESIGN_HOSTNAME, LEGACY_IDESIGN_HOSTNAME])
 
 export function isIDesignHostname(host: string | null): boolean {
   if (!host) return false
 
-  return host.split(',')[0].trim().split(':')[0].toLowerCase() === IDESIGN_HOSTNAME
+  return IDESIGN_HOSTNAMES.has(host.split(',')[0].trim().split(':')[0].toLowerCase())
 }
 
 export function getIDesignOverviewPath(role?: unknown): string {
