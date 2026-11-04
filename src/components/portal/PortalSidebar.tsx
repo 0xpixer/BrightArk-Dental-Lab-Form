@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ChevronUp, CirclePlus, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, UserCircle, UserRoundCog, type IconNode } from 'lucide'
+import { ChevronDown, ChevronUp, CirclePlus, DoorOpen, ExternalLink, Globe2, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, UserCircle, UserRoundCog, type IconNode } from 'lucide'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
@@ -36,7 +36,11 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
       {MODULES.map((module) => { const open = openModule === module.id; return <div key={module.id}><button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${activeModule === module.id ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}><MorphIcon icon={module.icon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><span className="hidden md:inline-flex"><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span></>}</button>{open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}</div> })}
       <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}<NavLink href="/portal/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/portal/profile')} showLabels={showLabels} /></div>
     </nav>
-    <div className="border-t border-border p-2">{showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><p className="text-xs capitalize text-text-muted">{role.replace('_', ' ')}</p></div>}<button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} title="Sign out" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`}><MorphIcon icon={LogOut} hoverIcon={DoorOpen} className="h-4 w-4" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button></div>
+    <div className="border-t border-border p-2">
+      <a href="https://www.thebrightark.com" target="_blank" rel="noreferrer" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`} title="BrightArk Website"><MorphIcon icon={Globe2} hoverIcon={ExternalLink} className="h-4 w-4" />{showLabels && <span className="hidden md:inline">BrightArk Website</span>}</a>
+      {showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><p className="text-xs capitalize text-text-muted">{role.replace('_', ' ')}</p></div>}
+      <button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} title="Sign out" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`}><MorphIcon icon={LogOut} hoverIcon={DoorOpen} className="h-4 w-4" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button>
+    </div>
   </aside>
 }
 

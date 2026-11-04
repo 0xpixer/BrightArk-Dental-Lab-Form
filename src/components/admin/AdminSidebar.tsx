@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
+import { ChevronDown, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, Globe2, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
@@ -63,7 +63,11 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
       </div>
     </nav>
 
-    <div className="border-t border-border p-2">{showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><span className="mt-1 inline-block rounded bg-bg px-2 py-0.5 text-[10px] font-semibold capitalize text-text-muted">{formatAdminRole(role)}</span></div>}<button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`} title="Sign out"><MorphIcon icon={LogOut} hoverIcon={DoorOpen} className="h-3.5 w-3.5" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button></div>
+    <div className="border-t border-border p-2">
+      <a href="https://www.thebrightark.com" target="_blank" rel="noreferrer" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`} title="BrightArk Website"><MorphIcon icon={Globe2} hoverIcon={ExternalLink} className="h-3.5 w-3.5" />{showLabels && <span className="hidden md:inline">BrightArk Website</span>}</a>
+      {showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><span className="mt-1 inline-block rounded bg-bg px-2 py-0.5 text-[10px] font-semibold capitalize text-text-muted">{formatAdminRole(role)}</span></div>}
+      <button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`} title="Sign out"><MorphIcon icon={LogOut} hoverIcon={DoorOpen} className="h-3.5 w-3.5" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button>
+    </div>
   </aside>
 }
 

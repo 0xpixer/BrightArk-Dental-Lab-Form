@@ -9,8 +9,8 @@ const notoSans = Noto_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'BrightArk — Dental Lab Order Form',
-  description: 'Submit dental lab orders to BrightArk',
+  title: 'BrightArk - Order Portal',
+  description: 'Manage dental lab and clear aligner orders with BrightArk',
   icons: {
     icon: '/BrightArk icon.PNG',
   },
