@@ -73,7 +73,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
 }
 
 function isActive(pathname: string, href: string) {
-  if (href.endsWith('/idesign/orders')) return pathname === href
+  if (href.endsWith('/idesign/orders')) return pathname === href || (pathname.startsWith(`${href}/`) && !pathname.startsWith(`${href}/new`))
   return pathname.startsWith(href)
 }
 
