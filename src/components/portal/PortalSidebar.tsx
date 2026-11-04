@@ -10,10 +10,11 @@ import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
 
-const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: IconNode; items: Array<{ href: string; label: string; icon: IconNode; hoverIcon: IconNode }> }> = [
+const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: IconNode; items: Array<{ href: string; label: string; icon: IconNode; hoverIcon: IconNode; external?: boolean }> }> = [
   { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, items: [
     { href: '/portal/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/portal/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
+    { href: 'https://bright-ark.myshopify.com/pages/idesign', label: 'Old iDesign Portal', icon: Globe2, hoverIcon: ExternalLink, external: true },
   ] },
   { id: 'dental', label: 'Dental Lab Orders', icon: ToothIcon, hoverIcon: ToothPolishedIcon, items: [
     { href: '/portal/orders', label: 'Orders', icon: List, hoverIcon: ListChecks },
@@ -49,4 +50,4 @@ function isActive(pathname: string, href: string) {
   if (href === '/portal/orders') return pathname !== '/portal/orders/new' && pathname.startsWith(href)
   return pathname.startsWith(href)
 }
-function NavLink({ href, label, icon, hoverIcon, active, showLabels, child = false }: { href: string; label: string; icon: IconNode; hoverIcon: IconNode; active: boolean; showLabels: boolean; child?: boolean }) { return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? child ? 'bg-[#f0f0f0] text-text' : 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`}><MorphIcon icon={icon} hoverIcon={hoverIcon} className={child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link> }
+function NavLink({ href, label, icon, hoverIcon, active, showLabels, child = false, external = false }: { href: string; label: string; icon: IconNode; hoverIcon: IconNode; active: boolean; showLabels: boolean; child?: boolean; external?: boolean }) { return <Link href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? child ? 'bg-[#f0f0f0] text-text' : 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`}><MorphIcon icon={icon} hoverIcon={hoverIcon} className={child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link> }
