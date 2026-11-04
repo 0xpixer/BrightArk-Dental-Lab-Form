@@ -66,6 +66,11 @@ const DATE_FIELDS = new Set<ImportField>([
   'deliveredDate',
 ])
 
+const PERCENT_FIELDS = new Set<ImportField>([
+  'discount',
+  'salesCommissionRate',
+])
+
 const OPTIONAL_NULLABLE_FIELDS = new Set<ImportField>([
   'purchasedProducts',
   'originalCurrency',
@@ -173,7 +178,11 @@ export function parseIDesignImportSheet(rows: unknown[][]): { rows: ParsedImport
     const raw: Record<string, unknown> = {}
     for (const [field, columnIndex] of columns) {
       const value = row[columnIndex]
-      raw[field] = DATE_FIELDS.has(field) ? parseDateCell(value) : cellTextOrNull(value)
+      raw[field] = DATE_FIELDS.has(field)
+        ? parseDateCell(value)
+        : PERCENT_FIELDS.has(field)
+          ? parsePercentCell(value)
+          : cellTextOrNull(value)
     }
 
     raw.country = canonicalValue(raw.country, IDESIGN_COUNTRIES)
@@ -352,6 +361,12 @@ function cellText(value: unknown) {
 function cellTextOrNull(value: unknown) {
   const text = cellText(value)
   return text || null
+}
+
+function parsePercentCell(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return cellTextOrNull(value)
+  const percentage = Math.abs(value) <= 1 ? value * 100 : value
+  return `${Number(percentage.toFixed(10))}%`
 }
 
 function canonicalValue<const T extends readonly string[]>(value: unknown, options: T): T[number] | null {

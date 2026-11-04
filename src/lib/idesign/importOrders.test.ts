@@ -70,6 +70,13 @@ test('parses the original Lark spreadsheet headers and day-first dates', () => {
   assert.equal(result.rows[0].data.salesCommissionRate, '5%')
 })
 
+test('converts numeric Excel percentages into percentage text', () => {
+  const result = parseIDesignImportSheet([header, sourceRow({ 11: 0.5, 24: 0.05 })])
+  assert.deepEqual(result.issues, [])
+  assert.equal(result.rows[0].data.discount, '50%')
+  assert.equal(result.rows[0].data.salesCommissionRate, '5%')
+})
+
 test('matches by patient, doctor, creation time and category and reports only source-owned field changes', () => {
   const parsed = parseIDesignImportSheet([header, sourceRow()])
   const preview = buildIDesignImportPreview(parsed.rows, [existingOrder()], parsed.issues)
