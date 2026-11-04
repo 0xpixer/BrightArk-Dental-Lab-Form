@@ -1,4 +1,4 @@
-import { and, asc, count, desc, ilike, inArray, or } from 'drizzle-orm'
+import { and, asc, count, desc, ilike, inArray, or, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
@@ -25,8 +25,12 @@ export async function GET(request: Request) {
   }
   const where = conditions.length ? and(...conditions) : undefined
   const db = getDb()
+  const effectiveUpdateTime = sql<Date>`coalesce(
+    (select ${idesignOrders.sourceUpdatedOn}::timestamptz from ${idesignOrders} where ${idesignOrders.id} = ${idesignCases.importedOrderId}),
+    ${idesignCases.updatedAt}
+  )`
   const [rows, totalRows] = await Promise.all([
-    db.select().from(idesignCases).where(where).orderBy(desc(idesignCases.createdAt), desc(idesignCases.id)).limit(limit).offset((page - 1) * limit),
+    db.select().from(idesignCases).where(where).orderBy(desc(effectiveUpdateTime), desc(idesignCases.id)).limit(limit).offset((page - 1) * limit),
     db.select({ count: count() }).from(idesignCases).where(where),
   ])
   const accountIds = [...new Set(rows.map((row) => row.doctorAccountId).filter((id): id is number => Boolean(id)))]
