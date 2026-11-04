@@ -7,7 +7,9 @@ import { idesignOrders, idesignTreatmentCourses, idesignTreatmentSteps } from '@
 import { canManageIDesignSchedule } from '@/lib/idesign/access'
 import {
   calculateEstimatedFinish,
+  calculateAutomaticTreatmentProgress,
   calculateTreatmentSteps,
+  dateInTimezone,
   recalculateRemainingSteps,
   startTreatmentCourseSchema,
   suggestedChangeDate,
@@ -17,11 +19,9 @@ import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@
 
 const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)))
 const actionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('advance'), actualDate: dateValue }),
   z.object({ action: z.literal('pause') }),
   z.object({ action: z.literal('resume'), actualDate: dateValue }),
   z.object({ action: z.literal('update_durations'), durations: updateTreatmentDurationsSchema.shape.durations }),
-  z.object({ action: z.literal('complete'), actualDate: dateValue }),
 ])
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -35,27 +35,28 @@ export async function POST(request: Request, { params }: { params: { id: string 
   if (existing) return NextResponse.json({ error: 'A treatment schedule already exists' }, { status: 409 })
   const steps = calculateTreatmentSteps(parsed.data.startDate, parsed.data.durations)
   const estimatedFinish = calculateEstimatedFinish(parsed.data.startDate, parsed.data.durations)
+  const automaticProgress = calculateAutomaticTreatmentProgress(steps, dateInTimezone(new Date(), parsed.data.timezone))!
   const [course] = await db.insert(idesignTreatmentCourses).values({
     caseId: context.caseRow.id,
     startDate: parsed.data.startDate,
     totalSteps: parsed.data.totalSteps,
     defaultDurationDays: parsed.data.defaultDurationDays,
-    currentStep: 1,
+    currentStep: automaticProgress.currentStage,
     originalEstimatedFinish: estimatedFinish,
     currentEstimatedFinish: estimatedFinish,
-    nextSuggestedChange: suggestedChangeDate(steps, 1),
+    nextSuggestedChange: automaticProgress.nextSuggestedChange,
     timezone: parsed.data.timezone,
-    status: 'active',
+    status: automaticProgress.status,
     createdBy: context.userId,
   }).returning()
   await db.insert(idesignTreatmentSteps).values(steps.map((step) => ({
     courseId: course.id,
     ...step,
     actualStartDate: step.stepNumber === 1 ? parsed.data.startDate : null,
-    status: step.stepNumber === 1 ? 'current' : 'scheduled',
+    status: automaticProgress.stageStatuses.get(step.stepNumber) ?? 'scheduled',
   })))
   if (context.caseRow.importedOrderId) await db.update(idesignOrders).set({ totalSteps: String(parsed.data.totalSteps), updatedAt: new Date() }).where(eq(idesignOrders.id, context.caseRow.importedOrderId))
-  await recordIDesignActivity({ caseId: context.caseRow.id, eventType: 'schedule_started', detail: `Wear schedule started with ${parsed.data.totalSteps} steps`, ...sessionActor(context.session) })
+  await recordIDesignActivity({ caseId: context.caseRow.id, eventType: 'schedule_started', detail: `Wear schedule started with ${parsed.data.totalSteps} stages`, ...sessionActor(context.session) })
   return NextResponse.json({ success: true, course }, { status: 201 })
 }
 
@@ -72,34 +73,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const now = new Date()
 
   if (parsed.data.action === 'pause') {
-    await db.update(idesignTreatmentCourses).set({ status: 'paused', nextSuggestedChange: null, updatedAt: now }).where(eq(idesignTreatmentCourses.id, course.id))
-    await activity(context, 'schedule_paused', `Treatment paused at step ${course.currentStep}`)
-    return NextResponse.json({ success: true })
-  }
-
-  if (parsed.data.action === 'complete') {
-    await db.update(idesignTreatmentCourses).set({ status: 'completed', currentEstimatedFinish: parsed.data.actualDate, nextSuggestedChange: null, updatedAt: now }).where(eq(idesignTreatmentCourses.id, course.id))
-    await db.update(idesignTreatmentSteps).set({ status: 'completed', confirmedBy: context.userId, confirmedAt: now }).where(eq(idesignTreatmentSteps.id, steps[Math.max(0, course.currentStep - 1)].id))
-    await activity(context, 'schedule_completed', `Treatment completed on ${parsed.data.actualDate}`)
-    return NextResponse.json({ success: true })
-  }
-
-  if (parsed.data.action === 'advance') {
-    if (course.status === 'paused') return NextResponse.json({ error: 'Resume the treatment before changing steps' }, { status: 400 })
-    const current = steps.find((step) => step.stepNumber === course.currentStep)
-    if (!current) return NextResponse.json({ error: 'Current step is unavailable' }, { status: 400 })
-    await db.update(idesignTreatmentSteps).set({ status: 'completed', confirmedBy: context.userId, confirmedAt: now }).where(eq(idesignTreatmentSteps.id, current.id))
-    if (course.currentStep >= course.totalSteps) {
-      await db.update(idesignTreatmentCourses).set({ status: 'completed', currentEstimatedFinish: parsed.data.actualDate, nextSuggestedChange: null, updatedAt: now }).where(eq(idesignTreatmentCourses.id, course.id))
-      await activity(context, 'schedule_completed', `Treatment completed on ${parsed.data.actualDate}`)
-      return NextResponse.json({ success: true })
-    }
-    const nextStep = course.currentStep + 1
-    const recalculated = recalculateRemainingSteps(steps, nextStep, parsed.data.actualDate)
-    await updateFutureSteps(course.id, recalculated, nextStep, context.userId, now)
-    const finish = recalculated.at(-1)?.suggestedEndDate ?? course.currentEstimatedFinish
-    await db.update(idesignTreatmentCourses).set({ currentStep: nextStep, status: 'active', currentEstimatedFinish: finish, nextSuggestedChange: suggestedChangeDate(recalculated, nextStep), updatedAt: now }).where(eq(idesignTreatmentCourses.id, course.id))
-    await activity(context, 'step_changed', `Changed to step ${nextStep} on ${parsed.data.actualDate}`)
+    const automaticProgress = calculateAutomaticTreatmentProgress(steps, dateInTimezone(now, course.timezone))
+    const currentStage = automaticProgress?.currentStage ?? course.currentStep
+    await db.update(idesignTreatmentCourses).set({ currentStep: currentStage, status: 'paused', nextSuggestedChange: null, updatedAt: now }).where(eq(idesignTreatmentCourses.id, course.id))
+    if (automaticProgress) await Promise.all(steps.map((step) => db.update(idesignTreatmentSteps).set({ status: automaticProgress.stageStatuses.get(step.stepNumber) ?? step.status }).where(eq(idesignTreatmentSteps.id, step.id))))
+    await activity(context, 'schedule_paused', `Treatment paused at Stage ${currentStage}`)
     return NextResponse.json({ success: true })
   }
 
@@ -108,7 +86,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     ? parsed.data.actualDate
     : current?.actualStartDate || current?.suggestedStartDate || course.startDate
   const durations = parsed.data.action === 'update_durations' ? parsed.data.durations : steps.map((step) => step.durationDays)
-  if (durations.length !== course.totalSteps) return NextResponse.json({ error: 'Add a duration for every step' }, { status: 400 })
+  if (durations.length !== course.totalSteps) return NextResponse.json({ error: 'Add a duration for every stage' }, { status: 400 })
   const withUpdatedDurations = steps.map((step) => ({ ...step, durationDays: durations[step.stepNumber - 1] }))
   const recalculated = recalculateRemainingSteps(withUpdatedDurations, course.currentStep, anchor)
   await updateFutureSteps(course.id, recalculated, course.currentStep, context.userId, now)

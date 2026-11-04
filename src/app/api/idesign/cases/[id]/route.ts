@@ -14,6 +14,7 @@ import {
 } from '@/lib/db/schema'
 import { canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
+import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)))
@@ -44,6 +45,9 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const steps = course
     ? await db.select().from(idesignTreatmentSteps).where(eq(idesignTreatmentSteps.courseId, course.id)).orderBy(asc(idesignTreatmentSteps.stepNumber))
     : []
+  const automaticProgress = course?.status === 'active'
+    ? calculateAutomaticTreatmentProgress(steps, dateInTimezone(new Date(), course.timezone))
+    : null
   const accountIds = [...new Set([
     caseRow.createdBy,
     caseRow.doctorAccountId,
@@ -82,7 +86,15 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       approvedByName: plan.approvedBy ? accountNames.get(plan.approvedBy) ?? null : null,
     })),
     activities,
-    course: course ? { ...course, steps } : null,
+    course: course ? {
+      ...course,
+      currentStep: automaticProgress?.currentStage ?? course.currentStep,
+      nextSuggestedChange: automaticProgress ? automaticProgress.nextSuggestedChange : course.nextSuggestedChange,
+      status: automaticProgress?.status ?? course.status,
+      steps: automaticProgress
+        ? steps.map((step) => ({ ...step, status: automaticProgress.stageStatuses.get(step.stepNumber) ?? step.status }))
+        : steps,
+    } : null,
     permissions: {
       canManagePlans: session!.user.role === 'superadmin' || session!.user.role === 'admin',
       canApprovePlans: session!.user.role === 'doctor' || session!.user.role === 'clinic_staff',

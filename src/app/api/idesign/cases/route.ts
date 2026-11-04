@@ -2,10 +2,11 @@ import { and, asc, count, desc, ilike, inArray, or, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans } from '@/lib/db/schema'
+import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps } from '@/lib/db/schema'
 import { canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { createIDesignCaseOrderNo, createIDesignCaseSchema } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
+import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
 
 export async function GET(request: Request) {
   const { session, error } = await requireSession()
@@ -45,15 +46,34 @@ export async function GET(request: Request) {
       ? db.select({ caseId: idesignTreatmentPlans.caseId, versionNumber: idesignTreatmentPlans.versionNumber }).from(idesignTreatmentPlans).where(inArray(idesignTreatmentPlans.caseId, caseIds)).orderBy(asc(idesignTreatmentPlans.versionNumber))
       : Promise.resolve([]),
     caseIds.length
-      ? db.select({ caseId: idesignTreatmentCourses.caseId, status: idesignTreatmentCourses.status, currentStep: idesignTreatmentCourses.currentStep, totalSteps: idesignTreatmentCourses.totalSteps }).from(idesignTreatmentCourses).where(inArray(idesignTreatmentCourses.caseId, caseIds))
+      ? db.select({ id: idesignTreatmentCourses.id, caseId: idesignTreatmentCourses.caseId, status: idesignTreatmentCourses.status, currentStep: idesignTreatmentCourses.currentStep, totalSteps: idesignTreatmentCourses.totalSteps, timezone: idesignTreatmentCourses.timezone }).from(idesignTreatmentCourses).where(inArray(idesignTreatmentCourses.caseId, caseIds))
       : Promise.resolve([]),
     importedOrderIds.length
       ? db.select({ id: idesignOrders.id, doctorName: idesignOrders.doctorName, sourceUpdatedOn: idesignOrders.sourceUpdatedOn }).from(idesignOrders).where(inArray(idesignOrders.id, importedOrderIds))
       : Promise.resolve([]),
   ])
+  const courseIds = courses.map((course) => course.id)
+  const treatmentStages = courseIds.length
+    ? await db.select({ courseId: idesignTreatmentSteps.courseId, stepNumber: idesignTreatmentSteps.stepNumber, suggestedStartDate: idesignTreatmentSteps.suggestedStartDate, suggestedEndDate: idesignTreatmentSteps.suggestedEndDate }).from(idesignTreatmentSteps).where(inArray(idesignTreatmentSteps.courseId, courseIds)).orderBy(asc(idesignTreatmentSteps.stepNumber))
+    : []
   const currentVersions = new Map<number, number>()
   for (const plan of plans) currentVersions.set(plan.caseId, plan.versionNumber)
-  const coursesByCase = new Map(courses.map((course) => [course.caseId, course]))
+  const stagesByCourse = new Map<number, typeof treatmentStages>()
+  for (const stage of treatmentStages) {
+    const stages = stagesByCourse.get(stage.courseId) ?? []
+    stages.push(stage)
+    stagesByCourse.set(stage.courseId, stages)
+  }
+  const coursesByCase = new Map(courses.map((course) => {
+    const automaticProgress = course.status === 'active'
+      ? calculateAutomaticTreatmentProgress(stagesByCourse.get(course.id) ?? [], dateInTimezone(new Date(), course.timezone))
+      : null
+    return [course.caseId, {
+      ...course,
+      currentStep: automaticProgress?.currentStage ?? course.currentStep,
+      status: automaticProgress?.status ?? course.status,
+    }]
+  }))
   const importedOrdersById = new Map(importedOrders.map((order) => [order.id, order]))
   const total = totalRows[0]?.count ?? 0
 

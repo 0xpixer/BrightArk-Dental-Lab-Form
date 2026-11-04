@@ -10,7 +10,7 @@ export const startTreatmentCourseSchema = z.object({
   timezone: z.string().trim().min(1).max(80).default('Asia/Jakarta'),
 }).superRefine((value, context) => {
   if (value.durations.length !== value.totalSteps) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ['durations'], message: 'Add a duration for every step' })
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['durations'], message: 'Add a duration for every stage' })
   }
 })
 
@@ -23,6 +23,39 @@ export interface CalculatedStep {
   durationDays: number
   suggestedStartDate: string
   suggestedEndDate: string
+}
+
+export interface AutomaticTreatmentProgress {
+  currentStage: number
+  status: 'active' | 'completed'
+  nextSuggestedChange: string | null
+  stageStatuses: Map<number, 'completed' | 'current' | 'scheduled'>
+}
+
+export function calculateAutomaticTreatmentProgress(
+  stages: Array<{ stepNumber: number; suggestedStartDate: string; suggestedEndDate: string }>,
+  today: string,
+): AutomaticTreatmentProgress | null {
+  if (stages.length === 0) return null
+  const ordered = [...stages].sort((left, right) => left.stepNumber - right.stepNumber)
+  const finalStage = ordered[ordered.length - 1]
+  const completed = today > finalStage.suggestedEndDate
+  const current = completed
+    ? finalStage
+    : [...ordered].reverse().find((stage) => stage.suggestedStartDate <= today) ?? ordered[0]
+  const nextStage = ordered.find((stage) => stage.stepNumber > current.stepNumber)
+  const stageStatuses = new Map<number, 'completed' | 'current' | 'scheduled'>()
+  for (const stage of ordered) {
+    stageStatuses.set(stage.stepNumber, completed || stage.stepNumber < current.stepNumber
+      ? 'completed'
+      : stage.stepNumber === current.stepNumber ? 'current' : 'scheduled')
+  }
+  return {
+    currentStage: current.stepNumber,
+    status: completed ? 'completed' : 'active',
+    nextSuggestedChange: completed ? null : nextStage?.suggestedStartDate ?? null,
+    stageStatuses,
+  }
 }
 
 export function calculateTreatmentSteps(startDate: string, durations: number[]): CalculatedStep[] {
@@ -61,6 +94,12 @@ export function recalculateRemainingSteps(
 
 export function addDaysToDate(date: string, days: number) {
   return formatDate(addDays(parseDate(date), days))
+}
+
+export function dateInTimezone(value: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(value)
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
 }
 
 function parseDate(value: string) {
