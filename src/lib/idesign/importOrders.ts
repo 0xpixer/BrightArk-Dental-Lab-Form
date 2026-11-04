@@ -379,9 +379,11 @@ function canonicalValue<const T extends readonly string[]>(value: unknown, optio
 function canonicalProgress(value: unknown) {
   const text = cellText(value)
   const aliases: Record<string, (typeof IDESIGN_PROGRESS_OPTIONS)[number]> = {
-    'clinical review approved': 'Clin. Review Approved',
-    'clin review approved': 'Clin. Review Approved',
-    'awaiting clinical review': 'Awaiting Clin. Review',
+    'clinical review approved': 'Approved',
+    'clin review approved': 'Approved',
+    'clin. review approved': 'Approved',
+    'awaiting clinical review': 'Awaiting Approval',
+    'awaiting clin. review': 'Awaiting Approval',
   }
   return aliases[text.toLowerCase()] ?? canonicalValue(text, IDESIGN_PROGRESS_OPTIONS) ?? text
 }

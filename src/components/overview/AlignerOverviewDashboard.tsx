@@ -78,7 +78,7 @@ export function AlignerOverviewDashboard({ canOpenImportedOrders = false }: { ca
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <OverviewCard label="All Cases" value={data?.metrics.total} icon={Boxes} hoverIcon={PackageOpen} loading={loading} href={canOpenImportedOrders ? '/admin/imported-orders' : undefined} />
         <OverviewCard label="Entering Info" value={data?.metrics.statusCounts['Entering Info']} icon={ClipboardEdit} hoverIcon={ClipboardCheck} loading={loading} href={canOpenImportedOrders ? progressHref('Entering Info') : undefined} />
-        <OverviewCard label="Awaiting Review" value={data?.metrics.statusCounts['Awaiting Clin. Review']} icon={Send} hoverIcon={SendHorizontal} loading={loading} href={canOpenImportedOrders ? progressHref('Awaiting Clin. Review') : undefined} />
+        <OverviewCard label="Awaiting Approval" value={data?.metrics.statusCounts['Awaiting Approval']} icon={Send} hoverIcon={SendHorizontal} loading={loading} href={canOpenImportedOrders ? progressHref('Awaiting Approval') : undefined} />
         <OverviewCard label="In Production" value={data?.metrics.statusCounts['In Production']} icon={Factory} hoverIcon={Boxes} loading={loading} href={canOpenImportedOrders ? progressHref('In Production') : undefined} />
         <OverviewCard label="Produced" value={data?.metrics.statusCounts.Produced} icon={PackageCheck} hoverIcon={PackageOpen} loading={loading} href={canOpenImportedOrders ? progressHref('Produced') : undefined} />
         <OverviewCard label="Completed" value={data?.metrics.statusCounts.Completed} icon={CheckCircle2} hoverIcon={BadgeCheck} loading={loading} href={canOpenImportedOrders ? progressHref('Completed') : undefined} />

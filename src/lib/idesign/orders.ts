@@ -5,8 +5,8 @@ export const IDESIGN_CATEGORIES = ['iAlign', 'iScan', 'Dental Lab', 'Others'] as
 export const IDESIGN_PROGRESS_OPTIONS = [
   'Entering Info',
   'Lab Designing',
-  'Awaiting Clin. Review',
-  'Clin. Review Approved',
+  'Awaiting Approval',
+  'Approved',
   'In Production',
   'Produced',
   'Shipped',
@@ -26,8 +26,8 @@ export const IDESIGN_SALES_COUNTRY: Record<string, (typeof IDESIGN_COUNTRIES)[nu
 export const IDESIGN_PROGRESS_STYLES: Record<string, string> = {
   'Entering Info': 'border-yellow-200 bg-yellow-100 text-yellow-800',
   'Lab Designing': 'border-cyan-200 bg-cyan-100 text-cyan-800',
-  'Awaiting Clin. Review': 'border-pink-200 bg-pink-100 text-pink-800',
-  'Clin. Review Approved': 'border-indigo-200 bg-indigo-100 text-indigo-800',
+  'Awaiting Approval': 'border-pink-200 bg-pink-100 text-pink-800',
+  Approved: 'border-indigo-200 bg-indigo-100 text-indigo-800',
   'In Production': 'border-blue-200 bg-blue-100 text-blue-800',
   Produced: 'border-sky-200 bg-sky-100 text-sky-800',
   Shipped: 'border-violet-200 bg-violet-100 text-violet-800',
@@ -38,8 +38,8 @@ export const IDESIGN_PROGRESS_STYLES: Record<string, string> = {
 export const IDESIGN_PROGRESS_COLORS: Record<string, string> = {
   'Entering Info': '#eab308',
   'Lab Designing': '#06b6d4',
-  'Awaiting Clin. Review': '#ec4899',
-  'Clin. Review Approved': '#6366f1',
+  'Awaiting Approval': '#ec4899',
+  Approved: '#6366f1',
   'In Production': '#3b82f6',
   Produced: '#0ea5e9',
   Shipped: '#8b5cf6',
