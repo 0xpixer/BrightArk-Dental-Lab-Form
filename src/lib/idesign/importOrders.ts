@@ -179,7 +179,7 @@ export function parseIDesignImportSheet(rows: unknown[][]): { rows: ParsedImport
     for (const [field, columnIndex] of columns) {
       const value = row[columnIndex]
       raw[field] = DATE_FIELDS.has(field)
-        ? parseDateCell(value)
+        ? parseDateCell(value, field === 'sourceUpdatedOn')
         : PERCENT_FIELDS.has(field)
           ? parsePercentCell(value)
           : cellTextOrNull(value)
@@ -258,7 +258,8 @@ export function buildIDesignImportPreview(parsedRows: ParsedImportRow[], existin
       continue
     }
 
-    if (isIncomingOlder(row.data.sourceUpdatedOn, existing.sourceUpdatedOn)) {
+    if (isIncomingOlder(row.data.sourceUpdatedOn, existing.sourceUpdatedOn)
+      && !isDayMonthSwap(row.data.sourceUpdatedOn, existing.sourceUpdatedOn)) {
       staleRows += 1
       issues.push({
         rowNumber: row.rowNumber,
@@ -391,10 +392,14 @@ function canonicalPaymentStatus(value: unknown) {
   return canonicalValue(text, IDESIGN_PAYMENT_STATUSES) ?? text
 }
 
-function parseDateCell(value: unknown) {
+function parseDateCell(value: unknown, dayFirstExcelDate = false) {
   if (value === null || value === undefined || value === '') return null
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}-${String(value.getUTCDate()).padStart(2, '0')}`
+    const year = value.getUTCFullYear()
+    const month = value.getUTCMonth() + 1
+    const day = value.getUTCDate()
+    if (dayFirstExcelDate && day <= 12) return validDate(year, day, month)
+    return validDate(year, month, day)
   }
   if (typeof value === 'number' && Number.isFinite(value)) {
     const date = new Date(Date.UTC(1899, 11, 30) + Math.floor(value) * 86400000)
@@ -427,4 +432,15 @@ function comparableFieldValue(field: ImportField, value: unknown) {
 
 function isIncomingOlder(incoming: string | null | undefined, existing: string | null | undefined) {
   return Boolean(incoming && existing && incoming < existing)
+}
+
+function isDayMonthSwap(incoming: string | null | undefined, existing: string | null | undefined) {
+  if (!incoming || !existing) return false
+  const incomingParts = incoming.split('-')
+  const existingParts = existing.split('-')
+  return incomingParts.length === 3
+    && existingParts.length === 3
+    && incomingParts[0] === existingParts[0]
+    && incomingParts[1] === existingParts[2]
+    && incomingParts[2] === existingParts[1]
 }

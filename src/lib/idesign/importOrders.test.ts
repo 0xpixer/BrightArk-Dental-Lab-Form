@@ -77,6 +77,16 @@ test('converts numeric Excel percentages into percentage text', () => {
   assert.equal(result.rows[0].data.salesCommissionRate, '5%')
 })
 
+test('recovers day-first Update Time values decoded as ambiguous Excel dates', () => {
+  const result = parseIDesignImportSheet([header, sourceRow({
+    3: new Date('2026-04-11T00:00:00.000Z'),
+    4: new Date('2026-02-11T00:00:00.000Z'),
+  })])
+  assert.deepEqual(result.issues, [])
+  assert.equal(result.rows[0].data.sourceUpdatedOn, '2026-11-04')
+  assert.equal(result.rows[0].data.sourceCreatedOn, '2026-02-11')
+})
+
 test('matches by patient, doctor, creation time and category and reports only source-owned field changes', () => {
   const parsed = parseIDesignImportSheet([header, sourceRow()])
   const preview = buildIDesignImportPreview(parsed.rows, [existingOrder()], parsed.issues)
@@ -101,6 +111,14 @@ test('does not overwrite a record with an older spreadsheet row', () => {
   assert.equal(preview.summary.staleRows, 1)
   assert.equal(preview.summary.updatedRows, 0)
   assert.equal(preview.canApply, true)
+})
+
+test('allows a corrected day-first date to replace a previously swapped update date', () => {
+  const parsed = parseIDesignImportSheet([header, sourceRow({ 3: '12/10/2026' })])
+  const preview = buildIDesignImportPreview(parsed.rows, [existingOrder({ sourceUpdatedOn: '2026-12-10' })], parsed.issues)
+  assert.equal(preview.summary.staleRows, 0)
+  assert.equal(preview.summary.updatedRows, 1)
+  assert.deepEqual(preview.changes[0].changes.map((change) => change.field), ['sourceUpdatedOn', 'latestProgress'])
 })
 
 test('blocks duplicate rows in the uploaded workbook', () => {
