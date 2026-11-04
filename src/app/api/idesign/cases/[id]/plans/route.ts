@@ -52,7 +52,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     latestProgress: 'Awaiting Clin. Review',
     updatedAt: now,
   }).where(eq(idesignCases.id, caseId))
-  if (caseRow.importedOrderId) await db.update(idesignOrders).set({ latestProgress: 'Awaiting Clin. Review', updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+  if (caseRow.importedOrderId) await db.update(idesignOrders).set({ latestProgress: 'Awaiting Clin. Review', sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
 
   await recordIDesignActivity({ caseId, eventType: 'plan_published', detail: `V${versionNumber} published`, ...sessionActor(session!) })
   await notifyIDesignCase(caseRow, {
@@ -90,7 +90,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (parsed.data.action === 'approve') {
     await getDb().update(idesignTreatmentPlans).set({ status: 'approved', approvedBy: Number(session!.user.id), approvedAt: now, updatedAt: now }).where(eq(idesignTreatmentPlans.id, latestPlan.id))
     await getDb().update(idesignCases).set({ planReviewStatus: 'approved', latestProgress: 'Clin. Review Approved', updatedAt: now }).where(eq(idesignCases.id, caseId))
-    if (caseRow.importedOrderId) await getDb().update(idesignOrders).set({ latestProgress: 'Clin. Review Approved', updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    if (caseRow.importedOrderId) await getDb().update(idesignOrders).set({ latestProgress: 'Clin. Review Approved', sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
     await recordIDesignActivity({ caseId, eventType: 'plan_approved', detail: `V${latestPlan.versionNumber} approved`, ...sessionActor(session!) })
     await notifyIDesignCase(caseRow, { type: 'plan_approved', title: 'Treatment plan approved', body: `${caseRow.patientName}'s treatment plan V${latestPlan.versionNumber} was approved.`, dedupeKey: `plan-approved-${latestPlan.id}`, audience: 'lab' })
   } else {

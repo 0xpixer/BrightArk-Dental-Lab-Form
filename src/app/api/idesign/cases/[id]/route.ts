@@ -107,7 +107,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const now = new Date()
   await getDb().update(idesignCases).set({ latestProgress: parsed.data.latestProgress, updatedAt: now }).where(eq(idesignCases.id, caseId))
   if (caseRow.importedOrderId) {
-    await getDb().update(idesignOrders).set({ latestProgress: parsed.data.latestProgress, updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    await getDb().update(idesignOrders).set({ latestProgress: parsed.data.latestProgress, sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
   }
   await recordIDesignActivity({
     caseId,

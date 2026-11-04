@@ -2,7 +2,7 @@ import { and, asc, count, desc, ilike, inArray, or } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, idesignCases, idesignTreatmentCourses, idesignTreatmentPlans } from '@/lib/db/schema'
+import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans } from '@/lib/db/schema'
 import { canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { createIDesignCaseOrderNo, createIDesignCaseSchema } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
@@ -29,30 +29,41 @@ export async function GET(request: Request) {
     db.select().from(idesignCases).where(where).orderBy(desc(idesignCases.createdAt), desc(idesignCases.id)).limit(limit).offset((page - 1) * limit),
     db.select({ count: count() }).from(idesignCases).where(where),
   ])
-  const accountIds = [...new Set(rows.flatMap((row) => [row.createdBy, row.doctorAccountId, row.salesAccountId]).filter((id): id is number => Boolean(id)))]
+  const accountIds = [...new Set(rows.map((row) => row.doctorAccountId).filter((id): id is number => Boolean(id)))]
   const accounts = accountIds.length
     ? await db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(inArray(adminUsers.id, accountIds))
     : []
   const accountNames = new Map(accounts.map((account) => [account.id, account.name || account.username]))
   const caseIds = rows.map((row) => row.id)
-  const [plans, courses] = caseIds.length ? await Promise.all([
-    db.select({ caseId: idesignTreatmentPlans.caseId, versionNumber: idesignTreatmentPlans.versionNumber }).from(idesignTreatmentPlans).where(inArray(idesignTreatmentPlans.caseId, caseIds)).orderBy(asc(idesignTreatmentPlans.versionNumber)),
-    db.select({ caseId: idesignTreatmentCourses.caseId, status: idesignTreatmentCourses.status, currentStep: idesignTreatmentCourses.currentStep, totalSteps: idesignTreatmentCourses.totalSteps }).from(idesignTreatmentCourses).where(inArray(idesignTreatmentCourses.caseId, caseIds)),
-  ]) : [[], []]
+  const importedOrderIds = rows.flatMap((row) => row.importedOrderId ? [row.importedOrderId] : [])
+  const [plans, courses, importedOrders] = await Promise.all([
+    caseIds.length
+      ? db.select({ caseId: idesignTreatmentPlans.caseId, versionNumber: idesignTreatmentPlans.versionNumber }).from(idesignTreatmentPlans).where(inArray(idesignTreatmentPlans.caseId, caseIds)).orderBy(asc(idesignTreatmentPlans.versionNumber))
+      : Promise.resolve([]),
+    caseIds.length
+      ? db.select({ caseId: idesignTreatmentCourses.caseId, status: idesignTreatmentCourses.status, currentStep: idesignTreatmentCourses.currentStep, totalSteps: idesignTreatmentCourses.totalSteps }).from(idesignTreatmentCourses).where(inArray(idesignTreatmentCourses.caseId, caseIds))
+      : Promise.resolve([]),
+    importedOrderIds.length
+      ? db.select({ id: idesignOrders.id, doctorName: idesignOrders.doctorName, sourceUpdatedOn: idesignOrders.sourceUpdatedOn }).from(idesignOrders).where(inArray(idesignOrders.id, importedOrderIds))
+      : Promise.resolve([]),
+  ])
   const currentVersions = new Map<number, number>()
   for (const plan of plans) currentVersions.set(plan.caseId, plan.versionNumber)
   const coursesByCase = new Map(courses.map((course) => [course.caseId, course]))
+  const importedOrdersById = new Map(importedOrders.map((order) => [order.id, order]))
   const total = totalRows[0]?.count ?? 0
 
   return NextResponse.json({
-    cases: rows.map((row) => ({
-      ...row,
-      createdByName: row.createdBy ? accountNames.get(row.createdBy) ?? null : null,
-      doctorName: row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null,
-      salesName: row.salesAccountId ? accountNames.get(row.salesAccountId) ?? null : null,
-      currentPlanVersion: currentVersions.get(row.id) ?? null,
-      course: coursesByCase.get(row.id) ?? null,
-    })),
+    cases: rows.map((row) => {
+      const importedOrder = row.importedOrderId ? importedOrdersById.get(row.importedOrderId) : null
+      return {
+        ...row,
+        doctorName: importedOrder?.doctorName ?? (row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null),
+        updateTime: importedOrder?.sourceUpdatedOn ?? row.updatedAt,
+        currentPlanVersion: currentVersions.get(row.id) ?? null,
+        course: coursesByCase.get(row.id) ?? null,
+      }
+    }),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
   })
 }
