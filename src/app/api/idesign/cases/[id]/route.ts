@@ -16,9 +16,11 @@ import { canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from 
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
-const updateCaseSchema = z.object({
-  latestProgress: z.enum(IDESIGN_PROGRESS_OPTIONS),
-})
+const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)))
+const updateCaseSchema = z.union([
+  z.object({ latestProgress: z.enum(IDESIGN_PROGRESS_OPTIONS) }),
+  z.object({ updateTime: dateValue }),
+])
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const { session, error } = await requireSession()
@@ -102,7 +104,23 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (!caseRow) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
 
   const parsed = updateCaseSchema.safeParse(await request.json().catch(() => null))
-  if (!parsed.success) return NextResponse.json({ error: 'Select a valid status' }, { status: 400 })
+  if (!parsed.success) return NextResponse.json({ error: 'Select a valid status or update date' }, { status: 400 })
+
+  if ('updateTime' in parsed.data) {
+    const manualTime = new Date(`${parsed.data.updateTime}T00:00:00Z`)
+    const db = getDb()
+    await db.update(idesignCases).set({ updatedAt: manualTime }).where(eq(idesignCases.id, caseId))
+    if (caseRow.importedOrderId) {
+      await db.update(idesignOrders).set({ sourceUpdatedOn: parsed.data.updateTime, updatedAt: manualTime }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    }
+    await recordIDesignActivity({
+      caseId,
+      eventType: 'update_time_changed',
+      detail: `Update time manually changed to ${parsed.data.updateTime}`,
+      ...sessionActor(session!),
+    })
+    return NextResponse.json({ success: true })
+  }
 
   const now = new Date()
   await getDb().update(idesignCases).set({ latestProgress: parsed.data.latestProgress, updatedAt: now }).where(eq(idesignCases.id, caseId))

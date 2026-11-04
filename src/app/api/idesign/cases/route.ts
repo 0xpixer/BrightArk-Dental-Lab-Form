@@ -69,6 +69,7 @@ export async function GET(request: Request) {
       }
     }),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    permissions: { canEditUpdateTime: session!.user.role === 'superadmin' || session!.user.role === 'admin' },
   })
 }
 
