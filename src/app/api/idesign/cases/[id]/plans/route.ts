@@ -7,6 +7,7 @@ import { idesignCases, idesignOrders, idesignTreatmentPlans } from '@/lib/db/sch
 import { canApproveIDesignPlans, canManageIDesignPlans, canViewIDesign } from '@/lib/idesign/access'
 import { notifyIDesignCase } from '@/lib/idesign/notifications'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
+import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
 
 const httpsUrl = z.string().trim().url().refine((value) => value.startsWith('https://'), 'Use an HTTPS link')
 const publishSchema = z.object({
@@ -86,6 +87,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const now = new Date()
 
   if (parsed.data.action === 'approve') {
+    const approvalState = getIDesignPlanApprovalState(caseRow.latestProgress, latestPlan.status)
+    if (approvalState.approved) return NextResponse.json({ success: true, alreadyApproved: true })
+    if (!approvalState.readyForApproval) return NextResponse.json({ error: 'This treatment plan is not ready for approval' }, { status: 409 })
     await getDb().update(idesignTreatmentPlans).set({ status: 'approved', approvedBy: Number(session!.user.id), approvedAt: now, updatedAt: now }).where(eq(idesignTreatmentPlans.id, latestPlan.id))
     await getDb().update(idesignCases).set({ planReviewStatus: 'approved', latestProgress: 'Clin. Review Approved', updatedAt: now }).where(eq(idesignCases.id, caseId))
     if (caseRow.importedOrderId) await getDb().update(idesignOrders).set({ latestProgress: 'Clin. Review Approved', sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))

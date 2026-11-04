@@ -105,7 +105,7 @@ function TreatmentPlanPanel({ data, caseId, reload }: { data: DetailPayload; cas
   </section>
 }
 
-function WearSchedulePanel({ course, importedTotalSteps, canManage, caseId, reload }: { course: CourseRow | null; importedTotalSteps?: number; canManage: boolean; caseId: number; reload: () => Promise<void> }) {
+export function WearSchedulePanel({ course, importedTotalSteps, canManage, caseId, reload }: { course: CourseRow | null; importedTotalSteps?: number; canManage: boolean; caseId: number; reload: () => Promise<void> }) {
   const today = localDateValue(new Date())
   const [startDate, setStartDate] = useState(today)
   const [totalSteps, setTotalSteps] = useState(Math.max(1, importedTotalSteps ?? 10))

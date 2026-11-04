@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps } from '@/lib/db/schema'
-import { canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
+import { canApproveIDesignPlans, canManageIDesignSchedule, canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { createIDesignCaseOrderNo, createIDesignCaseSchema } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -43,21 +43,21 @@ export async function GET(request: Request) {
   const importedOrderIds = rows.flatMap((row) => row.importedOrderId ? [row.importedOrderId] : [])
   const [plans, courses, importedOrders] = await Promise.all([
     caseIds.length
-      ? db.select({ caseId: idesignTreatmentPlans.caseId, versionNumber: idesignTreatmentPlans.versionNumber }).from(idesignTreatmentPlans).where(inArray(idesignTreatmentPlans.caseId, caseIds)).orderBy(asc(idesignTreatmentPlans.versionNumber))
+      ? db.select({ caseId: idesignTreatmentPlans.caseId, versionNumber: idesignTreatmentPlans.versionNumber, status: idesignTreatmentPlans.status }).from(idesignTreatmentPlans).where(inArray(idesignTreatmentPlans.caseId, caseIds)).orderBy(asc(idesignTreatmentPlans.versionNumber))
       : Promise.resolve([]),
     caseIds.length
       ? db.select({ id: idesignTreatmentCourses.id, caseId: idesignTreatmentCourses.caseId, status: idesignTreatmentCourses.status, currentStep: idesignTreatmentCourses.currentStep, totalSteps: idesignTreatmentCourses.totalSteps, timezone: idesignTreatmentCourses.timezone }).from(idesignTreatmentCourses).where(inArray(idesignTreatmentCourses.caseId, caseIds))
       : Promise.resolve([]),
     importedOrderIds.length
-      ? db.select({ id: idesignOrders.id, doctorName: idesignOrders.doctorName, sourceUpdatedOn: idesignOrders.sourceUpdatedOn }).from(idesignOrders).where(inArray(idesignOrders.id, importedOrderIds))
+      ? db.select({ id: idesignOrders.id, doctorName: idesignOrders.doctorName, sourceUpdatedOn: idesignOrders.sourceUpdatedOn, totalSteps: idesignOrders.totalSteps }).from(idesignOrders).where(inArray(idesignOrders.id, importedOrderIds))
       : Promise.resolve([]),
   ])
   const courseIds = courses.map((course) => course.id)
   const treatmentStages = courseIds.length
     ? await db.select({ courseId: idesignTreatmentSteps.courseId, stepNumber: idesignTreatmentSteps.stepNumber, suggestedStartDate: idesignTreatmentSteps.suggestedStartDate, suggestedEndDate: idesignTreatmentSteps.suggestedEndDate }).from(idesignTreatmentSteps).where(inArray(idesignTreatmentSteps.courseId, courseIds)).orderBy(asc(idesignTreatmentSteps.stepNumber))
     : []
-  const currentVersions = new Map<number, number>()
-  for (const plan of plans) currentVersions.set(plan.caseId, plan.versionNumber)
+  const currentPlans = new Map<number, { versionNumber: number; status: string }>()
+  for (const plan of plans) currentPlans.set(plan.caseId, { versionNumber: plan.versionNumber, status: plan.status })
   const stagesByCourse = new Map<number, typeof treatmentStages>()
   for (const stage of treatmentStages) {
     const stages = stagesByCourse.get(stage.courseId) ?? []
@@ -84,12 +84,18 @@ export async function GET(request: Request) {
         ...row,
         doctorName: importedOrder?.doctorName ?? (row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null),
         updateTime: importedOrder?.sourceUpdatedOn ?? row.updatedAt,
-        currentPlanVersion: currentVersions.get(row.id) ?? null,
+        currentPlanVersion: currentPlans.get(row.id)?.versionNumber ?? null,
+        currentPlanStatus: currentPlans.get(row.id)?.status ?? null,
+        importedTotalSteps: Number(importedOrder?.totalSteps) || null,
         course: coursesByCase.get(row.id) ?? null,
       }
     }),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
-    permissions: { canEditUpdateTime: session!.user.role === 'superadmin' || session!.user.role === 'admin' },
+    permissions: {
+      canApprovePlans: canApproveIDesignPlans(session!.user.role),
+      canEditUpdateTime: session!.user.role === 'superadmin' || session!.user.role === 'admin',
+      canManageSchedule: canManageIDesignSchedule(session!.user.role),
+    },
   })
 }
 
