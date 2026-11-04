@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { idesignOrders, idesignTreatmentCourses, idesignTreatmentSteps } from '@/lib/db/schema'
+import { idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentSteps } from '@/lib/db/schema'
 import { canManageIDesignSchedule } from '@/lib/idesign/access'
 import {
   calculateEstimatedFinish,
@@ -18,10 +18,23 @@ import {
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)))
-const actionSchema = z.discriminatedUnion('action', [
+const resetActionSchema = z.object({
+  action: z.literal('reset'),
+  startDate: dateValue,
+  totalSteps: z.number().int().min(1).max(100),
+  defaultDurationDays: z.number().int().min(1).max(60),
+  durations: z.array(z.number().int().min(1).max(60)).min(1).max(100),
+  timezone: z.string().trim().min(1).max(80),
+}).superRefine((value, context) => {
+  if (value.durations.length !== value.totalSteps) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['durations'], message: 'Add a duration for every stage' })
+  }
+})
+const actionSchema = z.union([
   z.object({ action: z.literal('pause') }),
   z.object({ action: z.literal('resume'), actualDate: dateValue }),
   z.object({ action: z.literal('update_durations'), durations: updateTreatmentDurationsSchema.shape.durations }),
+  resetActionSchema,
 ])
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -71,6 +84,40 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (!course) return NextResponse.json({ error: 'Start the treatment schedule first' }, { status: 404 })
   const steps = await db.select().from(idesignTreatmentSteps).where(eq(idesignTreatmentSteps.courseId, course.id)).orderBy(asc(idesignTreatmentSteps.stepNumber))
   const now = new Date()
+
+  if (parsed.data.action === 'reset') {
+    const reset = parsed.data
+    const recalculated = calculateTreatmentSteps(reset.startDate, reset.durations)
+    const estimatedFinish = calculateEstimatedFinish(reset.startDate, reset.durations)
+    const automaticProgress = calculateAutomaticTreatmentProgress(recalculated, dateInTimezone(now, reset.timezone))!
+    await db.update(idesignTreatmentCourses).set({
+      startDate: reset.startDate,
+      totalSteps: reset.totalSteps,
+      defaultDurationDays: reset.defaultDurationDays,
+      currentStep: automaticProgress.currentStage,
+      originalEstimatedFinish: estimatedFinish,
+      currentEstimatedFinish: estimatedFinish,
+      nextSuggestedChange: automaticProgress.nextSuggestedChange,
+      timezone: reset.timezone,
+      status: automaticProgress.status,
+      updatedAt: now,
+    }).where(eq(idesignTreatmentCourses.id, course.id))
+    await db.delete(idesignTreatmentSteps).where(eq(idesignTreatmentSteps.courseId, course.id))
+    await db.insert(idesignTreatmentSteps).values(recalculated.map((stage) => ({
+      courseId: course.id,
+      ...stage,
+      actualStartDate: stage.stepNumber === 1 ? reset.startDate : null,
+      status: automaticProgress.stageStatuses.get(stage.stepNumber) ?? 'scheduled',
+    })))
+    await db.update(idesignCases).set({ updatedAt: now }).where(eq(idesignCases.id, context.caseRow.id))
+    if (context.caseRow.importedOrderId) await db.update(idesignOrders).set({
+      totalSteps: String(reset.totalSteps),
+      sourceUpdatedOn: dateInTimezone(now, reset.timezone),
+      updatedAt: now,
+    }).where(eq(idesignOrders.id, context.caseRow.importedOrderId))
+    await activity(context, 'schedule_reset', `Wear schedule reset to ${reset.totalSteps} stages from ${reset.startDate}`)
+    return NextResponse.json({ success: true })
+  }
 
   if (parsed.data.action === 'pause') {
     const automaticProgress = calculateAutomaticTreatmentProgress(steps, dateInTimezone(now, course.timezone))
