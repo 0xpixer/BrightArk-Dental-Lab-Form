@@ -6,7 +6,7 @@ import { BadgeCheck, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Cir
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { usePathname } from 'next/navigation'
 import { IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
-import { getIDesignPlanViewerHref } from '@/lib/idesign/planLinks'
+import { getIDesignPlanHref } from '@/lib/idesign/planLinks'
 import { IDesignNotifications } from '@/components/idesign/IDesignNotifications'
 import { WearSchedulePanel } from '@/components/idesign/IDesignCaseDetail'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
@@ -43,15 +43,6 @@ export function IDesignCasesTable() {
   const [approving, setApproving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filtersReady, setFiltersReady] = useState(false)
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const savedPage = Number(params.get('page'))
-    setSearch(params.get('search') ?? '')
-    setPage(Number.isInteger(savedPage) && savedPage > 0 ? savedPage : 1)
-    setFiltersReady(true)
-  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,16 +64,7 @@ export function IDesignCasesTable() {
     } finally { setLoading(false) }
   }, [page, search])
 
-  useEffect(() => {
-    if (!filtersReady) return
-    const timer = setTimeout(load, search ? 250 : 0)
-    return () => clearTimeout(timer)
-  }, [filtersReady, load, search])
-
-  const listParams = new URLSearchParams()
-  if (search) listParams.set('search', search)
-  if (page > 1) listParams.set('page', String(page))
-  const returnTo = `${pathname}${listParams.size ? `?${listParams}` : ''}`
+  useEffect(() => { const timer = setTimeout(load, search ? 250 : 0); return () => clearTimeout(timer) }, [load, search])
 
   const approvePlan = async () => {
     if (!approvalCase) return
@@ -106,16 +88,15 @@ export function IDesignCasesTable() {
     <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-xl font-semibold text-text">iDesign | Clear Aligners</h1><p className="mt-1 text-sm text-text-muted">{loading ? 'Loading orders...' : `${total} clear aligner order${total === 1 ? '' : 's'}`}</p></div><div className="flex items-center gap-2"><IDesignNotifications /><Link href={newHref} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />New Order</Link></div></header>
     <div className="rounded-card border border-border bg-surface p-3"><label className="relative block max-w-md"><span className="sr-only">Search clear aligner orders</span><span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Search patient or order number" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" /></label></div>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-    <CasesTable cases={cases} loading={loading} detailBase={detailBase} returnTo={returnTo} canApprovePlans={canApprovePlans} canEditUpdateTime={canEditUpdateTime} canManageSchedule={canManageSchedule} expandedScheduleId={expandedScheduleId} setExpandedScheduleId={setExpandedScheduleId} setApprovalCase={setApprovalCase} reload={load} setError={setError} page={page} totalPages={totalPages} setPage={setPage} />
+    <CasesTable cases={cases} loading={loading} detailBase={detailBase} canApprovePlans={canApprovePlans} canEditUpdateTime={canEditUpdateTime} canManageSchedule={canManageSchedule} expandedScheduleId={expandedScheduleId} setExpandedScheduleId={setExpandedScheduleId} setApprovalCase={setApprovalCase} reload={load} setError={setError} page={page} totalPages={totalPages} setPage={setPage} />
     {approvalCase && <ApprovalDialog item={approvalCase} approving={approving} onCancel={() => setApprovalCase(null)} onConfirm={() => void approvePlan()} />}
   </section>
 }
 
-function CasesTable({ cases, loading, detailBase, returnTo, canApprovePlans, canEditUpdateTime, canManageSchedule, expandedScheduleId, setExpandedScheduleId, setApprovalCase, reload, setError, page, totalPages, setPage }: {
+function CasesTable({ cases, loading, detailBase, canApprovePlans, canEditUpdateTime, canManageSchedule, expandedScheduleId, setExpandedScheduleId, setApprovalCase, reload, setError, page, totalPages, setPage }: {
   cases: CaseRow[]
   loading: boolean
   detailBase: string
-  returnTo: string
   canApprovePlans: boolean
   canEditUpdateTime: boolean
   canManageSchedule: boolean
@@ -141,7 +122,7 @@ function CasesTable({ cases, loading, detailBase, returnTo, canApprovePlans, can
             <td className="px-4 py-3"><div className="flex items-center gap-3"><PatientAvatar name={item.patientName} files={item.fileUrls} /><div className="min-w-0"><Link href={`${detailBase}/${item.id}`} className="block truncate text-sm font-semibold text-text underline-offset-4 hover:underline">{item.patientName}</Link><p className="mt-0.5 truncate text-xs text-text-muted">{item.orderNo}{item.gender ? ` · ${item.gender}` : ''}</p></div></div></td>
             <td className="px-4 py-3 text-sm text-text">{item.doctorName || 'Unassigned'}</td>
             <td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[item.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{item.latestProgress}</span></td>
-            <td className="px-4 py-3">{item.currentPlanVersion ? <div className="flex w-fit flex-col items-start gap-2"><Link href={getIDesignPlanViewerHref(item.id, detailBase, returnTo)} aria-label={`View treatment plan V${item.currentPlanVersion} for ${item.patientName}`} className="inline-flex h-7 items-center justify-center whitespace-nowrap rounded bg-text px-2.5 text-[11px] font-semibold text-white hover:bg-neutral-700">View Plan V{item.currentPlanVersion}</Link>{approvalState.approved ? <span className="px-0.5 text-xs font-medium text-text-muted">Approved</span> : <button type="button" disabled={!approvalEnabled} onClick={() => approvalEnabled && setApprovalCase(item)} className={`h-7 whitespace-nowrap rounded px-2.5 text-[11px] font-semibold ${approvalEnabled ? 'bg-primary text-white hover:bg-orange-600' : 'cursor-not-allowed border border-border bg-bg text-text-muted'}`}>Approve</button>}</div> : <p className="text-sm font-medium text-text-muted">No plan</p>}</td>
+            <td className="px-4 py-3">{item.currentPlanVersion ? <div className="flex w-fit flex-col items-start gap-2"><a href={getIDesignPlanHref(item.id)} target="_blank" rel="noreferrer" aria-label={`View treatment plan V${item.currentPlanVersion} for ${item.patientName}`} className="inline-flex h-7 items-center justify-center whitespace-nowrap rounded bg-text px-2.5 text-[11px] font-semibold text-white hover:bg-neutral-700">View Plan V{item.currentPlanVersion}</a>{approvalState.approved ? <span className="px-0.5 text-xs font-medium text-text-muted">Approved</span> : <button type="button" disabled={!approvalEnabled} onClick={() => approvalEnabled && setApprovalCase(item)} className={`h-7 whitespace-nowrap rounded px-2.5 text-[11px] font-semibold ${approvalEnabled ? 'bg-primary text-white hover:bg-orange-600' : 'cursor-not-allowed border border-border bg-bg text-text-muted'}`}>Approve</button>}</div> : <p className="text-sm font-medium text-text-muted">No plan</p>}</td>
             <td className="px-4 py-3">{item.course ? <><p className="text-sm font-medium text-text">Stage {item.course.currentStep} of {item.course.totalSteps}</p><p className="text-xs capitalize text-text-muted">{item.course.status}</p></> : canManageSchedule ? <button type="button" onClick={() => setExpandedScheduleId((current) => current === item.id ? null : item.id)} aria-expanded={scheduleExpanded} className="text-xs font-semibold text-text underline-offset-4 hover:underline">Set schedule</button> : <span className="text-sm text-text-muted">Not scheduled</span>}</td>
             <td className="px-4 py-3 text-sm text-text-muted">{canEditUpdateTime ? <InlineUpdateTime caseId={item.id} value={item.updateTime} onSaved={reload} onError={setError} /> : formatDate(item.updateTime)}</td>
           </tr>

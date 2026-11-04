@@ -46,7 +46,7 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
 }
 
 function isActive(pathname: string, href: string) {
-  if (href.endsWith('/idesign/orders')) return pathname === href || (pathname.startsWith(`${href}/`) && !pathname.startsWith(`${href}/new`))
+  if (href.endsWith('/idesign/orders')) return pathname === href
   if (href === '/portal/orders') return pathname !== '/portal/orders/new' && pathname.startsWith(href)
   return pathname.startsWith(href)
 }
