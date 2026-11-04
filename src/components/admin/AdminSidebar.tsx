@@ -52,7 +52,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
         const open = openModule === module.id
         const ModuleIcon = module.icon
         return <div key={module.id}>
-          <button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${activeModule === module.id ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}>
+          <button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${activeModule === module.id ? 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}>
             <MorphIcon icon={ModuleIcon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><span className="hidden md:inline-flex"><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span></>}
           </button>
           {open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.filter((item) => !item.roles || item.roles.includes(role)).map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}
@@ -77,5 +77,5 @@ function isActive(pathname: string, href: string) {
 }
 
 function NavLink({ href, label, icon, hoverIcon, active, showLabels, child = false }: { href: string; label: string; icon: IconNode; hoverIcon: IconNode; active: boolean; showLabels: boolean; child?: boolean }) {
-  return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? 'bg-[#f0f0f0] text-text' : 'text-text-muted hover:bg-bg hover:text-text'}`}><MorphIcon icon={icon} hoverIcon={hoverIcon} className={child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link>
+  return <Link href={href} title={label} className={`flex h-10 items-center justify-center gap-3 rounded-card px-2 text-sm font-medium transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${child ? 'text-xs' : ''} ${active ? child ? 'bg-[#f0f0f0] text-text' : 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`}><MorphIcon icon={icon} hoverIcon={hoverIcon} className={child ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />{showLabels && <span className="hidden truncate md:inline">{label}</span>}</Link>
 }
