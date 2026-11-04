@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignOrders, idesignTreatmentCourses, idesignTreatmentSteps } from '@/lib/db/schema'
-import { canApproveIDesignPlans } from '@/lib/idesign/access'
+import { canManageIDesignSchedule } from '@/lib/idesign/access'
 import {
   calculateEstimatedFinish,
   calculateTreatmentSteps,
@@ -126,7 +126,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 async function scheduleContext(id: string) {
   const { session, error } = await requireSession()
   if (error) return { response: error }
-  if (!canApproveIDesignPlans(session!.user.role)) return { response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+  if (!canManageIDesignSchedule(session!.user.role)) return { response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
   const caseId = Number(id)
   if (!Number.isInteger(caseId)) return { response: NextResponse.json({ error: 'Invalid case' }, { status: 400 }) }
   const userId = Number(session!.user.id)

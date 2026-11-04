@@ -12,7 +12,7 @@ import {
   idesignTreatmentPlans,
   idesignTreatmentSteps,
 } from '@/lib/db/schema'
-import { canManageIDesignPlans, canViewIDesign } from '@/lib/idesign/access'
+import { canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
@@ -84,7 +84,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     permissions: {
       canManagePlans: session!.user.role === 'superadmin' || session!.user.role === 'admin',
       canApprovePlans: session!.user.role === 'doctor' || session!.user.role === 'clinic_staff',
-      canManageSchedule: session!.user.role === 'doctor' || session!.user.role === 'clinic_staff',
+      canManageSchedule: canManageIDesignSchedule(session!.user.role),
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
     },
