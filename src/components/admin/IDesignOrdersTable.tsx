@@ -15,7 +15,6 @@ import { IDesignImportDialog } from './IDesignImportDialog'
 interface IDesignOrderRow {
   id: number
   patientName: string
-  caseId: string | null
   doctorName: string
   salespersonName: string
   country: string
@@ -135,7 +134,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
           <label className="relative">
             <span className="sr-only">Search iDesign orders</span>
             <span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span>
-            <input type="search" value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder="Search patient, case, doctor or sales" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" />
+            <input type="search" value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder="Search patient, doctor or sales" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" />
           </label>
           <FilterSelect label="Category" value={category} onChange={(value) => updateFilter(setCategory, value)} options={IDESIGN_CATEGORIES} />
           <FilterSelect label="Progress" value={progress} onChange={(value) => updateFilter(setProgress, value)} options={IDESIGN_PROGRESS_OPTIONS} />
@@ -161,7 +160,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
           <table className="w-full min-w-[1120px]">
             <thead className="border-b border-border bg-bg text-left text-xs font-semibold uppercase text-text-muted">
               <tr>
-                <th className="px-4 py-3">Patient / Case</th>
+                <th className="px-4 py-3">Patient</th>
                 <th className="px-4 py-3">Doctor</th>
                 <th className="px-4 py-3">Sales</th>
                 <th className="px-4 py-3">Market</th>
@@ -180,7 +179,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
                 <tr><td colSpan={canManage ? 10 : 9} className="px-4 py-12 text-center text-sm text-text-muted">No matching records</td></tr>
               ) : orders.map((order) => (
                 <tr key={order.id} className="border-b border-border last:border-0 hover:bg-bg/60">
-                  <td className="px-4 py-3"><p className="text-sm font-medium text-text">{order.patientName}</p><p className="mt-0.5 text-xs text-text-muted">{order.caseId || 'No case ID'}</p></td>
+                  <td className="px-4 py-3"><p className="text-sm font-medium text-text">{order.patientName}</p></td>
                   <td className="px-4 py-3 text-sm text-text">{order.doctorName}</td>
                   <td className="px-4 py-3 text-sm text-text">{order.salespersonName}</td>
                   <td className="px-4 py-3 text-sm text-text-muted">{order.country}</td>

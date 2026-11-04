@@ -63,7 +63,6 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       createdByName: caseRow.createdBy ? accountNames.get(caseRow.createdBy) ?? null : null,
     },
     importedOrder: imported ? {
-      caseId: imported.caseId,
       category: imported.category,
       purchasedProducts: imported.purchasedProducts,
       totalSteps: imported.totalSteps,

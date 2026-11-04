@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   if (country) conditions.push(eq(idesignOrders.country, country))
   if (search) {
     const pattern = `%${search}%`
-    conditions.push(or(ilike(idesignOrders.caseId, pattern), ilike(idesignOrders.patientName, pattern), ilike(idesignOrders.doctorName, pattern), ilike(idesignOrders.salespersonName, pattern))!)
+    conditions.push(or(ilike(idesignOrders.patientName, pattern), ilike(idesignOrders.doctorName, pattern), ilike(idesignOrders.salespersonName, pattern))!)
   }
 
   const assignment = account.role === 'sales'

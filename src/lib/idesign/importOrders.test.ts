@@ -4,7 +4,7 @@ import type { IDesignOrder } from '@/lib/db/schema'
 import { buildIDesignImportPreview, importValuesForChange, parseIDesignImportSheet, sourceKeyForImport } from './importOrders'
 
 const header = [
-  'Sales', 'Country', 'Patient Name', 'Case ID', 'Update Time', 'Creation Time', 'Doctor', 'Latest Progress', 'Category',
+  'Sales', 'Country', 'Patient Name', 'Update Time', 'Creation Time', 'Doctor', 'Latest Progress', 'Category',
   'Purchased Products', 'Currency-Original Price', 'Original Price', 'Discount', 'Total Amount', 'Actual payment Currency',
   'Actual payment (after fees)', 'Payment Status', 'Invoice No.', 'Invoice Date', 'Payment Date', 'Shipped Date',
   'Tracking No.', 'Delivered Date', 'Total Steps', 'Produced Steps', 'Sales Commision Rate', 'Attribute to Month', 'Sales Commision',
@@ -12,7 +12,7 @@ const header = [
 
 function sourceRow(overrides: Record<number, unknown> = {}) {
   const row: unknown[] = [
-    'Germain Ho', 'Singapore', 'Patient One', 'CASE-1', '02/11/2026', '01/10/2026', 'Doctor One', 'In Production', 'iAlign',
+    'Germain Ho', 'Singapore', 'Patient One', '02/11/2026', '01/10/2026', 'Doctor One', 'In Production', 'iAlign',
     'iAlign 10 Dual', 'SGD', '1000', '10%', '900', 'SGD', '880', 'Paid', 'INV-1', '02/10/2026', '03/10/2026',
     '04/10/2026', 'TRACK-1', '05/10/2026', '10', '1-5', '5%', 'October', '44',
   ]
@@ -28,7 +28,6 @@ function existingOrder(overrides: Partial<IDesignOrder> = {}): IDesignOrder {
     salesAccountId: 20,
     country: 'Singapore',
     patientName: 'Patient One',
-    caseId: 'CASE-1',
     sourceUpdatedOn: '2026-10-01',
     sourceCreatedOn: '2026-10-01',
     doctorName: 'Doctor One',
@@ -71,7 +70,7 @@ test('parses the original Lark spreadsheet headers and day-first dates', () => {
   assert.equal(result.rows[0].data.salesCommissionRate, '5%')
 })
 
-test('matches by Case ID and reports only source-owned field changes', () => {
+test('matches by patient, doctor, creation time and category and reports only source-owned field changes', () => {
   const parsed = parseIDesignImportSheet([header, sourceRow()])
   const preview = buildIDesignImportPreview(parsed.rows, [existingOrder()], parsed.issues)
   assert.equal(preview.summary.updatedRows, 1)
@@ -82,15 +81,15 @@ test('matches by Case ID and reports only source-owned field changes', () => {
   assert.equal('salesAccountId' in values, false)
 })
 
-test('uses a safe fallback for records without a Case ID and creates deterministic source keys', () => {
-  const parsed = parseIDesignImportSheet([header, sourceRow({ 3: '' })])
-  const preview = buildIDesignImportPreview(parsed.rows, [existingOrder({ caseId: null })], parsed.issues)
+test('creates deterministic source keys without a Case ID column', () => {
+  const parsed = parseIDesignImportSheet([header, sourceRow()])
+  const preview = buildIDesignImportPreview(parsed.rows, [existingOrder()], parsed.issues)
   assert.equal(preview.summary.updatedRows, 1)
   assert.equal(sourceKeyForImport(parsed.rows[0]), sourceKeyForImport(parsed.rows[0]))
 })
 
 test('does not overwrite a record with an older spreadsheet row', () => {
-  const parsed = parseIDesignImportSheet([header, sourceRow({ 4: '01/09/2026' })])
+  const parsed = parseIDesignImportSheet([header, sourceRow({ 3: '01/09/2026' })])
   const preview = buildIDesignImportPreview(parsed.rows, [existingOrder()], parsed.issues)
   assert.equal(preview.summary.staleRows, 1)
   assert.equal(preview.summary.updatedRows, 0)
@@ -104,7 +103,7 @@ test('blocks duplicate rows in the uploaded workbook', () => {
   assert.equal(preview.canApply, false)
 })
 
-test('does not double-count a row that conflicts with duplicate existing Case IDs', () => {
+test('does not double-count a row that conflicts with duplicate existing match fields', () => {
   const parsed = parseIDesignImportSheet([header, sourceRow()])
   const preview = buildIDesignImportPreview(parsed.rows, [existingOrder(), existingOrder({ id: 8 })], parsed.issues)
   assert.equal(preview.summary.totalRows, 1)
@@ -112,14 +111,14 @@ test('does not double-count a row that conflicts with duplicate existing Case ID
 })
 
 test('accepts legacy year-first timestamps and blank patient names for non-aligner records', () => {
-  const parsed = parseIDesignImportSheet([header, sourceRow({ 2: '', 8: 'Others', 22: '2026/08/10 00:00' })])
+  const parsed = parseIDesignImportSheet([header, sourceRow({ 2: '', 7: 'Others', 21: '2026/08/10 00:00' })])
   assert.deepEqual(parsed.issues, [])
   assert.equal(parsed.rows[0].data.patientName, '-')
   assert.equal(parsed.rows[0].data.deliveredDate, '2026-08-10')
 })
 
 test('reports unsupported currencies instead of silently clearing them', () => {
-  const parsed = parseIDesignImportSheet([header, sourceRow({ 10: 'USD' })])
+  const parsed = parseIDesignImportSheet([header, sourceRow({ 9: 'USD' })])
   assert.equal(parsed.rows.length, 0)
   assert.match(parsed.issues[0].message, /Currency - Original Price/)
 })

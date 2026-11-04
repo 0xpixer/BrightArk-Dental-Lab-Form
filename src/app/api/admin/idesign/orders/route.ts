@@ -30,7 +30,6 @@ export async function GET(request: Request) {
   if (search) {
     const pattern = `%${search}%`
     conditions.push(or(
-      ilike(idesignOrders.caseId, pattern),
       ilike(idesignOrders.patientName, pattern),
       ilike(idesignOrders.doctorName, pattern),
       ilike(idesignOrders.salespersonName, pattern),

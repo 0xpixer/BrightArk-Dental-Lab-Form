@@ -17,7 +17,6 @@ const FIELD_DEFINITIONS = [
   ['salespersonName', 'Sales', ['sales', 'salesperson', 'sales person']],
   ['country', 'Country', ['country', 'market']],
   ['patientName', 'Patient Name', ['patient name', 'patient']],
-  ['caseId', 'Case ID', ['case id', 'case no', 'case number']],
   ['sourceUpdatedOn', 'Update Time', ['update time', 'updated time', 'updated on', 'update date']],
   ['sourceCreatedOn', 'Creation Time', ['creation time', 'created time', 'created on', 'creation date']],
   ['doctorName', 'Doctor', ['doctor', 'doctor name']],
@@ -50,7 +49,6 @@ const REQUIRED_FIELDS: ImportField[] = [
   'salespersonName',
   'country',
   'patientName',
-  'caseId',
   'sourceUpdatedOn',
   'sourceCreatedOn',
   'doctorName',
@@ -69,7 +67,6 @@ const DATE_FIELDS = new Set<ImportField>([
 ])
 
 const OPTIONAL_NULLABLE_FIELDS = new Set<ImportField>([
-  'caseId',
   'purchasedProducts',
   'originalCurrency',
   'originalPrice',
@@ -120,7 +117,6 @@ export interface ImportChange {
   rowNumber: number
   action: 'create' | 'update'
   existingId: number | null
-  caseId: string | null
   patientName: string
   doctorName: string
   changes: ImportFieldChange[]
@@ -180,7 +176,6 @@ export function parseIDesignImportSheet(rows: unknown[][]): { rows: ParsedImport
       raw[field] = DATE_FIELDS.has(field) ? parseDateCell(value) : cellTextOrNull(value)
     }
 
-    raw.caseId = meaningfulCaseId(raw.caseId)
     raw.country = canonicalValue(raw.country, IDESIGN_COUNTRIES)
       ?? IDESIGN_SALES_COUNTRY[cellText(raw.salespersonName)]
       ?? cellTextOrNull(raw.country)
@@ -207,7 +202,7 @@ export function parseIDesignImportSheet(rows: unknown[][]): { rows: ParsedImport
 
     const matchKey = importMatchKey(parsed.data)
     if (!matchKey) {
-      issues.push({ rowNumber, message: 'A row without a Case ID requires Patient Name, Doctor, Creation Time and Category for safe matching', type: 'error' })
+      issues.push({ rowNumber, message: 'Patient Name, Doctor, Creation Time and Category are required to match imported records safely', type: 'error' })
       return
     }
     const duplicateAt = seenKeys.get(matchKey)
@@ -223,7 +218,6 @@ export function parseIDesignImportSheet(rows: unknown[][]): { rows: ParsedImport
 }
 
 export function buildIDesignImportPreview(parsedRows: ParsedImportRow[], existingRows: IDesignOrder[], parseIssues: ImportIssue[] = []): ImportPreview {
-  const byCase = groupExisting(existingRows, (row) => caseMatchKey(row.caseId))
   const byFallback = groupExisting(existingRows, (row) => fallbackMatchKey(row))
   const changes: ImportChange[] = []
   const issues = [...parseIssues]
@@ -232,30 +226,15 @@ export function buildIDesignImportPreview(parsedRows: ParsedImportRow[], existin
   let conflictRows = parseIssues.filter((issue) => issue.type === 'conflict').length
 
   for (const row of parsedRows) {
-    const caseKey = caseMatchKey(row.data.caseId)
-    const exactMatches = caseKey ? byCase.get(caseKey) ?? [] : []
     const fallbackMatches = byFallback.get(fallbackMatchKey(row.data)!) ?? []
     let existing: IDesignOrder | undefined
 
-    if (exactMatches.length > 1) {
-      issues.push({ rowNumber: row.rowNumber, message: `Multiple existing records use Case ID ${row.data.caseId}`, type: 'conflict' })
-      conflictRows += 1
-      continue
-    }
-    if (exactMatches.length === 1) {
-      existing = exactMatches[0]
-    } else if (fallbackMatches.length > 1) {
+    if (fallbackMatches.length > 1) {
       issues.push({ rowNumber: row.rowNumber, message: 'Multiple existing records match the Patient, Doctor, Creation Time and Category', type: 'conflict' })
       conflictRows += 1
       continue
     } else if (fallbackMatches.length === 1) {
-      const fallback = fallbackMatches[0]
-      if (caseKey && caseMatchKey(fallback.caseId) && caseMatchKey(fallback.caseId) !== caseKey) {
-        issues.push({ rowNumber: row.rowNumber, message: `The fallback record already has a different Case ID (${fallback.caseId})`, type: 'conflict' })
-        conflictRows += 1
-        continue
-      }
-      existing = fallback
+      existing = fallbackMatches[0]
     }
 
     if (!existing) {
@@ -263,7 +242,6 @@ export function buildIDesignImportPreview(parsedRows: ParsedImportRow[], existin
         rowNumber: row.rowNumber,
         action: 'create',
         existingId: null,
-        caseId: row.data.caseId,
         patientName: row.data.patientName,
         doctorName: row.data.doctorName,
         changes: [],
@@ -294,7 +272,6 @@ export function buildIDesignImportPreview(parsedRows: ParsedImportRow[], existin
       rowNumber: row.rowNumber,
       action: 'update',
       existingId: existing.id,
-      caseId: row.data.caseId,
       patientName: row.data.patientName,
       doctorName: row.data.doctorName,
       changes: fieldChanges,
@@ -329,7 +306,10 @@ export function importValuesForChange(row: ParsedImportRow, change: ImportChange
       sourceKey: sourceKeyForImport(row),
     }
   }
-  return Object.fromEntries(change.changes.map(({ field }) => [field, row.data[field]])) as Partial<CreateIDesignOrderInput>
+  return {
+    ...Object.fromEntries(change.changes.map(({ field }) => [field, row.data[field]])),
+    sourceKey: sourceKeyForImport(row),
+  } as Partial<CreateIDesignOrderInput> & { sourceKey: string }
 }
 
 export function sourceKeyForImport(row: ParsedImportRow) {
@@ -347,12 +327,7 @@ function groupExisting(rows: IDesignOrder[], keyFor: (row: IDesignOrder) => stri
 }
 
 function importMatchKey(input: CreateIDesignOrderInput) {
-  return caseMatchKey(input.caseId) ?? fallbackMatchKey(input)
-}
-
-function caseMatchKey(value: unknown) {
-  const id = meaningfulCaseId(value)
-  return id ? `case:${id.toLowerCase()}` : null
+  return fallbackMatchKey(input)
 }
 
 function fallbackMatchKey(input: Pick<CreateIDesignOrderInput, 'patientName' | 'doctorName' | 'sourceCreatedOn' | 'category'> | Pick<IDesignOrder, 'patientName' | 'doctorName' | 'sourceCreatedOn' | 'category'>) {
@@ -377,11 +352,6 @@ function cellText(value: unknown) {
 function cellTextOrNull(value: unknown) {
   const text = cellText(value)
   return text || null
-}
-
-function meaningfulCaseId(value: unknown) {
-  const text = cellText(value)
-  return text && text !== '-' ? text : null
 }
 
 function canonicalValue<const T extends readonly string[]>(value: unknown, options: T): T[number] | null {
@@ -437,7 +407,6 @@ function comparableValue(value: unknown) {
 }
 
 function comparableFieldValue(field: ImportField, value: unknown) {
-  if (field === 'caseId') return meaningfulCaseId(value)
   return comparableValue(value)
 }
 

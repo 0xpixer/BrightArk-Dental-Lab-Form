@@ -61,7 +61,6 @@ export const createIDesignOrderSchema = z.object({
   salespersonName: z.string().trim().min(1, 'Salesperson is required').max(200),
   country: z.enum(IDESIGN_COUNTRIES),
   patientName: z.string().trim().min(1, 'Patient name is required').max(200),
-  caseId: optionalText,
   sourceUpdatedOn: optionalDate,
   sourceCreatedOn: optionalDate,
   doctorName: z.string().trim().min(1, 'Doctor is required').max(200),

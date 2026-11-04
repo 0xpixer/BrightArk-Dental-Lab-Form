@@ -1,0 +1,1 @@
+ALTER TABLE "idesign_orders" DROP COLUMN "case_id";

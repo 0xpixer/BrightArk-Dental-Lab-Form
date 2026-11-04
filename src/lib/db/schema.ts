@@ -123,7 +123,6 @@ export const idesignOrders = pgTable('idesign_orders', {
   salesAccountId: integer('sales_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
   country: text('country').notNull(),
   patientName: text('patient_name').notNull(),
-  caseId: text('case_id'),
   sourceUpdatedOn: date('source_updated_on', { mode: 'string' }),
   sourceCreatedOn: date('source_created_on', { mode: 'string' }),
   doctorName: text('doctor_name').notNull(),
