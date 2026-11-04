@@ -1,3 +1,3 @@
-export function getIDesignPlanReviewHref(caseId: number, versionNumber: number) {
-  return `/api/idesign/cases/${caseId}/open?type=review&version=${versionNumber}`
+export function getIDesignPlanHref(caseId: number) {
+  return `/api/idesign/cases/${caseId}/open`
 }

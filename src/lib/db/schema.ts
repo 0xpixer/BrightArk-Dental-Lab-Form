@@ -204,7 +204,6 @@ export const idesignTreatmentPlans = pgTable('idesign_treatment_plans', {
   id: serial('id').primaryKey(),
   caseId: integer('case_id').references(() => idesignCases.id, { onDelete: 'cascade' }).notNull(),
   versionNumber: integer('version_number').notNull(),
-  reviewUrl: text('review_url').notNull(),
   summary: text('summary'),
   status: text('status').default('published').notNull(),
   createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),

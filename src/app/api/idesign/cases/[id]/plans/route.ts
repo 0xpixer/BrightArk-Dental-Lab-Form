@@ -10,8 +10,7 @@ import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@
 
 const httpsUrl = z.string().trim().url().refine((value) => value.startsWith('https://'), 'Use an HTTPS link')
 const publishSchema = z.object({
-  reviewUrl: httpsUrl,
-  editableUrl: httpsUrl.optional().or(z.literal('')),
+  editableUrl: httpsUrl,
   summary: z.string().trim().max(500).optional(),
 })
 const actionSchema = z.discriminatedUnion('action', [
@@ -41,13 +40,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const [plan] = await db.insert(idesignTreatmentPlans).values({
     caseId,
     versionNumber,
-    reviewUrl: parsed.data.reviewUrl,
     summary: parsed.data.summary || null,
     createdBy: Number(session!.user.id),
     publishedAt: now,
   }).returning()
   await db.update(idesignCases).set({
-    currentEditableUrl: parsed.data.editableUrl || caseRow.currentEditableUrl,
+    currentEditableUrl: parsed.data.editableUrl,
     planReviewStatus: 'awaiting_review',
     latestProgress: 'Awaiting Clin. Review',
     updatedAt: now,

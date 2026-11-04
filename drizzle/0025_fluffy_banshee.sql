@@ -1,0 +1,1 @@
+ALTER TABLE "idesign_treatment_plans" DROP COLUMN "review_url";
