@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, EyeOff } from 'lucide'
+import { ArrowUpRight, ExternalLink, Eye, EyeOff } from 'lucide'
 import { getSafeLoginCallback } from '@/lib/siteRouting'
 import { PasswordResetForm } from '@/components/auth/PasswordResetForm'
 import { MorphIcon } from '@/components/ui/MorphIcon'
@@ -127,9 +127,18 @@ function LoginForm() {
           {loginFailed && <button type="button" onClick={() => setResetOpen(true)} className="w-full text-sm font-medium text-text underline underline-offset-2">Forgot your password?</button>}
         </form>}
 
-        {!resetOpen && <p className="mt-4 text-center text-xs text-text-muted">
-          Doctors can <Link href="/register" className="font-medium text-text hover:underline">create an account</Link> to submit and manage orders.
-        </p>}
+        {!resetOpen && <div className="mt-5 space-y-3 border-t border-border pt-5 text-center text-xs text-text-muted">
+          <p>
+            Doctors can <Link href="/register" className="font-medium text-text hover:underline">create an account</Link> to submit and manage orders.
+          </p>
+          <p>
+            Still using the previous iDesign workflow?{' '}
+            <a href="https://thebrightark.com/pages/idesign" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-text hover:underline">
+              Open the legacy iDesign portal
+              <MorphIcon icon={ExternalLink} hoverIcon={ArrowUpRight} className="h-3.5 w-3.5" />
+            </a>
+          </p>
+        </div>}
       </div>
     </div>
   )
