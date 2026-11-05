@@ -79,7 +79,7 @@ test('email sends a branded one-time verification link with bounded timeout and 
     assert.match(payload.text, /verify\?registrationId=test-id&token=test-token/)
     assert.match(payload.html, /Verify email and sign in/)
     assert.match(payload.html, /registrationId=test-id&amp;token=test-token/)
-    assert.match(payload.text, /15 minutes/)
+    assert.match(payload.text, /24 hours/)
     assert.equal(new Headers(init?.headers).get('Idempotency-Key'), 'signup/test-id')
     return Response.json({ id: 'sent' })
   })

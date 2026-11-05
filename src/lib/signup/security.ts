@@ -1,6 +1,7 @@
 import { createHmac, randomBytes, randomInt } from 'node:crypto'
 import { isIP } from 'node:net'
 import { z } from 'zod'
+import { REGISTRATION_LINK_TTL_LABEL } from './constants'
 
 export const registrationSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
@@ -95,7 +96,7 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
         from: config.from,
         to: [email],
         subject: 'Welcome to BrightArk Order Portal - verify your email',
-        text: `Welcome to BrightArk Order Portal\n\nThank you for creating your account. Verify your email to securely submit and manage your BrightArk orders.\n\nVerify your email and sign in:\n${verificationUrl}\n\nThis secure link expires in 15 minutes and can only be used once. If you did not create this account, you can safely ignore this email.`,
+        text: `Welcome to BrightArk Order Portal\n\nThank you for creating your account. Verify your email to securely submit and manage your BrightArk orders.\n\nVerify your email and sign in:\n${verificationUrl}\n\nThis secure link expires in ${REGISTRATION_LINK_TTL_LABEL} and can only be used once. If you did not create this account, you can safely ignore this email.`,
         html: `<!doctype html>
 <html lang="en">
   <body style="margin:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#171717">
@@ -107,7 +108,7 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
           <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25">Welcome to BrightArk</h1>
           <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#525252">Thank you for creating your account. Verify your email to securely submit and manage your BrightArk orders.</p>
           <a href="${htmlVerificationUrl}" style="display:inline-block;padding:13px 20px;border-radius:8px;background:#f58220;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700">Verify email and sign in</a>
-          <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#737373">This secure link expires in 15 minutes and can only be used once. If you did not create this account, you can safely ignore this email.</p>
+          <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#737373">This secure link expires in ${REGISTRATION_LINK_TTL_LABEL} and can only be used once. If you did not create this account, you can safely ignore this email.</p>
         </div>
       </div>
     </div>

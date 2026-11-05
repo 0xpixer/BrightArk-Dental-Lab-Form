@@ -19,7 +19,7 @@ test('signup migrations and security queries on isolated in-memory Postgres', as
     const { sql, params } = dialect.sqlToQuery(query)
     return db.query(sql, params)
   }
-  const addPending = async (id: string, email = `${id}@example.test`, expires = "now() + interval '15 minutes'") => {
+  const addPending = async (id: string, email = `${id}@example.test`, expires = "now() + interval '24 hours'") => {
     await db.query(`INSERT INTO pending_registrations (id, email, password_hash, full_name, clinic_name, address, code_hash, expires_at)
       VALUES ($1, $2, 'hashed-password', 'Test Doctor', 'Test Clinic', 'Test address', 'correct-hash', ${expires})`, [id, email])
   }

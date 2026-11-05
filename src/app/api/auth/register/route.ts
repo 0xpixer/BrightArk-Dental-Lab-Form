@@ -4,6 +4,7 @@ import { eq, or } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, pendingRegistrations } from '@/lib/db/schema'
 import { checkTurnstile, createVerificationLink, emailLimitIdentity, readSignupJson, registrationSchema, requestIp, sendVerificationEmail, signupConfig, SignupError } from '@/lib/signup/security'
+import { REGISTRATION_LINK_TTL_MS } from '@/lib/signup/constants'
 import { cleanupSignupData, limitSignup } from '@/lib/signup/store'
 
 export const runtime = 'nodejs'
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     const { password, ...profile } = values
     await db.insert(pendingRegistrations).values({
       ...profile, id, codeHash: tokenHash, passwordHash: await bcrypt.hash(password, 12),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      expiresAt: new Date(Date.now() + REGISTRATION_LINK_TTL_MS),
     })
     const verificationUrl = `${config.appUrl}/register/verify?registrationId=${id}&token=${token}`
     try { await sendVerificationEmail(values.email, verificationUrl, id, config) }

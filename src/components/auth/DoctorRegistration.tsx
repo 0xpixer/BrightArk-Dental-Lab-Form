@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Turnstile } from './Turnstile'
+import { REGISTRATION_LINK_TTL_LABEL } from '@/lib/signup/constants'
 
 export function DoctorRegistration({ compact = false }: {
   compact?: boolean
@@ -49,7 +50,7 @@ export function DoctorRegistration({ compact = false }: {
       <div className="rounded-card border border-border bg-bg p-4">
         <h3 className="text-sm font-semibold text-text">Check your email</h3>
         {notice && <p role="status" className="mt-1 break-words text-sm leading-6 text-text-muted">{notice}</p>}
-        <p className="mt-2 text-xs leading-5 text-text-muted">Open the link within 15 minutes to verify your email and sign in automatically.</p>
+        <p className="mt-2 text-xs leading-5 text-text-muted">Open the link within {REGISTRATION_LINK_TTL_LABEL} to verify your email and sign in automatically.</p>
       </div>
     </>}
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
