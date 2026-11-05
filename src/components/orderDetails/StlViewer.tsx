@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 
 interface StlViewerProps {
@@ -78,54 +79,51 @@ export default function StlViewer({ url, filename, resetSignal }: StlViewerProps
       frameId = window.requestAnimationFrame(render)
     }
 
-    const loader = new STLLoader()
-    loader.load(
-      url,
-      (geometry) => {
-        if (disposed) {
-          geometry.dispose()
-          return
-        }
+    const handleGeometry = (geometry: THREE.BufferGeometry) => {
+      if (disposed) {
+        geometry.dispose()
+        return
+      }
 
-        geometry.computeVertexNormals()
-        geometry.center()
-        const material = new THREE.MeshStandardMaterial({
-          color: 0xd9dee2,
-          roughness: 0.72,
-          metalness: 0.04,
-          side: THREE.DoubleSide,
-        })
-        mesh = new THREE.Mesh(geometry, material)
-        scene.add(mesh)
+      geometry.computeVertexNormals()
+      geometry.center()
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xd9dee2,
+        roughness: 0.72,
+        metalness: 0.04,
+        side: THREE.DoubleSide,
+      })
+      mesh = new THREE.Mesh(geometry, material)
+      scene.add(mesh)
 
-        const bounds = new THREE.Box3().setFromObject(mesh)
-        const size = bounds.getSize(new THREE.Vector3())
-        const radius = Math.max(size.length() / 2, 0.01)
+      const bounds = new THREE.Box3().setFromObject(mesh)
+      const size = bounds.getSize(new THREE.Vector3())
+      const radius = Math.max(size.length() / 2, 0.01)
 
-        const resetView = () => {
-          controls.target.set(0, 0, 0)
-          const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.15
-          camera.position.set(distance * 0.55, distance * 0.42, distance)
-          camera.near = Math.max(distance / 1000, 0.001)
-          camera.far = distance * 20
-          camera.updateProjectionMatrix()
-          controls.minDistance = radius * 0.3
-          controls.maxDistance = distance * 5
-          controls.update()
-        }
+      const resetView = () => {
+        controls.target.set(0, 0, 0)
+        const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.15
+        camera.position.set(distance * 0.55, distance * 0.42, distance)
+        camera.near = Math.max(distance / 1000, 0.001)
+        camera.far = distance * 20
+        camera.updateProjectionMatrix()
+        controls.minDistance = radius * 0.3
+        controls.maxDistance = distance * 5
+        controls.update()
+      }
 
-        resetViewRef.current = resetView
-        resetView()
+      resetViewRef.current = resetView
+      resetView()
+      setLoading(false)
+    }
+    const handleError = () => {
+      if (!disposed) {
         setLoading(false)
-      },
-      undefined,
-      () => {
-        if (!disposed) {
-          setLoading(false)
-          setError('This STL file could not be previewed. You can still download it.')
-        }
-      },
-    )
+        setError('This 3D model could not be previewed. You can still download it.')
+      }
+    }
+    if (/\.ply$/i.test(filename)) new PLYLoader().load(url, handleGeometry, undefined, handleError)
+    else new STLLoader().load(url, handleGeometry, undefined, handleError)
 
     resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(container)

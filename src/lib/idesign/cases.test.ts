@@ -16,7 +16,15 @@ const validCase = {
   patientName: 'Patient One',
   gender: 'Female',
   dateOfBirth: '2000-02-20',
-  fileUrls: requiredFiles,
+  fileUrls: {
+    ...requiredFiles,
+    occlusion: [{
+      url: 'https://example.public.blob.vercel-storage.com/idesign/occlusion.ply',
+      name: 'occlusion.ply',
+      size: 120,
+      type: 'model/ply',
+    }],
+  },
   dentitionStage: 'Permanent Dentition',
   extractionTeeth: [18, 11, 21],
   lockedTeeth: [],
@@ -43,6 +51,25 @@ test('rejects missing required scans or facial photos and invalid teeth', () => 
   assert.equal(missingScan.success, false)
   const invalidTooth = createIDesignCaseSchema.safeParse({ ...validCase, extractionTeeth: [99] })
   assert.equal(invalidTooth.success, false)
+})
+
+test('accepts STL or PLY oral scans and rejects other occlusion formats', () => {
+  const plyUpper = createIDesignCaseSchema.safeParse({
+    ...validCase,
+    fileUrls: {
+      ...validCase.fileUrls,
+      'upper-model': [{ ...requiredFiles['upper-model'][0], name: 'upper-model.ply', type: 'model/ply' }],
+    },
+  })
+  assert.equal(plyUpper.success, true)
+  const invalidOcclusion = createIDesignCaseSchema.safeParse({
+    ...validCase,
+    fileUrls: {
+      ...validCase.fileUrls,
+      occlusion: [{ ...validCase.fileUrls.occlusion[0], name: 'occlusion.pdf', type: 'application/pdf' }],
+    },
+  })
+  assert.equal(invalidOcclusion.success, false)
 })
 
 test('allows an admin to update a legacy case without requiring missing case files', () => {

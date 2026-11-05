@@ -2,8 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getFilePreviewKind } from './filePreview'
 
-test('recognizes uploaded image and STL files from blob URLs', () => {
+test('recognizes uploaded images, STL files, and PLY files from blob URLs', () => {
   assert.equal(getFilePreviewKind('https://example.com/orders/case/scan.STL'), 'stl')
+  assert.equal(getFilePreviewKind('https://example.com/orders/case/scan.PLY'), 'ply')
   assert.equal(getFilePreviewKind('https://example.com/orders/case/shade%20photo.jpeg'), 'image')
   assert.equal(getFilePreviewKind('https://example.com/orders/case/arch.webp?download=1'), 'image')
 })

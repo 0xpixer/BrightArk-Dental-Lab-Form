@@ -20,6 +20,7 @@ export const IDESIGN_REQUIRED_FILE_SLOTS = [
 
 export const IDESIGN_FILE_SLOTS = [
   ...IDESIGN_REQUIRED_FILE_SLOTS,
+  'occlusion',
   'panoramic-xray',
   'lateral-ceph',
   'upper-arch',
@@ -63,8 +64,8 @@ const fileUrlsSchema = z.record(z.array(fileReferenceSchema).max(25)).superRefin
     for (const slot of Object.keys(files)) {
       if (!IDESIGN_FILE_SLOTS.includes(slot as IDesignFileSlot)) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Unknown upload slot' })
     }
-    for (const slot of ['upper-model', 'lower-model'] as const) {
-      if (files[slot]?.some((file) => !/\.stl$/i.test(file.name))) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Upload an STL file' })
+    for (const slot of ['upper-model', 'lower-model', 'occlusion'] as const) {
+      if (files[slot]?.some((file) => !/\.(?:stl|ply)$/i.test(file.name))) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Upload an STL or PLY file' })
     }
     for (const slot of ['frontal-view', 'frontal-smile', 'profile-view', 'panoramic-xray', 'lateral-ceph', 'upper-arch', '45-central', 'right-occlusal', 'central-occlusal', 'left-occlusal', 'lower-arch'] as const) {
       if (files[slot]?.some((file) => !/\.(?:jpe?g|png|webp)$/i.test(file.name))) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Upload a JPG, PNG, or WebP image' })

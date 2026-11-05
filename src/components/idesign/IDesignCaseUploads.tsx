@@ -21,10 +21,11 @@ export type IDesignUploadState = Partial<Record<IDesignFileSlot, IDesignUploadFi
 const GROUPS: Array<{ heading: string; note?: string; slots: Array<FileSlotConfig & { id: IDesignFileSlot }> }> = [
   {
     heading: 'Oral scans',
-    note: 'STL files',
+    note: 'STL or PLY files',
     slots: [
-      { id: 'upper-model', label: 'Upper Model', required: true, accept: '.stl,model/stl,application/octet-stream', icon: 'scan', illustrationSrc: '/idesign-upper-model.png', formatBadge: 'STL' },
-      { id: 'lower-model', label: 'Lower Model', required: true, accept: '.stl,model/stl,application/octet-stream', icon: 'scan', illustrationSrc: '/idesign-lower-model.png', formatBadge: 'STL' },
+      { id: 'upper-model', label: 'Upper Model', required: true, accept: '.stl,.ply,model/stl,model/ply,application/ply,application/octet-stream', icon: 'scan', illustrationSrc: '/idesign-upper-model.png', formatBadge: 'STL / PLY' },
+      { id: 'lower-model', label: 'Lower Model', required: true, accept: '.stl,.ply,model/stl,model/ply,application/ply,application/octet-stream', icon: 'scan', illustrationSrc: '/idesign-lower-model.png', formatBadge: 'STL / PLY' },
+      { id: 'occlusion', label: 'Occlusion', accept: '.stl,.ply,model/stl,model/ply,application/ply,application/octet-stream', icon: 'scan', illustrationSrc: '/idesign-occlusion.png', formatBadge: 'STL / PLY' },
     ],
   },
   {
@@ -71,7 +72,7 @@ export function IDesignCaseUploads({ uploadId, value, onChange, errors = {}, enf
     const id = existingId ?? crypto.randomUUID()
     const previousPreview = existingId ? filesRef.current[slot]?.find((item) => item.id === existingId)?.previewUrl : undefined
     if (previousPreview) URL.revokeObjectURL(previousPreview)
-    const previewUrl = file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.stl') ? URL.createObjectURL(file) : undefined
+    const previewUrl = file.type.startsWith('image/') || /\.(?:stl|ply)$/i.test(file.name) ? URL.createObjectURL(file) : undefined
     const entry: IDesignUploadFile = { id, file, previewUrl, progress: 0, status: 'uploading' }
     updateSlot(slot, (files) => existingId ? files.map((item) => item.id === existingId ? entry : item) : [...files, entry])
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')

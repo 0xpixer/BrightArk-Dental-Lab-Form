@@ -6,7 +6,7 @@ import { CircleX, CloudDownload, Download, RefreshCcw, RotateCcw, X } from 'luci
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import type { FilePreviewKind } from '@/lib/filePreview'
 
-const StlViewer = dynamic(() => import('./StlViewer'), {
+const ModelViewer = dynamic(() => import('./StlViewer'), {
   ssr: false,
   loading: () => <div className="grid min-h-[280px] place-items-center bg-bg text-sm text-text-muted sm:min-h-[480px]">Loading 3D viewer…</div>,
 })
@@ -47,7 +47,7 @@ export function FilePreviewModal({ file, onClose }: { file: PreviewFile; onClose
         <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{file.filename}</p>
           <div className="flex shrink-0 items-center gap-1">
-            {file.kind === 'stl' && (
+            {file.kind !== 'image' && (
               <button type="button" onClick={() => setResetSignal((value) => value + 1)} className="rounded p-2 text-text-muted hover:bg-bg hover:text-text" title="Reset 3D view">
                 <MorphIcon icon={RotateCcw} hoverIcon={RefreshCcw} className="h-4 w-4" />
                 <span className="sr-only">Reset 3D view</span>
@@ -70,7 +70,7 @@ export function FilePreviewModal({ file, onClose }: { file: PreviewFile; onClose
               <img src={file.url} alt={file.filename} className="max-h-[78vh] max-w-full object-contain" />
             </div>
           ) : (
-            <StlViewer url={file.url} filename={file.filename} resetSignal={resetSignal} />
+            <ModelViewer url={file.url} filename={file.filename} resetSignal={resetSignal} />
           )}
         </div>
       </div>

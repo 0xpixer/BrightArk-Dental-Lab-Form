@@ -205,6 +205,7 @@ function storedFilesToUploadState(fileUrls: IDesignCaseInformationData['fileUrls
 
 function inferFileType(name: string) {
   if (/\.stl$/i.test(name)) return 'model/stl'
+  if (/\.ply$/i.test(name)) return 'model/ply'
   if (/\.png$/i.test(name)) return 'image/png'
   if (/\.webp$/i.test(name)) return 'image/webp'
   if (/\.jpe?g$/i.test(name)) return 'image/jpeg'
