@@ -39,15 +39,7 @@ export function AuthModal({ onClose, onSignedIn }: { onClose: () => void; onSign
           <div><h2 id="account-modal-title" className="text-lg font-semibold text-text">{mode === 'signin' ? 'Sign in to submit your order' : 'Create your doctor account'}</h2><p className="mt-1 text-sm text-text-muted">Your completed order will stay here while you sign in.</p></div>
           <button type="button" onClick={onClose} className="rounded p-1 text-text-muted hover:bg-bg hover:text-text" aria-label="Close sign in"><MorphIcon icon={X} hoverIcon={CircleX} className="h-5 w-5" /></button>
         </div>
-        {mode === 'register' ? <DoctorRegistration compact onVerified={async (credentials) => {
-          setEmail(credentials.email)
-          setPassword(credentials.password)
-          setMode('signin')
-          setLoading(true)
-          try { await signInDoctor(credentials) }
-          catch { setError('Email verified. Please sign in to continue.') }
-          finally { setLoading(false) }
-        }} /> : <form onSubmit={submit} className="space-y-4">
+        {mode === 'register' ? <DoctorRegistration compact /> : <form onSubmit={submit} className="space-y-4">
           <Field label="Email" type="email" value={email} onChange={setEmail} required />
           <Field label="Password" type="password" value={password} onChange={setPassword} required minLength={8} />
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

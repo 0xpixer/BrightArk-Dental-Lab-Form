@@ -37,7 +37,7 @@ test('signup migrations and security queries on isolated in-memory Postgres', as
     assert.equal((await run(completeRegistrationQuery('pending', 'wrong-hash'))).rows.length, 0)
     assert.equal((await db.query('SELECT * FROM admin_users')).rows.length, 0)
   })
-  await t.test('correct code creates only a Doctor and its clinic, then cannot be replayed', async () => {
+  await t.test('correct token creates only a Doctor and its clinic, then cannot be replayed', async () => {
     assert.equal((await run(verificationAttemptQuery('pending'))).rows.length, 1)
     assert.equal((await run(completeRegistrationQuery('pending', 'correct-hash'))).rows.length, 1)
     const user = (await db.query<{ role: string; email_verified_at: Date }>('SELECT * FROM admin_users')).rows[0]

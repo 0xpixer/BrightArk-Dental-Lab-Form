@@ -7,6 +7,8 @@ import { adminUsers } from '@/lib/db/schema'
 import { checkLoginRateLimit, clearLoginRateLimit } from '@/lib/admin/rateLimit'
 import { authConfig } from './auth.config'
 import { createCurrentAccountJwtCallback } from '@/lib/admin/currentAccountSession'
+import { completeRegistrationQuery } from '@/lib/signup/store'
+import { secretHash, verificationSchema } from '@/lib/signup/security'
 
 declare module 'next-auth' {
   interface User {
@@ -53,8 +55,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        registrationId: { label: 'Registration ID', type: 'text' },
+        verificationToken: { label: 'Verification token', type: 'password' },
       },
       authorize: async (credentials) => {
+        const linkCredentials = verificationSchema.safeParse({
+          registrationId: credentials?.registrationId,
+          token: credentials?.verificationToken,
+        })
+        if (linkCredentials.success) {
+          const secret = process.env.TURNSTILE_SECRET_KEY
+          if (!secret) return null
+          const { registrationId, token } = linkCredentials.data
+          const created = await getDb().execute(completeRegistrationQuery(
+            registrationId,
+            secretHash(secret, registrationId, token),
+          ))
+          const account = created.rows[0] as { id: number; username: string; full_name: string; role: string } | undefined
+          if (!account) return null
+          return {
+            id: String(account.id),
+            username: account.username,
+            name: account.full_name,
+            role: account.role,
+          }
+        }
+
         const username = credentials?.username as string | undefined
         const password = credentials?.password as string | undefined
 

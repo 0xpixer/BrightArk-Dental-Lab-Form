@@ -10,13 +10,13 @@ export async function POST(request: Request) {
     const config = signupConfig()
     await limitSignup(config.secret, 'verify-ip', requestIp(request), 30)
     const parsed = verificationSchema.safeParse(await readSignupJson(request))
-    if (!parsed.success) throw new SignupError('Enter the six-digit code from your email.')
-    const { registrationId, code } = parsed.data
+    if (!parsed.success) throw new SignupError('This verification link is invalid.')
+    const { registrationId, token } = parsed.data
     const db = getDb()
     const attempt = await db.execute(verificationAttemptQuery(registrationId))
-    if (!attempt.rows.length) throw new SignupError('This code has expired or has too many attempts. Request a new code.')
-    const created = await db.execute(completeRegistrationQuery(registrationId, secretHash(config.secret, registrationId, code)))
-    if (!created.rows.length) throw new SignupError('Invalid or already used code. Try again, or sign in if you already verified.')
+    if (!attempt.rows.length) throw new SignupError('This link has expired or has already been used. Request a new link.')
+    const created = await db.execute(completeRegistrationQuery(registrationId, secretHash(config.secret, registrationId, token)))
+    if (!created.rows.length) throw new SignupError('This link is invalid or has already been used. Try signing in if you already verified.')
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (error) {
     if (error instanceof SignupError) return NextResponse.json({ error: error.message }, {

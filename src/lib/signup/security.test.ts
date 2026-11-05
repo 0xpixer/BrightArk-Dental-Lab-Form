@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { checkTurnstile, createVerification, emailLimitIdentity, readSignupJson, registrationSchema, requestIp, secretHash, sendVerificationEmail, signupConfig, SignupError } from './security'
+import { checkTurnstile, createVerificationLink, emailLimitIdentity, readSignupJson, registrationSchema, requestIp, secretHash, sendVerificationEmail, signupConfig, SignupError } from './security'
 
 test('Turnstile requires success, the signup action, and an allowed hostname', async () => {
   const config = { secret: 'local-test', hosts: ['brightark.example.test'] }
@@ -43,15 +43,15 @@ test('registration validates bounded input, strips roles, and requires a captcha
   }
 })
 
-test('codes are random, hashed with a server secret, and tied to their registration', () => {
-  const a = createVerification('test-secret')
-  const b = createVerification('test-secret')
+test('verification tokens are random, hashed with a server secret, and tied to their registration', () => {
+  const a = createVerificationLink('test-secret')
+  const b = createVerificationLink('test-secret')
   assert.match(a.id, /^[a-f0-9]{64}$/)
-  assert.match(a.code, /^\d{6}$/)
+  assert.match(a.token, /^[a-f0-9]{64}$/)
   assert.notEqual(a.id, b.id)
-  assert.equal(a.codeHash, secretHash('test-secret', a.id, a.code))
-  assert.notEqual(a.codeHash, secretHash('test-secret', b.id, a.code))
-  assert.notEqual(a.codeHash, secretHash('other-secret', a.id, a.code))
+  assert.equal(a.tokenHash, secretHash('test-secret', a.id, a.token))
+  assert.notEqual(a.tokenHash, secretHash('test-secret', b.id, a.token))
+  assert.notEqual(a.tokenHash, secretHash('other-secret', a.id, a.token))
 })
 
 test('quota identifiers group Gmail dot and plus aliases without changing other domains', () => {
@@ -67,19 +67,24 @@ test('untrusted forwarding headers cannot choose rate limit identities outside V
   assert.equal(requestIp(new Request('https://example.test'), true), 'unknown')
 })
 
-test('email sends only the code, with bounded timeout and idempotency, and rejects provider failures', async () => {
+test('email sends a branded one-time verification link with bounded timeout and idempotency', async () => {
   const config = { apiKey: 'test-key', from: 'BrightArk <verify@example.test>' }
-  await sendVerificationEmail('doctor@example.test', '012345', 'test-id', config, async (_url, init) => {
+  const verificationUrl = 'https://order.example.test/register/verify?registrationId=test-id&token=test-token'
+  await sendVerificationEmail('doctor@example.test', verificationUrl, 'test-id', config, async (_url, init) => {
     const payload = JSON.parse(String(init?.body))
     assert.equal(payload.from, config.from)
     assert.deepEqual(payload.to, ['doctor@example.test'])
-    assert.match(payload.text, /012345/)
+    assert.match(payload.subject, /Welcome to BrightArk Order Portal/)
+    assert.match(payload.text, /Welcome to BrightArk Order Portal/)
+    assert.match(payload.text, /verify\?registrationId=test-id&token=test-token/)
+    assert.match(payload.html, /Verify email and sign in/)
+    assert.match(payload.html, /registrationId=test-id&amp;token=test-token/)
     assert.match(payload.text, /15 minutes/)
     assert.equal(new Headers(init?.headers).get('Idempotency-Key'), 'signup/test-id')
     return Response.json({ id: 'sent' })
   })
   for (const response of [Response.json({ error: 'rejected' }, { status: 403 }), new Response('bad'), Response.json({})]) {
-    await assert.rejects(sendVerificationEmail('doctor@example.test', '012345', 'test-id', config, async () => response), { status: 503 })
+    await assert.rejects(sendVerificationEmail('doctor@example.test', verificationUrl, 'test-id', config, async () => response), { status: 503 })
   }
 })
 

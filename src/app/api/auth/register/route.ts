@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { eq, or } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, pendingRegistrations } from '@/lib/db/schema'
-import { checkTurnstile, createVerification, emailLimitIdentity, readSignupJson, registrationSchema, requestIp, sendVerificationEmail, signupConfig, SignupError } from '@/lib/signup/security'
+import { checkTurnstile, createVerificationLink, emailLimitIdentity, readSignupJson, registrationSchema, requestIp, sendVerificationEmail, signupConfig, SignupError } from '@/lib/signup/security'
 import { cleanupSignupData, limitSignup } from '@/lib/signup/store'
 
 export const runtime = 'nodejs'
@@ -25,13 +25,14 @@ export async function POST(request: Request) {
       .where(or(eq(adminUsers.email, values.email), eq(adminUsers.username, values.email))).limit(1)
     if (existing) throw new SignupError('An account with this email already exists. Please sign in.', 409)
     await cleanupSignupData()
-    const { id, code, codeHash } = createVerification(config.secret)
+    const { id, token, tokenHash } = createVerificationLink(config.secret)
     const { password, ...profile } = values
     await db.insert(pendingRegistrations).values({
-      ...profile, id, codeHash, passwordHash: await bcrypt.hash(password, 12),
+      ...profile, id, codeHash: tokenHash, passwordHash: await bcrypt.hash(password, 12),
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     })
-    try { await sendVerificationEmail(values.email, code, id, config) }
+    const verificationUrl = `${config.appUrl}/register/verify?registrationId=${id}&token=${token}`
+    try { await sendVerificationEmail(values.email, verificationUrl, id, config) }
     catch (error) {
       await db.delete(pendingRegistrations).where(eq(pendingRegistrations.id, id))
       throw error

@@ -30,14 +30,14 @@ export function completeRegistrationQuery(id: string, codeHash: string) {
     WHERE id = ${id} AND code_hash = ${codeHash} AND expires_at > now() AND attempts <= 5
     RETURNING *
   ), created AS (
-    INSERT INTO admin_users (username, email, password_hash, full_name, clinic_name, address, phone, role, is_active, email_verified_at)
-    SELECT email, email, password_hash, full_name, clinic_name, address, nullif(phone, ''), 'doctor', true, now() FROM verified
+    INSERT INTO admin_users (username, email, password_hash, full_name, clinic_name, address, phone, role, is_active, email_verified_at, last_login_at)
+    SELECT email, email, password_hash, full_name, clinic_name, address, nullif(phone, ''), 'doctor', true, now(), now() FROM verified
     ON CONFLICT DO NOTHING
-    RETURNING id, clinic_name, address
+    RETURNING id, username, full_name, role, clinic_name, address
   ), clinic AS (
     INSERT INTO doctor_clinics (doctor_id, name, address)
     SELECT id, clinic_name, address FROM created RETURNING id
-  ) SELECT id FROM created`
+  ) SELECT id, username, full_name, role FROM created`
 }
 
 export async function cleanupSignupData() {
