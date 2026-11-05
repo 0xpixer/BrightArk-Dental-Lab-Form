@@ -59,16 +59,9 @@ const fileReferenceSchema = z.object({
 
 const dateSchema = z.string().refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), 'Enter a valid date')
 
-export const createIDesignCaseSchema = z.object({
-  patientName: z.string().trim().min(1, 'Name is required').max(200),
-  gender: z.enum(IDESIGN_GENDERS),
-  dateOfBirth: dateSchema,
-  fileUrls: z.record(z.array(fileReferenceSchema).max(25)).superRefine((files, context) => {
+const fileUrlsSchema = z.record(z.array(fileReferenceSchema).max(25)).superRefine((files, context) => {
     for (const slot of Object.keys(files)) {
       if (!IDESIGN_FILE_SLOTS.includes(slot as IDesignFileSlot)) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Unknown upload slot' })
-    }
-    for (const slot of IDESIGN_REQUIRED_FILE_SLOTS) {
-      if (!files[slot]?.length) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Required file is missing' })
     }
     for (const slot of ['upper-model', 'lower-model'] as const) {
       if (files[slot]?.some((file) => !/\.stl$/i.test(file.name))) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Upload an STL file' })
@@ -76,7 +69,10 @@ export const createIDesignCaseSchema = z.object({
     for (const slot of ['frontal-view', 'frontal-smile', 'profile-view', 'panoramic-xray', 'lateral-ceph', 'upper-arch', '45-central', 'right-occlusal', 'central-occlusal', 'left-occlusal', 'lower-arch'] as const) {
       if (files[slot]?.some((file) => !/\.(?:jpe?g|png|webp)$/i.test(file.name))) context.addIssue({ code: z.ZodIssueCode.custom, path: [slot], message: 'Upload a JPG, PNG, or WebP image' })
     }
-  }),
+  })
+
+const clinicalCaseFields = {
+  fileUrls: fileUrlsSchema,
   dentitionStage: z.enum(DENTITION_STAGES).optional().nullable(),
   extractionTeeth: toothSelection,
   lockedTeeth: toothSelection,
@@ -98,6 +94,24 @@ export const createIDesignCaseSchema = z.object({
   }),
   molarDistalizationNotAllowed: z.object({ upperLeft: z.boolean(), upperRight: z.boolean(), lowerLeft: z.boolean(), lowerRight: z.boolean() }),
   remarks: z.string().trim().max(500).optional().nullable().transform((value) => value || null),
+}
+
+export const createIDesignCaseSchema = z.object({
+  patientName: z.string().trim().min(1, 'Name is required').max(200),
+  gender: z.enum(IDESIGN_GENDERS),
+  dateOfBirth: dateSchema,
+  ...clinicalCaseFields,
+}).superRefine((value, context) => {
+  for (const slot of IDESIGN_REQUIRED_FILE_SLOTS) {
+    if (!value.fileUrls[slot]?.length) context.addIssue({ code: z.ZodIssueCode.custom, path: ['fileUrls', slot], message: 'Required file is missing' })
+  }
+})
+
+export const updateIDesignCaseInformationSchema = z.object({
+  patientName: z.string().trim().min(1, 'Name is required').max(200),
+  gender: z.enum(IDESIGN_GENDERS).optional().nullable(),
+  dateOfBirth: dateSchema.optional().nullable(),
+  ...clinicalCaseFields,
 })
 
 export type CreateIDesignCaseInput = z.infer<typeof createIDesignCaseSchema>

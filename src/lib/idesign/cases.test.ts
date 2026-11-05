@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_REQUIRED_FILE_SLOTS } from './cases'
+import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_REQUIRED_FILE_SLOTS, updateIDesignCaseInformationSchema } from './cases'
 
 const requiredFiles = Object.fromEntries(IDESIGN_REQUIRED_FILE_SLOTS.map((slot) => {
   const extension = slot.endsWith('model') ? 'stl' : 'jpg'
@@ -43,6 +43,11 @@ test('rejects missing required scans or facial photos and invalid teeth', () => 
   assert.equal(missingScan.success, false)
   const invalidTooth = createIDesignCaseSchema.safeParse({ ...validCase, extractionTeeth: [99] })
   assert.equal(invalidTooth.success, false)
+})
+
+test('allows an admin to update a legacy case without requiring missing case files', () => {
+  const parsed = updateIDesignCaseInformationSchema.safeParse({ ...validCase, gender: null, dateOfBirth: null, fileUrls: {} })
+  assert.equal(parsed.success, true)
 })
 
 test('creates recognisable, unique iDesign order numbers', () => {

@@ -2,22 +2,29 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, BadgeCheck, Check, CirclePause, ExternalLink, MoveLeft, Play, Plus, RefreshCcw, Save } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { IDesignNotifications } from './IDesignNotifications'
 import { IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
+import type { IDesignCaseInformationData } from '@/components/admin/NewIDesignOrderForm'
+
+const IDesignCaseInformationEditor = dynamic(
+  () => import('@/components/admin/NewIDesignOrderForm').then((module) => module.IDesignCaseInformationEditor),
+  { loading: () => <div className="rounded-card border border-border bg-surface p-8 text-center text-sm text-text-muted">Loading case information...</div> },
+)
 
 interface PlanRow { id: number; versionNumber: number; summary: string | null; status: string; publishedAt: string; approvedAt: string | null; createdByName: string | null; approvedByName: string | null }
 interface StepRow { id: number; stepNumber: number; durationDays: number; suggestedStartDate: string; suggestedEndDate: string; actualStartDate: string | null; status: string }
 interface CourseRow { id: number; startDate: string; totalSteps: number; defaultDurationDays: number; currentStep: number; originalEstimatedFinish: string; currentEstimatedFinish: string; nextSuggestedChange: string | null; status: string; steps: StepRow[] }
 interface DetailPayload {
-  case: Record<string, any> & { id: number; orderNo: string; patientName: string; latestProgress: string; planReviewStatus: string; currentEditableUrl: string | null; doctorName: string | null; salesName: string | null }
+  case: Record<string, any> & IDesignCaseInformationData & { id: number; orderNo: string; latestProgress: string; planReviewStatus: string; currentEditableUrl: string | null; doctorName: string | null; salesName: string | null }
   importedOrder: null | Record<string, any>
   plans: PlanRow[]
   activities: Array<{ id: number; detail: string; actorName: string; createdAt: string }>
   course: CourseRow | null
-  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean }
+  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean }
 }
 
 export function IDesignCaseDetail({ caseId }: { caseId: number }) {
@@ -59,10 +66,10 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
       <div className="space-y-5">
         <TreatmentPlanPanel data={data} caseId={caseId} reload={load} />
         <WearSchedulePanel course={data.course} importedTotalSteps={Number(data.importedOrder?.totalSteps) || undefined} canManage={data.permissions.canManageSchedule} caseId={caseId} reload={load} />
-        <CaseInformation data={data} />
       </div>
       <ActivityPanel activities={data.activities} />
     </div>
+    {data.permissions.canEditCaseInformation ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} /> : <CaseInformation data={data} />}
   </div>
 }
 

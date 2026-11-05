@@ -14,6 +14,7 @@ import {
 } from '@/lib/db/schema'
 import { canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
+import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
@@ -21,6 +22,7 @@ const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Num
 const updateCaseSchema = z.union([
   z.object({ latestProgress: z.enum(IDESIGN_PROGRESS_OPTIONS) }),
   z.object({ updateTime: dateValue }),
+  z.object({ action: z.literal('update_case_information'), data: updateIDesignCaseInformationSchema }),
 ])
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
@@ -101,6 +103,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
+      canEditCaseInformation: session!.user.role === 'superadmin' || session!.user.role === 'admin',
     },
   })
 }
@@ -116,7 +119,27 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (!caseRow) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
 
   const parsed = updateCaseSchema.safeParse(await request.json().catch(() => null))
-  if (!parsed.success) return NextResponse.json({ error: 'Select a valid status or update date' }, { status: 400 })
+  if (!parsed.success) return NextResponse.json({ error: 'Please check the case information and try again', details: parsed.error.flatten() }, { status: 400 })
+
+  if ('action' in parsed.data && parsed.data.action === 'update_case_information') {
+    const now = new Date()
+    const db = getDb()
+    await db.update(idesignCases).set({ ...parsed.data.data, updatedAt: now }).where(eq(idesignCases.id, caseId))
+    if (caseRow.importedOrderId) {
+      await db.update(idesignOrders).set({
+        patientName: parsed.data.data.patientName,
+        sourceUpdatedOn: now.toISOString().slice(0, 10),
+        updatedAt: now,
+      }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    }
+    await recordIDesignActivity({
+      caseId,
+      eventType: 'case_information_updated',
+      detail: 'Case information and clinical records updated',
+      ...sessionActor(session!),
+    })
+    return NextResponse.json({ success: true })
+  }
 
   if ('updateTime' in parsed.data) {
     const manualTime = new Date(`${parsed.data.updateTime}T00:00:00Z`)
@@ -134,6 +157,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ success: true })
   }
 
+  if (!('latestProgress' in parsed.data)) return NextResponse.json({ error: 'Invalid case update' }, { status: 400 })
   const now = new Date()
   await getDb().update(idesignCases).set({ latestProgress: parsed.data.latestProgress, updatedAt: now }).where(eq(idesignCases.id, caseId))
   if (caseRow.importedOrderId) {

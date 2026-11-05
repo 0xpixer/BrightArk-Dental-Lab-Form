@@ -12,6 +12,8 @@ import type { IDesignFileSlot } from '@/lib/idesign/cases'
 
 export interface IDesignUploadFile extends SlotFile {
   id: string
+  storedSize?: number
+  storedType?: string
 }
 
 export type IDesignUploadState = Partial<Record<IDesignFileSlot, IDesignUploadFile[]>>
@@ -55,7 +57,7 @@ const GROUPS: Array<{ heading: string; note?: string; slots: Array<FileSlotConfi
   },
 ]
 
-export function IDesignCaseUploads({ uploadId, value, onChange, errors = {} }: { uploadId: string; value: IDesignUploadState; onChange: Dispatch<SetStateAction<IDesignUploadState>>; errors?: Partial<Record<string, string>> }) {
+export function IDesignCaseUploads({ uploadId, value, onChange, errors = {}, enforceRequired = true }: { uploadId: string; value: IDesignUploadState; onChange: Dispatch<SetStateAction<IDesignUploadState>>; errors?: Partial<Record<string, string>>; enforceRequired?: boolean }) {
   const [preview, setPreview] = useState<PreviewFile | null>(null)
   const cbctInput = useRef<HTMLInputElement>(null)
   const filesRef = useRef(value)
@@ -104,12 +106,12 @@ export function IDesignCaseUploads({ uploadId, value, onChange, errors = {} }: {
 
   return <div className="space-y-6">
     {GROUPS.map((group) => <section key={group.heading}>
-      <div className="mb-3 flex items-baseline gap-2"><h3 className="text-sm font-semibold text-text">{group.heading}{group.slots.some((slot) => slot.required) && <span className="text-red-500"> *</span>}</h3>{group.note && <span className="text-xs text-text-muted">{group.note}</span>}</div>
+      <div className="mb-3 flex items-baseline gap-2"><h3 className="text-sm font-semibold text-text">{group.heading}{enforceRequired && group.slots.some((slot) => slot.required) && <span className="text-red-500"> *</span>}</h3>{group.note && <span className="text-xs text-text-muted">{group.note}</span>}</div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {group.slots.map((slot) => {
           const item = value[slot.id]?.[0]
           return <div key={slot.id} className="space-y-1.5">
-            <UploadSlotCard slot={slot} slotFile={item} hasError={Boolean(errors[slot.id])} onSelect={(file) => uploadFile(slot.id, file, item?.id)} onRemove={() => item && remove(slot.id, item.id)} onRetry={() => item && uploadFile(slot.id, item.file, item.id)} />
+            <UploadSlotCard slot={{ ...slot, required: enforceRequired && slot.required }} slotFile={item} hasError={Boolean(errors[slot.id])} onSelect={(file) => uploadFile(slot.id, file, item?.id)} onRemove={() => item && remove(slot.id, item.id)} onRetry={() => item && uploadFile(slot.id, item.file, item.id)} />
             {item?.status === 'success' && getFilePreviewKind(item.blobUrl || item.file.name) && <button type="button" onClick={() => openPreview(item)} className="inline-flex items-center gap-1 text-xs font-medium text-text-muted hover:text-text"><MorphIcon icon={Eye} hoverIcon={ScanEye} className="h-3.5 w-3.5" />Preview</button>}
             {errors[slot.id] && <p role="alert" className="text-xs text-red-600">{errors[slot.id]}</p>}
           </div>
