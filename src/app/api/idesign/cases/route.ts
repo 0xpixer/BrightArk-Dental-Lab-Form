@@ -1,9 +1,9 @@
-import { and, asc, count, desc, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps } from '@/lib/db/schema'
-import { canApproveIDesignPlans, canManageIDesignSchedule, canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
+import { canApproveIDesignPlans, canAssignIDesignOrders, canManageIDesignSchedule, canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { createIDesignCaseOrderNo, createIDesignCaseSchema } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -26,15 +26,22 @@ export async function GET(request: Request) {
   }
   const where = conditions.length ? and(...conditions) : undefined
   const db = getDb()
+  const canAssignOrders = canAssignIDesignOrders(session!.user.role)
   const effectiveUpdateTime = sql<Date>`coalesce(
     (select ${idesignOrders.sourceUpdatedOn}::timestamptz from ${idesignOrders} where ${idesignOrders.id} = ${idesignCases.importedOrderId}),
     ${idesignCases.updatedAt}
   )`
-  const [rows, totalRows] = await Promise.all([
+  const [rows, totalRows, assignableAccounts] = await Promise.all([
     db.select().from(idesignCases).where(where).orderBy(desc(effectiveUpdateTime), desc(idesignCases.id)).limit(limit).offset((page - 1) * limit),
     db.select({ count: count() }).from(idesignCases).where(where),
+    canAssignOrders
+      ? db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role })
+        .from(adminUsers)
+        .where(and(inArray(adminUsers.role, ['doctor', 'sales']), eq(adminUsers.isActive, true)))
+        .orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
+      : Promise.resolve([]),
   ])
-  const accountIds = [...new Set(rows.map((row) => row.doctorAccountId).filter((id): id is number => Boolean(id)))]
+  const accountIds = [...new Set(rows.flatMap((row) => [row.doctorAccountId, row.salesAccountId]).filter((id): id is number => Boolean(id)))]
   const accounts = accountIds.length
     ? await db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(inArray(adminUsers.id, accountIds))
     : []
@@ -83,6 +90,8 @@ export async function GET(request: Request) {
       return {
         ...row,
         doctorName: importedOrder?.doctorName ?? (row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null),
+        assignedDoctorName: row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null,
+        assignedSalesName: row.salesAccountId ? accountNames.get(row.salesAccountId) ?? null : null,
         updateTime: importedOrder?.sourceUpdatedOn ?? row.updatedAt,
         currentPlanVersion: currentPlans.get(row.id)?.versionNumber ?? null,
         currentPlanStatus: currentPlans.get(row.id)?.status ?? null,
@@ -93,8 +102,12 @@ export async function GET(request: Request) {
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     permissions: {
       canApprovePlans: canApproveIDesignPlans(session!.user.role),
+      canAssignOrders,
       canEditUpdateTime: session!.user.role === 'superadmin' || session!.user.role === 'admin',
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
+    },
+    options: {
+      assignableAccounts: assignableAccounts.map((account) => ({ id: account.id, name: account.name || account.username, role: account.role })),
     },
   })
 }

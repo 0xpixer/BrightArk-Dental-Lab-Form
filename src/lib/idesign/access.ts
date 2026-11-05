@@ -38,3 +38,7 @@ export function canApproveIDesignPlans(role: string) {
 export function canManageIDesignSchedule(role: string) {
   return role === 'superadmin' || role === 'admin' || role === 'doctor' || role === 'clinic_staff'
 }
+
+export function canAssignIDesignOrders(role: string) {
+  return role === 'superadmin' || role === 'admin'
+}

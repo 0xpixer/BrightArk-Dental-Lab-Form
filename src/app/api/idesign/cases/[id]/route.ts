@@ -12,7 +12,7 @@ import {
   idesignTreatmentPlans,
   idesignTreatmentSteps,
 } from '@/lib/db/schema'
-import { canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
+import { canAssignIDesignOrders, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -23,6 +23,11 @@ const updateCaseSchema = z.union([
   z.object({ latestProgress: z.enum(IDESIGN_PROGRESS_OPTIONS) }),
   z.object({ updateTime: dateValue }),
   z.object({ action: z.literal('update_case_information'), data: updateIDesignCaseInformationSchema }),
+  z.object({
+    action: z.literal('assign_owners'),
+    doctorAccountId: z.number().int().positive().nullable(),
+    salesAccountId: z.number().int().positive().nullable(),
+  }),
 ])
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
@@ -120,6 +125,48 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   const parsed = updateCaseSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: 'Please check the case information and try again', details: parsed.error.flatten() }, { status: 400 })
+
+  if ('action' in parsed.data && parsed.data.action === 'assign_owners') {
+    if (!canAssignIDesignOrders(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const db = getDb()
+    const accountIds = [parsed.data.doctorAccountId, parsed.data.salesAccountId].filter((id): id is number => id !== null)
+    const accounts = accountIds.length
+      ? await db.select({ id: adminUsers.id, role: adminUsers.role, name: adminUsers.fullName, username: adminUsers.username })
+        .from(adminUsers)
+        .where(and(inArray(adminUsers.id, accountIds), eq(adminUsers.isActive, true)))
+      : []
+    const accountsById = new Map(accounts.map((account) => [account.id, account]))
+    const doctor = parsed.data.doctorAccountId ? accountsById.get(parsed.data.doctorAccountId) : null
+    const sales = parsed.data.salesAccountId ? accountsById.get(parsed.data.salesAccountId) : null
+    if (parsed.data.doctorAccountId && doctor?.role !== 'doctor') {
+      return NextResponse.json({ error: 'Choose an active Doctor account' }, { status: 400 })
+    }
+    if (parsed.data.salesAccountId && sales?.role !== 'sales') {
+      return NextResponse.json({ error: 'Choose an active Sales account' }, { status: 400 })
+    }
+
+    await db.update(idesignCases).set({
+      doctorAccountId: parsed.data.doctorAccountId,
+      salesAccountId: parsed.data.salesAccountId,
+    }).where(eq(idesignCases.id, caseId))
+    if (caseRow.importedOrderId) {
+      await db.update(idesignOrders).set({
+        doctorAccountId: parsed.data.doctorAccountId,
+        salesAccountId: parsed.data.salesAccountId,
+        assignmentUpdatedBy: Number(session!.user.id),
+        assignmentUpdatedAt: new Date(),
+      }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    }
+    const doctorName = doctor ? doctor.name || doctor.username : 'Unassigned'
+    const salesName = sales ? sales.name || sales.username : 'Unassigned'
+    await recordIDesignActivity({
+      caseId,
+      eventType: 'owners_assigned',
+      detail: `Order access updated — Doctor: ${doctorName}; Sales: ${salesName}`,
+      ...sessionActor(session!),
+    })
+    return NextResponse.json({ success: true })
+  }
 
   if ('action' in parsed.data && parsed.data.action === 'update_case_information') {
     const now = new Date()
