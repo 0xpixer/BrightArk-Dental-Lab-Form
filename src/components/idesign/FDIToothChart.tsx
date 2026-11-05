@@ -7,7 +7,7 @@ const ROWS = [
   { label: 'Lower primary', right: [85, 84, 83, 82, 81], left: [71, 72, 73, 74, 75] },
 ]
 
-export function FDIToothChart({ title, helper, value, onChange }: { title: string; helper?: string; value: number[]; onChange: (teeth: number[]) => void }) {
+export function FDIToothChart({ title, helper, value, onChange, readOnly = false }: { title: string; helper?: string; value: number[]; onChange: (teeth: number[]) => void; readOnly?: boolean }) {
   const selected = new Set(value)
   const toggle = (tooth: number) => onChange(selected.has(tooth) ? value.filter((item) => item !== tooth) : [...value, tooth])
 
@@ -18,9 +18,9 @@ export function FDIToothChart({ title, helper, value, onChange }: { title: strin
       <div className="min-w-[610px] space-y-2" role="group" aria-label={`${title} tooth selection`}>
         {ROWS.map((row, rowIndex) => <div key={row.label} className={`grid grid-cols-[20px_1fr_1px_1fr_20px] items-center gap-2 ${rowIndex === 2 ? 'border-t border-border pt-2' : ''}`}>
           <span className="text-center text-[10px] font-semibold text-text-muted">R</span>
-          <div className="flex justify-end gap-1">{row.right.map((tooth) => <ToothChip key={tooth} tooth={tooth} active={selected.has(tooth)} onClick={() => toggle(tooth)} />)}</div>
+          <div className="flex justify-end gap-1">{row.right.map((tooth) => <ToothChip key={tooth} tooth={tooth} active={selected.has(tooth)} readOnly={readOnly} onClick={() => toggle(tooth)} />)}</div>
           <div className="h-8 bg-border" aria-hidden />
-          <div className="flex gap-1">{row.left.map((tooth) => <ToothChip key={tooth} tooth={tooth} active={selected.has(tooth)} onClick={() => toggle(tooth)} />)}</div>
+          <div className="flex gap-1">{row.left.map((tooth) => <ToothChip key={tooth} tooth={tooth} active={selected.has(tooth)} readOnly={readOnly} onClick={() => toggle(tooth)} />)}</div>
           <span className="text-center text-[10px] font-semibold text-text-muted">L</span>
         </div>)}
       </div>
@@ -28,6 +28,6 @@ export function FDIToothChart({ title, helper, value, onChange }: { title: strin
   </fieldset>
 }
 
-function ToothChip({ tooth, active, onClick }: { tooth: number; active: boolean; onClick: () => void }) {
-  return <button type="button" aria-pressed={active} onClick={onClick} className={`h-8 w-8 shrink-0 rounded border text-[11px] font-semibold transition-colors ${active ? 'border-text bg-text text-white' : 'border-border bg-surface text-text hover:border-neutral-400 hover:bg-bg'}`}>{tooth}</button>
+function ToothChip({ tooth, active, onClick, readOnly }: { tooth: number; active: boolean; onClick: () => void; readOnly: boolean }) {
+  return <button type="button" aria-pressed={active} disabled={readOnly} onClick={onClick} className={`h-8 w-8 shrink-0 rounded border text-[11px] font-semibold transition-colors disabled:cursor-default disabled:opacity-100 ${active ? 'border-text bg-text text-white' : `border-border bg-surface text-text ${readOnly ? '' : 'hover:border-neutral-400 hover:bg-bg'}`}`}>{tooth}</button>
 }

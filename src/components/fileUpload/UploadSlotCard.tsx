@@ -22,6 +22,7 @@ interface UploadSlotCardProps {
   onSelect: (file: File) => void
   onRemove: () => void
   onRetry: () => void
+  readOnly?: boolean
 }
 
 export function UploadSlotCard({
@@ -31,13 +32,14 @@ export function UploadSlotCard({
   onSelect,
   onRemove,
   onRetry,
+  readOnly = false,
 }: UploadSlotCardProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const openPicker = useCallback(() => {
-    if (slotFile?.status === 'uploading') return
+    if (readOnly || slotFile?.status === 'uploading') return
     inputRef.current?.click()
-  }, [slotFile?.status])
+  }, [readOnly, slotFile?.status])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -53,12 +55,12 @@ export function UploadSlotCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={openPicker}
-      onKeyDown={handleKeyDown}
-      aria-label={`Upload ${slot.label}${slot.required ? ', required' : ''}`}
-      className={`group relative flex flex-col items-center rounded-card border-2 border-dashed bg-bg p-3 transition-all duration-brand ease-in-out hover:scale-[1.02] hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-text/10 ${
+      role={readOnly ? undefined : 'button'}
+      tabIndex={readOnly ? -1 : 0}
+      onClick={readOnly ? undefined : openPicker}
+      onKeyDown={readOnly ? undefined : handleKeyDown}
+      aria-label={`${readOnly ? '' : 'Upload '}${slot.label}${slot.required ? ', required' : ''}`}
+      className={`group relative flex flex-col items-center rounded-card border-2 border-dashed bg-bg p-3 transition-all duration-brand ease-in-out focus:outline-none focus:ring-2 focus:ring-text/10 ${readOnly ? '' : 'hover:scale-[1.02] hover:border-neutral-400'} ${
         hasError
           ? 'border-red-400'
           : isSuccess
@@ -93,7 +95,7 @@ export function UploadSlotCard({
         type="file"
         className="sr-only"
         accept={slot.accept}
-        disabled={isUploading}
+        disabled={readOnly || isUploading}
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) onSelect(file)
@@ -114,7 +116,7 @@ export function UploadSlotCard({
               {slotFile.file.name.split('.').pop()?.toUpperCase()}
             </div>
           )}
-          {!isUploading && (
+          {!readOnly && !isUploading && (
             <button
               type="button"
               onClick={(e) => {
@@ -136,7 +138,7 @@ export function UploadSlotCard({
               />
             </div>
           )}
-          {isError && (
+          {!readOnly && isError && (
             <div className="mt-2 flex flex-col items-center gap-1">
               <p className="text-center text-[10px] text-red-600">{slotFile.error ?? 'Upload failed'}</p>
               <button

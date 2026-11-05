@@ -15,6 +15,11 @@ const IDesignCaseInformationEditor = dynamic(
   { loading: () => <div className="rounded-card border border-border bg-surface p-8 text-center text-sm text-text-muted">Loading case information...</div> },
 )
 
+const IDesignCaseInformationViewer = dynamic(
+  () => import('@/components/admin/NewIDesignOrderForm').then((module) => module.IDesignCaseInformationViewer),
+  { loading: () => <div className="rounded-card border border-border bg-surface p-8 text-center text-sm text-text-muted">Loading case information...</div> },
+)
+
 interface PlanRow { id: number; versionNumber: number; summary: string | null; status: string; publishedAt: string; approvedAt: string | null; createdByName: string | null; approvedByName: string | null }
 interface StepRow { id: number; stepNumber: number; durationDays: number; suggestedStartDate: string; suggestedEndDate: string; actualStartDate: string | null; status: string }
 interface CourseRow { id: number; startDate: string; totalSteps: number; defaultDurationDays: number; currentStep: number; originalEstimatedFinish: string; currentEstimatedFinish: string; nextSuggestedChange: string | null; status: string; steps: StepRow[] }
@@ -69,7 +74,9 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
       </div>
       <ActivityPanel activities={data.activities} />
     </div>
-    {data.permissions.canEditCaseInformation ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} /> : <CaseInformation data={data} />}
+    {data.permissions.canEditCaseInformation
+      ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} />
+      : <IDesignCaseInformationViewer caseId={caseId} value={data.case} />}
   </div>
 }
 
@@ -171,18 +178,12 @@ function StatusSelect({ caseId, value, reload }: { caseId: number; value: string
   return <select aria-label="Order status" disabled={busy} value={value} onChange={(event) => void update(event.target.value)} className={`h-8 rounded-full border px-2.5 text-xs font-medium outline-none ${IDESIGN_PROGRESS_STYLES[value] ?? 'border-border bg-bg text-text-muted'}`}>{IDESIGN_PROGRESS_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select>
 }
 
-function CaseInformation({ data }: { data: DetailPayload }) {
-  const files = data.case.fileUrls && typeof data.case.fileUrls === 'object' ? data.case.fileUrls as Record<string, Array<{ url: string; name: string }>> : {}
-  return <section className="overflow-hidden rounded-card border border-border bg-surface"><div className="border-b border-border px-4 py-4"><h2 className="text-sm font-semibold text-text">Case Information</h2></div><div className="grid gap-5 p-4 md:grid-cols-2"><div><h3 className="text-xs font-semibold uppercase text-text-muted">Clinical details</h3><dl className="mt-3 space-y-2 text-sm"><Definition label="Gender" value={data.case.gender || 'Not recorded'} /><Definition label="Dentition" value={data.case.dentitionStage || 'Not recorded'} /><Definition label="Remarks" value={data.case.remarks || 'None'} />{data.importedOrder?.purchasedProducts && <Definition label="Product" value={data.importedOrder.purchasedProducts} />}</dl></div><div><h3 className="text-xs font-semibold uppercase text-text-muted">Case files</h3><div className="mt-3 space-y-2">{Object.values(files).flat().length === 0 ? <p className="text-sm text-text-muted">No files uploaded.</p> : Object.entries(files).flatMap(([slot, entries]) => entries.map((file, index) => <a key={`${slot}-${index}`} href={file.url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded border border-border px-3 py-2 text-sm text-text hover:bg-bg"><span className="truncate">{file.name}</span><span className="shrink-0 text-[10px] capitalize text-text-muted">{slot.replaceAll('-', ' ')}</span></a>))}</div></div></div></section>
-}
-
 function ActivityPanel({ activities }: { activities: DetailPayload['activities'] }) {
   return <section className="sticky top-5 overflow-hidden rounded-card border border-border bg-surface"><div className="border-b border-border px-4 py-4"><h2 className="text-sm font-semibold text-text">Activity</h2><p className="mt-1 text-xs text-text-muted">Plan, approval and schedule history</p></div><ol className="max-h-[720px] overflow-y-auto px-4 py-2">{activities.length === 0 ? <li className="py-10 text-center text-sm text-text-muted">No activity yet</li> : activities.map((activity) => <li key={activity.id} className="relative border-l border-border py-3 pl-4 before:absolute before:-left-1 before:top-5 before:h-2 before:w-2 before:rounded-full before:bg-text"><p className="text-sm text-text">{activity.detail}</p><p className="mt-1 text-[10px] text-text-muted">{formatDate(activity.createdAt)} · {activity.actorName}</p></li>)}</ol></section>
 }
 
 function Summary({ label, value }: { label: string; value: string }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">{label}</p><p className="mt-1 truncate text-sm font-medium text-text">{value}</p></div> }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label><span className="mb-1 block text-xs font-medium text-text-muted">{label}</span>{children}</label> }
-function Definition({ label, value }: { label: string; value: string }) { return <div className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-text-muted">{label}</dt><dd className="break-words text-text">{value}</dd></div> }
 function titleCase(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 function formatDate(value: string | null | undefined) { if (!value) return '—'; const date = new Date(value.length === 10 ? `${value}T00:00:00Z` : value); return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) }
 function localDateValue(value: Date) { return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}` }
