@@ -32,6 +32,8 @@ interface DetailPayload {
   permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean }
 }
 
+type DetailTab = 'case-information' | 'treatment-progress'
+
 export function IDesignCaseDetail({ caseId }: { caseId: number }) {
   const pathname = usePathname()
   const portal = pathname.startsWith('/portal')
@@ -39,6 +41,7 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
   const [data, setData] = useState<DetailPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<DetailTab>('case-information')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -67,16 +70,38 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
       <Summary label="Plan status" value={titleCase(data.case.planReviewStatus)} />
     </section>
 
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)]">
-      <div className="space-y-5">
-        <TreatmentPlanPanel data={data} caseId={caseId} reload={load} />
-        <WearSchedulePanel course={data.course} importedTotalSteps={Number(data.importedOrder?.totalSteps) || undefined} canManage={data.permissions.canManageSchedule} caseId={caseId} reload={load} />
-      </div>
-      <ActivityPanel activities={data.activities} />
+    <DetailTabs activeTab={activeTab} onChange={setActiveTab} />
+
+    <div id="case-information-panel" role="tabpanel" aria-labelledby="case-information-tab" hidden={activeTab !== 'case-information'}>
+      {activeTab === 'case-information' && (data.permissions.canEditCaseInformation
+        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} />
+        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} />)}
     </div>
-    {data.permissions.canEditCaseInformation
-      ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} />
-      : <IDesignCaseInformationViewer caseId={caseId} value={data.case} />}
+
+    <div id="treatment-progress-panel" role="tabpanel" aria-labelledby="treatment-progress-tab" hidden={activeTab !== 'treatment-progress'}>
+      {activeTab === 'treatment-progress' && <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)]">
+        <div className="space-y-5">
+          <TreatmentPlanPanel data={data} caseId={caseId} reload={load} />
+          <WearSchedulePanel course={data.course} importedTotalSteps={Number(data.importedOrder?.totalSteps) || undefined} canManage={data.permissions.canManageSchedule} caseId={caseId} reload={load} />
+        </div>
+        <ActivityPanel activities={data.activities} />
+      </div>
+      }
+    </div>
+  </div>
+}
+
+function DetailTabs({ activeTab, onChange }: { activeTab: DetailTab; onChange: (tab: DetailTab) => void }) {
+  const tabs: Array<{ id: DetailTab; label: string }> = [
+    { id: 'case-information', label: 'Case Information' },
+    { id: 'treatment-progress', label: 'Treatment & Progress' },
+  ]
+
+  return <div role="tablist" aria-label="Patient case details" className="grid overflow-hidden rounded-card border border-primary bg-surface sm:inline-grid sm:grid-cols-2">
+    {tabs.map((tab) => {
+      const active = activeTab === tab.id
+      return <button key={tab.id} id={`${tab.id}-tab`} type="button" role="tab" aria-selected={active} aria-controls={`${tab.id}-panel`} tabIndex={active ? 0 : -1} onClick={() => onChange(tab.id)} className={`min-h-11 px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${active ? 'bg-primary text-white' : 'bg-surface text-primary hover:bg-orange-50'}`}>{tab.label}</button>
+    })}
   </div>
 }
 
