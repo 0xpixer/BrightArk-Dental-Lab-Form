@@ -13,7 +13,7 @@ import {
   idesignTreatmentPlans,
   idesignTreatmentSteps,
 } from '@/lib/db/schema'
-import { canAssignIDesignOrders, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
+import { canAssignIDesignOrders, canDeleteIDesignOrders, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -118,9 +118,35 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
       canEditCaseInformation: session!.user.role === 'superadmin' || session!.user.role === 'admin',
+      canDeleteCase: canDeleteIDesignOrders(session!.user.role),
       showSales: session!.user.role !== 'doctor' && session!.user.role !== 'clinic_staff',
     },
   })
+}
+
+export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+  const { session, error } = await requireSession()
+  if (error) return error
+  if (!canDeleteIDesignOrders(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const caseId = Number(params.id)
+  if (!Number.isInteger(caseId) || caseId <= 0) return NextResponse.json({ error: 'Invalid case' }, { status: 400 })
+
+  try {
+    const db = getDb()
+    const [caseRow] = await db.select({ id: idesignCases.id, importedOrderId: idesignCases.importedOrderId }).from(idesignCases).where(eq(idesignCases.id, caseId)).limit(1)
+    if (!caseRow) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
+
+    if (caseRow.importedOrderId) {
+      await db.delete(idesignOrders).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    } else {
+      await db.delete(idesignCases).where(eq(idesignCases.id, caseId))
+    }
+    return NextResponse.json({ success: true })
+  } catch (deleteError) {
+    console.error('iDesign case delete failed:', deleteError)
+    return NextResponse.json({ error: 'Unable to delete this order' }, { status: 500 })
+  }
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {

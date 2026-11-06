@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { PgDialect } from 'drizzle-orm/pg-core'
-import { canAssignIDesignOrders, canManageIDesignSchedule, canViewIDesign, getIDesignAccessCondition, getIDesignCaseAccessCondition } from './access'
+import { canAssignIDesignOrders, canDeleteIDesignOrders, canManageIDesignSchedule, canViewIDesign, getIDesignAccessCondition, getIDesignCaseAccessCondition } from './access'
 
 const dialect = new PgDialect()
 
@@ -48,5 +48,13 @@ test('allows only Superadmin and Lab Admin to assign iDesign order access', () =
   assert.equal(canAssignIDesignOrders('admin'), true)
   for (const role of ['sales', 'doctor', 'clinic_staff']) {
     assert.equal(canAssignIDesignOrders(role), false)
+  }
+})
+
+test('allows only Superadmin and Lab Admin to delete iDesign orders', () => {
+  assert.equal(canDeleteIDesignOrders('superadmin'), true)
+  assert.equal(canDeleteIDesignOrders('admin'), true)
+  for (const role of ['sales', 'doctor', 'clinic_staff']) {
+    assert.equal(canDeleteIDesignOrders(role), false)
   }
 })

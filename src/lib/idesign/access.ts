@@ -1,6 +1,6 @@
 import { eq, sql, type SQL } from 'drizzle-orm'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
-import { isPortalRole, isSalesRole } from '@/lib/admin/roles'
+import { isAdminRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
 
 export async function getIDesignAccessCondition(userId: number, role: string): Promise<SQL | undefined> {
@@ -41,4 +41,8 @@ export function canManageIDesignSchedule(role: string) {
 
 export function canAssignIDesignOrders(role: string) {
   return role === 'superadmin' || role === 'admin'
+}
+
+export function canDeleteIDesignOrders(role: string) {
+  return isAdminRole(role)
 }

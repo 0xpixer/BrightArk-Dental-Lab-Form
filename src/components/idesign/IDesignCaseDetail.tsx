@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { usePathname } from 'next/navigation'
-import { ArrowLeft, CirclePause, ExternalLink, MoveLeft, Play, Plus, Save } from 'lucide'
+import { usePathname, useRouter } from 'next/navigation'
+import { ArrowLeft, CirclePause, ExternalLink, MoveLeft, Play, Plus, Save, Trash2, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { IDesignNotifications } from './IDesignNotifications'
 import { IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
@@ -31,13 +31,14 @@ interface DetailPayload {
   plans: PlanRow[]
   activities: Array<{ id: number; detail: string; actorName: string; createdAt: string }>
   course: CourseRow | null
-  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; showSales: boolean }
+  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; canDeleteCase: boolean; showSales: boolean }
 }
 
 type DetailTab = 'case-information' | 'treatment-progress'
 
 export function IDesignCaseDetail({ caseId }: { caseId: number }) {
   const pathname = usePathname()
+  const router = useRouter()
   const portal = pathname.startsWith('/portal')
   const listHref = portal ? '/portal/idesign/orders' : '/admin/idesign/orders'
   const [data, setData] = useState<DetailPayload | null>(null)
@@ -46,6 +47,9 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
   const [activeTab, setActiveTab] = useState<DetailTab>('treatment-progress')
   const [planAttention, setPlanAttention] = useState(0)
   const [highlightPlan, setHighlightPlan] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -69,13 +73,26 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
     setActiveTab('treatment-progress')
     setPlanAttention((value) => value + 1)
   }
+  const deleteCase = async () => {
+    setDeleting(true)
+    setDeleteError(null)
+    const response = await fetch(`/api/idesign/cases/${caseId}`, { method: 'DELETE' })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      setDeleteError(payload.error ?? 'Unable to delete this order')
+      setDeleting(false)
+      return
+    }
+    router.replace(listHref)
+    router.refresh()
+  }
   if (loading && !data) return <div className="py-20 text-center text-sm text-text-muted">Loading case...</div>
   if (!data) return <div className="rounded-card border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error ?? 'Case not found'}</div>
 
   return <div className="mx-auto max-w-7xl space-y-5">
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><IDesignPatientAvatar name={data.case.patientName} files={data.case.fileUrls} /><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canManagePlans ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{formatPatientDemographics(data.case.gender, data.case.dateOfBirth)}</p></div></div>
-      <IDesignNotifications />
+      <div className="flex items-center gap-2">{data.permissions.canDeleteCase && <button type="button" onClick={() => { setDeleteError(null); setDeleteOpen(true) }} className="inline-flex h-9 items-center gap-2 rounded-card border border-red-200 bg-surface px-3 text-xs font-semibold text-red-600 hover:bg-red-50"><MorphIcon icon={Trash2} className="h-4 w-4" />Delete Order</button>}<IDesignNotifications /></div>
     </header>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
@@ -105,6 +122,8 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
         ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} hideHeader />
         : <IDesignCaseInformationViewer caseId={caseId} value={data.case} hideHeader />)}
     </div>
+
+    {deleteOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setDeleteOpen(false) }}><div role="dialog" aria-modal="true" aria-labelledby="delete-order-title" className="w-full max-w-md rounded-card border border-border bg-surface p-5"><div className="flex items-start justify-between gap-4"><div><h2 id="delete-order-title" className="text-base font-semibold text-text">Delete this order?</h2><p className="mt-2 text-sm leading-6 text-text-muted">This permanently deletes <span className="font-medium text-text">{data.case.patientName}</span> ({data.case.orderNo}) and all related treatment plans, schedule records and activity. This action cannot be undone.</p></div><button type="button" disabled={deleting} onClick={() => setDeleteOpen(false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-card text-text-muted hover:bg-bg hover:text-text disabled:opacity-40" aria-label="Close delete confirmation"><MorphIcon icon={X} className="h-4 w-4" /></button></div>{deleteError && <p role="alert" className="mt-3 rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{deleteError}</p>}<div className="mt-5 flex justify-end gap-2"><button type="button" disabled={deleting} onClick={() => setDeleteOpen(false)} className="h-9 rounded-card border border-border px-4 text-sm font-semibold text-text hover:bg-bg disabled:opacity-40">Cancel</button><button type="button" disabled={deleting} onClick={() => void deleteCase()} className="inline-flex h-9 items-center gap-2 rounded-card bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"><MorphIcon icon={Trash2} className="h-4 w-4" />{deleting ? 'Deleting...' : 'Delete Order'}</button></div></div></div>}
   </div>
 }
 
