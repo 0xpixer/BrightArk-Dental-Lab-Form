@@ -43,7 +43,9 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
   const [data, setData] = useState<DetailPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<DetailTab>('case-information')
+  const [activeTab, setActiveTab] = useState<DetailTab>('treatment-progress')
+  const [planAttention, setPlanAttention] = useState(0)
+  const [highlightPlan, setHighlightPlan] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -55,6 +57,18 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
   }, [caseId])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    if (!planAttention || activeTab !== 'treatment-progress') return
+    setHighlightPlan(true)
+    const frame = window.requestAnimationFrame(() => document.getElementById('treatment-plan-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    const timeout = window.setTimeout(() => setHighlightPlan(false), 3200)
+    return () => { window.cancelAnimationFrame(frame); window.clearTimeout(timeout) }
+  }, [activeTab, planAttention])
+
+  const reviewTreatmentPlan = () => {
+    setActiveTab('treatment-progress')
+    setPlanAttention((value) => value + 1)
+  }
   if (loading && !data) return <div className="py-20 text-center text-sm text-text-muted">Loading case...</div>
   if (!data) return <div className="rounded-card border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error ?? 'Case not found'}</div>
 
@@ -70,34 +84,34 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
       <Summary label="Clinic" value={data.case.clinicName || 'Unassigned'} />
       {data.permissions.showSales && <Summary label="Sales" value={data.case.salesName || 'Unassigned'} />}
       <Summary label="Est. wear schedule" value={data.course ? `Stage ${data.course.currentStep} of ${data.course.totalSteps}` : 'Not scheduled'} />
-      <StatusSummary value={data.case.latestProgress} />
+      <StatusSummary value={data.case.latestProgress} onReview={reviewTreatmentPlan} />
     </section>
 
     <DetailTabs activeTab={activeTab} onChange={setActiveTab} />
 
-    <div id="case-information-panel" role="tabpanel" aria-labelledby="case-information-tab" hidden={activeTab !== 'case-information'}>
-      {activeTab === 'case-information' && (data.permissions.canEditCaseInformation
-        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} hideHeader />
-        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} hideHeader />)}
-    </div>
-
     <div id="treatment-progress-panel" role="tabpanel" aria-labelledby="treatment-progress-tab" hidden={activeTab !== 'treatment-progress'}>
       {activeTab === 'treatment-progress' && <div className="space-y-6">
         <div className="grid items-start gap-5 xl:grid-cols-2">
-          <TreatmentPlanPanel data={data} caseId={caseId} reload={load} />
+          <div id="treatment-plan-section" className={`scroll-mt-6 rounded-card ${highlightPlan ? 'plan-attention-flash' : ''}`}><TreatmentPlanPanel data={data} caseId={caseId} reload={load} /></div>
           <WearSchedulePanel course={data.course} importedTotalSteps={Number(data.importedOrder?.totalSteps) || undefined} canManage={data.permissions.canManageSchedule} caseId={caseId} reload={load} />
         </div>
         <ActivityPanel activities={data.activities} />
       </div>
       }
     </div>
+
+    <div id="case-information-panel" role="tabpanel" aria-labelledby="case-information-tab" hidden={activeTab !== 'case-information'}>
+      {activeTab === 'case-information' && (data.permissions.canEditCaseInformation
+        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} hideHeader />
+        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} hideHeader />)}
+    </div>
   </div>
 }
 
 function DetailTabs({ activeTab, onChange }: { activeTab: DetailTab; onChange: (tab: DetailTab) => void }) {
   const tabs: Array<{ id: DetailTab; label: string }> = [
-    { id: 'case-information', label: 'Case Information' },
     { id: 'treatment-progress', label: 'Treatment & Progress' },
+    { id: 'case-information', label: 'Case Information' },
   ]
 
   return <div role="tablist" aria-label="Patient case details" className="grid overflow-hidden rounded-card border border-primary bg-surface sm:inline-grid sm:grid-cols-2">
@@ -149,7 +163,7 @@ function TreatmentPlanPanel({ data, caseId, reload }: { data: DetailPayload; cas
   }
 
   return <section className="overflow-hidden rounded-card border border-border bg-surface">
-    <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-semibold text-text">Treatment Plan</h2><p className="mt-1 text-xs text-text-muted">Review and approve a clinical design.</p></div>{featuredPlan && <span className="w-fit rounded bg-bg px-2 py-1 text-xs font-semibold text-text">{approvedPlan || implicitApproval ? 'Approved' : 'Latest'}: V{featuredPlan.versionNumber}</span>}</div>
+    <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><span className="h-4 w-1 shrink-0 rounded-full bg-primary" aria-hidden /><h2 className="text-sm font-semibold text-text">Treatment Plan</h2></div><p className="mt-1 text-xs text-text-muted">Review and approve a clinical design.</p></div>{featuredPlan && <span className="w-fit rounded bg-bg px-2 py-1 text-xs font-semibold text-text">{approvedPlan || implicitApproval ? 'Approved' : 'Latest'}: V{featuredPlan.versionNumber}</span>}</div>
     <div className="space-y-4 p-4">
       {!featuredPlan ? <div className="rounded-card border border-dashed border-border py-10 text-center"><p className="text-sm font-medium text-text">No treatment plan published</p><p className="mt-1 text-xs text-text-muted">The plan will appear here when it is ready for review.</p></div> : <div className="flex flex-col gap-3 rounded-card border border-border bg-bg p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-text">Treatment Plan V{featuredPlan.versionNumber}</p><span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium capitalize text-text-muted">{featuredPlan.status}</span></div><p className="mt-1 text-xs text-text-muted">Published {formatDate(featuredPlan.publishedAt)}{featuredPlan.summary ? ` · ${featuredPlan.summary}` : ''}</p></div>{planActions(featuredPlan)}</div>}
 
@@ -188,7 +202,7 @@ export function WearSchedulePanel({ course, importedTotalSteps, canManage, caseI
   }
 
   return <section className="overflow-hidden rounded-card border border-border bg-surface">
-    <div className="border-b border-border px-4 py-4"><h2 className="text-sm font-semibold text-text">Patient Wear Schedule</h2><p className="mt-1 text-xs text-text-muted">The current stage is calculated automatically from the wear schedule.</p></div>
+    <div className="border-b border-border px-4 py-4"><div className="flex items-center gap-2"><span className="h-4 w-1 shrink-0 rounded-full bg-primary" aria-hidden /><h2 className="text-sm font-semibold text-text">Patient Wear Schedule</h2></div><p className="mt-1 text-xs text-text-muted">The current stage is calculated automatically from the wear schedule.</p></div>
     <div className="space-y-4 p-4">
       {!course ? canManage ? <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
@@ -225,7 +239,7 @@ function ActivityPanel({ activities }: { activities: DetailPayload['activities']
 }
 
 function Summary({ label, value }: { label: string; value: string }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">{label}</p><p className="mt-1 truncate text-sm font-medium text-text">{value}</p></div> }
-function StatusSummary({ value }: { value: string }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">Status</p><span className={`mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[value] ?? 'border-border bg-bg text-text-muted'}`}>{value}</span></div> }
+function StatusSummary({ value, onReview }: { value: string; onReview: () => void }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">Status</p><div className="mt-1 flex flex-wrap items-center gap-2"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[value] ?? 'border-border bg-bg text-text-muted'}`}>{value}</span>{value === 'Awaiting Approval' && <button type="button" onClick={onReview} className="inline-flex h-7 items-center rounded-card border border-primary px-2.5 text-[11px] font-semibold text-primary hover:bg-orange-50">Review &amp; Approval</button>}</div></div> }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label><span className="mb-1 block text-xs font-medium text-text-muted">{label}</span>{children}</label> }
 function titleCase(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 function formatDate(value: string | null | undefined) { if (!value) return '—'; const date = new Date(value.length === 10 ? `${value}T00:00:00Z` : value); return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) }
