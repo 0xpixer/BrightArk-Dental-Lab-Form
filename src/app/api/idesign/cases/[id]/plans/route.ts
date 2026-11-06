@@ -15,7 +15,7 @@ const publishSchema = z.object({
   summary: z.string().trim().max(500).optional(),
 })
 const actionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('approve') }),
+  z.object({ action: z.literal('approve'), planId: z.number().int().positive() }),
   z.object({ action: z.literal('review_complete') }),
   z.object({ action: z.literal('update_editable'), editableUrl: httpsUrl }),
 ])
@@ -42,6 +42,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     caseId,
     versionNumber,
     summary: parsed.data.summary || null,
+    editableUrl: parsed.data.editableUrl,
     createdBy: Number(session!.user.id),
     publishedAt: now,
   }).returning()
@@ -76,26 +77,38 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   if (parsed.data.action === 'update_editable') {
     if (!canManageIDesignPlans(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    await getDb().update(idesignCases).set({ currentEditableUrl: parsed.data.editableUrl, updatedAt: new Date() }).where(eq(idesignCases.id, caseId))
+    const db = getDb()
+    const [latestPlan] = await db.select({ id: idesignTreatmentPlans.id }).from(idesignTreatmentPlans).where(eq(idesignTreatmentPlans.caseId, caseId)).orderBy(desc(idesignTreatmentPlans.versionNumber)).limit(1)
+    await db.update(idesignCases).set({ currentEditableUrl: parsed.data.editableUrl, updatedAt: new Date() }).where(eq(idesignCases.id, caseId))
+    if (latestPlan) await db.update(idesignTreatmentPlans).set({ editableUrl: parsed.data.editableUrl, updatedAt: new Date() }).where(eq(idesignTreatmentPlans.id, latestPlan.id))
     await recordIDesignActivity({ caseId, eventType: 'editable_link', detail: 'Current editable treatment plan link updated', ...sessionActor(session!) })
     return NextResponse.json({ success: true })
   }
 
   if (!canApproveIDesignPlans(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const [latestPlan] = await getDb().select().from(idesignTreatmentPlans).where(eq(idesignTreatmentPlans.caseId, caseId)).orderBy(desc(idesignTreatmentPlans.versionNumber)).limit(1)
-  if (!latestPlan) return NextResponse.json({ error: 'No treatment plan has been published' }, { status: 400 })
+  const db = getDb()
   const now = new Date()
 
   if (parsed.data.action === 'approve') {
-    const approvalState = getIDesignPlanApprovalState(caseRow.latestProgress, latestPlan.status)
-    if (approvalState.approved) return NextResponse.json({ success: true, alreadyApproved: true })
+    const [selectedPlanRows, approvedPlanRows] = await Promise.all([
+      db.select().from(idesignTreatmentPlans).where(and(eq(idesignTreatmentPlans.id, parsed.data.planId), eq(idesignTreatmentPlans.caseId, caseId))).limit(1),
+      db.select().from(idesignTreatmentPlans).where(and(eq(idesignTreatmentPlans.caseId, caseId), eq(idesignTreatmentPlans.status, 'approved'))).limit(1),
+    ])
+    const selectedPlan = selectedPlanRows[0]
+    const existingApprovedPlan = approvedPlanRows[0]
+    if (!selectedPlan) return NextResponse.json({ error: 'Treatment plan version not found' }, { status: 404 })
+    if (existingApprovedPlan) return NextResponse.json({ success: true, alreadyApproved: true, approvedPlanId: existingApprovedPlan.id })
+    const approvalState = getIDesignPlanApprovalState(caseRow.latestProgress, selectedPlan.status)
     if (!approvalState.readyForApproval) return NextResponse.json({ error: 'This treatment plan is not ready for approval' }, { status: 409 })
-    await getDb().update(idesignTreatmentPlans).set({ status: 'approved', approvedBy: Number(session!.user.id), approvedAt: now, updatedAt: now }).where(eq(idesignTreatmentPlans.id, latestPlan.id))
-    await getDb().update(idesignCases).set({ planReviewStatus: 'approved', latestProgress: 'Approved', updatedAt: now }).where(eq(idesignCases.id, caseId))
-    if (caseRow.importedOrderId) await getDb().update(idesignOrders).set({ latestProgress: 'Approved', sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
-    await recordIDesignActivity({ caseId, eventType: 'plan_approved', detail: `V${latestPlan.versionNumber} approved`, ...sessionActor(session!) })
-    await notifyIDesignCase(caseRow, { type: 'plan_approved', title: 'Treatment plan approved', body: `${caseRow.patientName}'s treatment plan V${latestPlan.versionNumber} was approved.`, dedupeKey: `plan-approved-${latestPlan.id}`, audience: 'lab' })
+    await db.update(idesignTreatmentPlans).set({ status: 'superseded', updatedAt: now }).where(eq(idesignTreatmentPlans.caseId, caseId))
+    await db.update(idesignTreatmentPlans).set({ status: 'approved', approvedBy: Number(session!.user.id), approvedAt: now, updatedAt: now }).where(eq(idesignTreatmentPlans.id, selectedPlan.id))
+    await db.update(idesignCases).set({ planReviewStatus: 'approved', latestProgress: 'Approved', updatedAt: now }).where(eq(idesignCases.id, caseId))
+    if (caseRow.importedOrderId) await db.update(idesignOrders).set({ latestProgress: 'Approved', sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
+    await recordIDesignActivity({ caseId, eventType: 'plan_approved', detail: `V${selectedPlan.versionNumber} approved`, ...sessionActor(session!) })
+    await notifyIDesignCase(caseRow, { type: 'plan_approved', title: 'Treatment plan approved', body: `${caseRow.patientName}'s treatment plan V${selectedPlan.versionNumber} was approved.`, dedupeKey: `plan-approved-${selectedPlan.id}`, audience: 'lab' })
   } else {
+    const [latestPlan] = await db.select().from(idesignTreatmentPlans).where(eq(idesignTreatmentPlans.caseId, caseId)).orderBy(desc(idesignTreatmentPlans.versionNumber)).limit(1)
+    if (!latestPlan) return NextResponse.json({ error: 'No treatment plan has been published' }, { status: 400 })
     await getDb().update(idesignTreatmentPlans).set({ status: 'review_completed', updatedAt: now }).where(eq(idesignTreatmentPlans.id, latestPlan.id))
     await getDb().update(idesignCases).set({ planReviewStatus: 'review_completed', updatedAt: now }).where(eq(idesignCases.id, caseId))
     await recordIDesignActivity({ caseId, eventType: 'review_completed', detail: `Review completed for V${latestPlan.versionNumber}`, ...sessionActor(session!) })

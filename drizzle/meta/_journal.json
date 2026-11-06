@@ -197,6 +197,13 @@
       "when": 1793937701768,
       "tag": "0027_ordinary_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793942797345,
+      "tag": "0028_cool_the_professor",
+      "breakpoints": true
     }
   ]
 }

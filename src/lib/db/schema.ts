@@ -206,6 +206,7 @@ export const idesignTreatmentPlans = pgTable('idesign_treatment_plans', {
   caseId: integer('case_id').references(() => idesignCases.id, { onDelete: 'cascade' }).notNull(),
   versionNumber: integer('version_number').notNull(),
   summary: text('summary'),
+  editableUrl: text('editable_url'),
   status: text('status').default('published').notNull(),
   createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
   publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
