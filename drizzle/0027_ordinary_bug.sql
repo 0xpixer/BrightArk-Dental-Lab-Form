@@ -1,0 +1,1 @@
+ALTER TABLE "idesign_cases" ADD COLUMN "chief_complaints" jsonb DEFAULT '[]'::jsonb NOT NULL;

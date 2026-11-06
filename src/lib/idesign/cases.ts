@@ -10,6 +10,29 @@ export const RELATIONSHIP_OPTIONS = [
   'Improve Canine Relationship Only',
 ] as const
 
+export const CHIEF_COMPLAINT_GROUPS = [
+  {
+    title: 'Problems with teeth appearance and alignment',
+    options: ['Protruding teeth', 'Crowded teeth', 'Spacing between teeth', 'Unattractive teeth'],
+  },
+  {
+    title: 'Facial aesthetics and symmetry issues',
+    options: ['Maxillary protrusion', 'Mandibular protrusion', 'Left-right facial asymmetry', 'Open bite (anterior crossbite)'],
+  },
+  {
+    title: 'Occlusal function and discomfort issues',
+    options: ['Reverse bite', 'Open bite', 'Posterior tooth locking', 'Occlusal discomfort', 'Deep overbite', 'Deep overjet'],
+  },
+  { title: 'Issues related to missing teeth', options: ['Missing teeth'] },
+  {
+    title: 'Developmental issues',
+    options: ['Insufficient maxillary development', 'Mandibular retrusion'],
+  },
+  { title: 'Other issues', options: ['Other'] },
+] as const
+
+const chiefComplaintOptions = new Set<string>(CHIEF_COMPLAINT_GROUPS.flatMap((group) => [...group.options]).filter((option) => option !== 'Other'))
+
 export const IDESIGN_REQUIRED_FILE_SLOTS = [
   'upper-model',
   'lower-model',
@@ -75,6 +98,10 @@ const fileUrlsSchema = z.record(z.array(fileReferenceSchema).max(25)).superRefin
 const clinicalCaseFields = {
   fileUrls: fileUrlsSchema,
   dentitionStage: z.enum(DENTITION_STAGES).optional().nullable(),
+  chiefComplaints: z.array(z.string().trim().min(1).max(200).refine(
+    (value) => chiefComplaintOptions.has(value) || (value.startsWith('Other: ') && value.length > 7),
+    'Invalid chief complaint',
+  )).max(20).default([]),
   extractionTeeth: toothSelection,
   lockedTeeth: toothSelection,
   attachmentRestrictedTeeth: toothSelection,

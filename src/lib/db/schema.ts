@@ -172,6 +172,7 @@ export const idesignCases = pgTable('idesign_cases', {
   dateOfBirth: date('date_of_birth', { mode: 'string' }),
   fileUrls: jsonb('file_urls').notNull().default({}),
   dentitionStage: text('dentition_stage'),
+  chiefComplaints: jsonb('chief_complaints').notNull().default([]),
   extractionTeeth: jsonb('extraction_teeth').notNull().default([]),
   lockedTeeth: jsonb('locked_teeth').notNull().default([]),
   attachmentRestrictedTeeth: jsonb('attachment_restricted_teeth').notNull().default([]),

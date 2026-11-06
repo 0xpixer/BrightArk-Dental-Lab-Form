@@ -7,15 +7,15 @@ const ROWS = [
   { label: 'Lower primary', right: [85, 84, 83, 82, 81], left: [71, 72, 73, 74, 75] },
 ]
 
-export function FDIToothChart({ title, helper, value, onChange, readOnly = false }: { title: string; helper?: string; value: number[]; onChange: (teeth: number[]) => void; readOnly?: boolean }) {
+export function FDIToothChart({ title, helper, value, onChange, readOnly = false }: { title?: string; helper?: string; value: number[]; onChange: (teeth: number[]) => void; readOnly?: boolean }) {
   const selected = new Set(value)
   const toggle = (tooth: number) => onChange(selected.has(tooth) ? value.filter((item) => item !== tooth) : [...value, tooth])
 
   return <fieldset className="border-t border-border py-5 first:border-t-0 first:pt-0">
-    <legend className="mb-1 text-sm font-semibold text-text">{title}</legend>
+    {title ? <legend className="mb-1 text-sm font-semibold text-text">{title}</legend> : <legend className="sr-only">FDI tooth selection</legend>}
     {helper && <p className="mb-3 text-xs text-text-muted">{helper}</p>}
     <div className="overflow-x-auto pb-1">
-      <div className="min-w-[610px] space-y-2" role="group" aria-label={`${title} tooth selection`}>
+      <div className="min-w-[610px] space-y-2" role="group" aria-label={`${title ?? 'FDI'} tooth selection`}>
         {ROWS.map((row, rowIndex) => <div key={row.label} className={`grid grid-cols-[20px_1fr_1px_1fr_20px] items-center gap-2 ${rowIndex === 2 ? 'border-t border-border pt-2' : ''}`}>
           <span className="text-center text-[10px] font-semibold text-text-muted">R</span>
           <div className="flex justify-end gap-1">{row.right.map((tooth) => <ToothChip key={tooth} tooth={tooth} active={selected.has(tooth)} readOnly={readOnly} onClick={() => toggle(tooth)} />)}</div>

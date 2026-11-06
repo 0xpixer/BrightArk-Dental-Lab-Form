@@ -1,13 +1,13 @@
 'use client'
 
-import { useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, BadgeCheck, Check, MoveLeft, MoveRight, Save } from 'lucide'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { ArrowLeft, ArrowRight, BadgeCheck, Check, MoveLeft, MoveRight, Plus, Save, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { FDIToothChart } from '@/components/idesign/FDIToothChart'
 import { IDesignCaseUploads, type IDesignUploadState } from '@/components/idesign/IDesignCaseUploads'
-import { DENTITION_STAGES, IDESIGN_GENDERS, IDESIGN_REQUIRED_FILE_SLOTS, RELATIONSHIP_OPTIONS } from '@/lib/idesign/cases'
+import { CHIEF_COMPLAINT_GROUPS, DENTITION_STAGES, IDESIGN_GENDERS, IDESIGN_REQUIRED_FILE_SLOTS, RELATIONSHIP_OPTIONS } from '@/lib/idesign/cases'
 
 type StepOneErrors = Partial<Record<'patientName' | 'gender' | 'dateOfBirth' | string, string>>
 type ToothField = 'extractionTeeth' | 'lockedTeeth' | 'attachmentRestrictedTeeth' | 'iprRestrictedTeeth' | 'reserveSpaceTeeth'
@@ -19,6 +19,7 @@ export interface IDesignCaseInformationData {
   dateOfBirth: string | null
   fileUrls: Record<string, StoredFile[]> | null
   dentitionStage: string | null
+  chiefComplaints: string[]
   extractionTeeth: number[]
   lockedTeeth: number[]
   attachmentRestrictedTeeth: number[]
@@ -59,6 +60,8 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved }: { mode: 'create
   const [files, setFiles] = useState<IDesignUploadState>(() => storedFilesToUploadState(initialData?.fileUrls))
   const [stepOneErrors, setStepOneErrors] = useState<StepOneErrors>({})
   const [dentitionStage, setDentitionStage] = useState(initialData?.dentitionStage ?? 'Permanent Dentition')
+  const [chiefComplaints, setChiefComplaints] = useState(initialData?.chiefComplaints ?? [])
+  const [complaintDialogOpen, setComplaintDialogOpen] = useState(false)
   const [teeth, setTeeth] = useState<Record<ToothField, number[]>>(() => ({
     extractionTeeth: initialData?.extractionTeeth ?? [], lockedTeeth: initialData?.lockedTeeth ?? [], attachmentRestrictedTeeth: initialData?.attachmentRestrictedTeeth ?? [], iprRestrictedTeeth: initialData?.iprRestrictedTeeth ?? [], reserveSpaceTeeth: initialData?.reserveSpaceTeeth ?? [],
   }))
@@ -106,7 +109,7 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved }: { mode: 'create
     setSubmitError(null)
     const fileUrls = Object.fromEntries(Object.entries(files).map(([slot, items]) => [slot, (items ?? []).filter((item) => item.status === 'success' && item.blobUrl).map((item) => ({ url: item.blobUrl!, name: item.file.name, size: item.storedSize ?? item.file.size, type: item.storedType ?? item.file.type }))]))
     const caseInformation = {
-      patientName, gender: gender || null, dateOfBirth: dateOfBirth || null, fileUrls, dentitionStage: dentitionStage || null, ...teeth,
+      patientName, gender: gender || null, dateOfBirth: dateOfBirth || null, fileUrls, dentitionStage: dentitionStage || null, chiefComplaints, ...teeth,
       maxillaryMidline: maxillaryMidline || null, mandibularMidline: mandibularMidline || null,
       leftRelationship: leftRelationship || null, rightRelationship: rightRelationship || null,
       posteriorExpansionNotAllowed: posteriorExpansion, iprNotAllowed: ipr, molarDistalizationNotAllowed: distalization, remarks,
@@ -163,13 +166,12 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved }: { mode: 'create
           <div className="min-w-0 space-y-7">
             <p className="rounded-card bg-bg px-3 py-2 text-xs text-text-muted">For reference during design; does not constitute a treatment plan.</p>
             <ClinicalSection title="Dentition Stage" first><div className="rounded-card bg-bg p-4"><RadioChoices name="dentition-stage" options={DENTITION_STAGES} value={dentitionStage} onChange={setDentitionStage} readOnly={readOnly} columns="md:grid-cols-3" /></div></ClinicalSection>
-            <ClinicalSection title="Chief Complaint"><div className="rounded-card bg-bg px-4 py-5">
-              <FDIToothChart title="Extraction" value={teeth.extractionTeeth} onChange={(value) => setToothField('extractionTeeth', value)} readOnly={readOnly} />
-              <FDIToothChart title="Lock" value={teeth.lockedTeeth} onChange={(value) => setToothField('lockedTeeth', value)} readOnly={readOnly} />
-              <FDIToothChart title="Teeth restricted from attachment bonding" value={teeth.attachmentRestrictedTeeth} onChange={(value) => setToothField('attachmentRestrictedTeeth', value)} readOnly={readOnly} />
-              <FDIToothChart title="Teeth restricted from IPR" value={teeth.iprRestrictedTeeth} onChange={(value) => setToothField('iprRestrictedTeeth', value)} readOnly={readOnly} />
-              <FDIToothChart title="Reserve space" helper="Minimum Scale Division: 0.01mm" value={teeth.reserveSpaceTeeth} onChange={(value) => setToothField('reserveSpaceTeeth', value)} readOnly={readOnly} />
-            </div></ClinicalSection>
+            <ClinicalSection title="Chief Complaint"><ChiefComplaintTags value={chiefComplaints} readOnly={readOnly} onAdd={() => setComplaintDialogOpen(true)} onRemove={(complaint) => setChiefComplaints((current) => current.filter((item) => item !== complaint))} /></ClinicalSection>
+            <ClinicalSection title="Extraction"><ToothChartPanel value={teeth.extractionTeeth} onChange={(value) => setToothField('extractionTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Lock"><ToothChartPanel value={teeth.lockedTeeth} onChange={(value) => setToothField('lockedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Teeth restricted from attachment bonding"><ToothChartPanel value={teeth.attachmentRestrictedTeeth} onChange={(value) => setToothField('attachmentRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Teeth restricted from IPR"><ToothChartPanel value={teeth.iprRestrictedTeeth} onChange={(value) => setToothField('iprRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Reserve space"><ToothChartPanel helper="Minimum Scale Division: 0.01mm" value={teeth.reserveSpaceTeeth} onChange={(value) => setToothField('reserveSpaceTeeth', value)} readOnly={readOnly} /></ClinicalSection>
             <ClinicalSection title="Midline target position"><RadioPanel readOnly={readOnly} rows={[
               { title: 'Maxillary', name: 'maxillary-midline', options: [...MIDLINE_OPTIONS, 'Match upper midline to lower midline'], value: maxillaryMidline, onChange: setMaxillaryMidline },
               { title: 'Mandibular', name: 'mandibular-midline', options: [...MIDLINE_OPTIONS, 'Match lower midline to upper midline'], value: mandibularMidline, onChange: setMandibularMidline },
@@ -195,6 +197,57 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved }: { mode: 'create
         <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-between sm:p-6"><button type="button" onClick={() => setStep(1)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" />Previous</button>{!readOnly && <div className="flex gap-2">{mode === 'create' && <Link href={listHref} className="inline-flex h-10 items-center rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg">Cancel</Link>}<button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"><MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-4 w-4" />{saving ? 'Saving...' : mode === 'create' ? 'Save' : 'Save Changes'}</button></div>}</div>
       </div>}
     </form>
+    {complaintDialogOpen && <ChiefComplaintDialog value={chiefComplaints} onCancel={() => setComplaintDialogOpen(false)} onConfirm={(value) => { setChiefComplaints(value); setComplaintDialogOpen(false); setSaved(false) }} />}
+  </div>
+}
+
+function ToothChartPanel({ helper, value, onChange, readOnly }: { helper?: string; value: number[]; onChange: (value: number[]) => void; readOnly: boolean }) {
+  return <div className="rounded-card bg-bg px-4 py-5"><FDIToothChart helper={helper} value={value} onChange={onChange} readOnly={readOnly} /></div>
+}
+
+function ChiefComplaintTags({ value, readOnly, onAdd, onRemove }: { value: string[]; readOnly: boolean; onAdd: () => void; onRemove: (value: string) => void }) {
+  return <div className="rounded-card bg-bg p-4">
+    <div className="flex flex-wrap gap-2">
+      {value.map((complaint) => <span key={complaint} className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-text">{complaint}{!readOnly && <button type="button" onClick={() => onRemove(complaint)} title={`Remove ${complaint}`} className="text-text-muted hover:text-text"><MorphIcon icon={X} className="h-3.5 w-3.5" /><span className="sr-only">Remove {complaint}</span></button>}</span>)}
+      {!readOnly && <button type="button" onClick={onAdd} className="inline-flex h-8 items-center gap-1 rounded-card border border-dashed border-neutral-400 bg-surface px-3 text-xs font-semibold text-text hover:border-primary hover:text-primary"><MorphIcon icon={Plus} className="h-3.5 w-3.5" />Add</button>}
+    </div>
+    {value.length === 0 && readOnly && <p className="text-sm text-text-muted">Not specified</p>}
+  </div>
+}
+
+function ChiefComplaintDialog({ value, onCancel, onConfirm }: { value: string[]; onCancel: () => void; onConfirm: (value: string[]) => void }) {
+  const standardOptions: string[] = CHIEF_COMPLAINT_GROUPS.flatMap((group) => [...group.options]).filter((option) => option !== 'Other')
+  const [selected, setSelected] = useState(() => new Set(value.filter((item) => standardOptions.includes(item))))
+  const existingOther = value.find((item) => item.startsWith('Other: '))
+  const [includeOther, setIncludeOther] = useState(Boolean(existingOther))
+  const [otherText, setOtherText] = useState(existingOther?.slice(7) ?? '')
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onCancel])
+
+  const toggle = (option: string) => setSelected((current) => {
+    const next = new Set(current)
+    if (next.has(option)) next.delete(option)
+    else next.add(option)
+    return next
+  })
+  const confirm = () => {
+    const next: string[] = standardOptions.filter((option) => selected.has(option))
+    if (includeOther && otherText.trim()) next.push(`Other: ${otherText.trim()}`)
+    onConfirm(next)
+  }
+
+  return <div className="fixed inset-0 z-[70] grid place-items-center bg-black/45 p-3 sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onCancel() }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="chief-complaint-title" className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-card border border-border bg-surface">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4"><h2 id="chief-complaint-title" className="text-lg font-semibold text-text">Chief Complaint</h2><button type="button" onClick={onCancel} title="Close" className="grid h-8 w-8 place-items-center rounded-card text-text-muted hover:bg-bg hover:text-text"><MorphIcon icon={X} className="h-5 w-5" /><span className="sr-only">Close</span></button></div>
+      <div className="space-y-6 overflow-y-auto px-5 py-5">
+        {CHIEF_COMPLAINT_GROUPS.map((group) => <fieldset key={group.title}><legend className="mb-3 text-sm font-semibold text-text">{group.title}</legend><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{group.options.map((option) => option === 'Other' ? <label key={option} className="col-span-full flex items-start gap-2 rounded-card bg-bg px-3 py-2.5 text-sm text-text"><input type="checkbox" checked={includeOther} onChange={(event) => setIncludeOther(event.target.checked)} className="mt-0.5 accent-neutral-900" /><span>Other (requires text description)</span></label> : <label key={option} className="flex items-start gap-2 rounded-card bg-bg px-3 py-2.5 text-sm text-text"><input type="checkbox" checked={selected.has(option)} onChange={() => toggle(option)} className="mt-0.5 accent-neutral-900" /><span>{option}</span></label>)}</div>{group.title === 'Other issues' && includeOther && <input autoFocus value={otherText} onChange={(event) => setOtherText(event.target.value)} maxLength={193} placeholder="Describe the other issue" className={`${inputClass(false)} mt-3`} />}</fieldset>)}
+      </div>
+      <div className="flex justify-end gap-2 border-t border-border px-5 py-4"><button type="button" onClick={onCancel} className="h-9 rounded-card border border-border px-4 text-sm font-semibold text-text hover:bg-bg">Cancel</button><button type="button" onClick={confirm} disabled={includeOther && !otherText.trim()} className="h-9 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-40">Confirm</button></div>
+    </div>
   </div>
 }
 

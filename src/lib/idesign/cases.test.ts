@@ -26,6 +26,7 @@ const validCase = {
     }],
   },
   dentitionStage: 'Permanent Dentition',
+  chiefComplaints: ['Crowded teeth', 'Other: Improve the smile arc'],
   extractionTeeth: [18, 11, 21],
   lockedTeeth: [],
   attachmentRestrictedTeeth: [55],
@@ -51,6 +52,11 @@ test('rejects missing required scans or facial photos and invalid teeth', () => 
   assert.equal(missingScan.success, false)
   const invalidTooth = createIDesignCaseSchema.safeParse({ ...validCase, extractionTeeth: [99] })
   assert.equal(invalidTooth.success, false)
+})
+
+test('rejects unknown chief complaint values', () => {
+  const parsed = createIDesignCaseSchema.safeParse({ ...validCase, chiefComplaints: ['Unknown complaint'] })
+  assert.equal(parsed.success, false)
 })
 
 test('accepts STL or PLY oral scans and rejects other occlusion formats', () => {
