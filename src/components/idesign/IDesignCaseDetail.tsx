@@ -24,12 +24,12 @@ interface PlanRow { id: number; versionNumber: number; summary: string | null; s
 interface StepRow { id: number; stepNumber: number; durationDays: number; suggestedStartDate: string; suggestedEndDate: string; actualStartDate: string | null; status: string }
 interface CourseRow { id: number; startDate: string; totalSteps: number; defaultDurationDays: number; currentStep: number; originalEstimatedFinish: string; currentEstimatedFinish: string; nextSuggestedChange: string | null; status: string; steps: StepRow[] }
 interface DetailPayload {
-  case: Record<string, any> & IDesignCaseInformationData & { id: number; orderNo: string; latestProgress: string; planReviewStatus: string; currentEditableUrl: string | null; doctorName: string | null; salesName: string | null }
+  case: Record<string, any> & IDesignCaseInformationData & { id: number; orderNo: string; latestProgress: string; planReviewStatus: string; currentEditableUrl: string | null; doctorName: string | null; clinicName: string | null; salesName: string | null }
   importedOrder: null | Record<string, any>
   plans: PlanRow[]
   activities: Array<{ id: number; detail: string; actorName: string; createdAt: string }>
   course: CourseRow | null
-  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean }
+  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; showSales: boolean }
 }
 
 type DetailTab = 'case-information' | 'treatment-progress'
@@ -58,24 +58,25 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
 
   return <div className="mx-auto max-w-7xl space-y-5">
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canManagePlans ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{data.case.orderNo}</p></div></div>
+      <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canManagePlans ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{formatPatientDemographics(data.case.gender, data.case.dateOfBirth)}</p></div></div>
       <IDesignNotifications />
     </header>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-    <section className="grid gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
+    <section className={`grid gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-2 ${data.permissions.showSales ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
       <Summary label="Doctor" value={data.case.doctorName || 'Unassigned'} />
-      <Summary label="Sales" value={data.case.salesName || 'Unassigned'} />
-      <Summary label="Date of birth" value={formatDate(data.case.dateOfBirth)} />
-      <Summary label="Plan status" value={titleCase(data.case.planReviewStatus)} />
+      <Summary label="Clinic" value={data.case.clinicName || 'Unassigned'} />
+      {data.permissions.showSales && <Summary label="Sales" value={data.case.salesName || 'Unassigned'} />}
+      <Summary label="Est. wear schedule" value={data.course ? `Finish ${formatDate(data.course.currentEstimatedFinish)}` : 'Not scheduled'} />
+      <StatusSummary value={data.case.latestProgress} />
     </section>
 
     <DetailTabs activeTab={activeTab} onChange={setActiveTab} />
 
     <div id="case-information-panel" role="tabpanel" aria-labelledby="case-information-tab" hidden={activeTab !== 'case-information'}>
       {activeTab === 'case-information' && (data.permissions.canEditCaseInformation
-        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} />
-        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} />)}
+        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} hideHeader />
+        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} hideHeader />)}
     </div>
 
     <div id="treatment-progress-panel" role="tabpanel" aria-labelledby="treatment-progress-tab" hidden={activeTab !== 'treatment-progress'}>
@@ -208,8 +209,11 @@ function ActivityPanel({ activities }: { activities: DetailPayload['activities']
 }
 
 function Summary({ label, value }: { label: string; value: string }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">{label}</p><p className="mt-1 truncate text-sm font-medium text-text">{value}</p></div> }
+function StatusSummary({ value }: { value: string }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">Status</p><span className={`mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[value] ?? 'border-border bg-bg text-text-muted'}`}>{value}</span></div> }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label><span className="mb-1 block text-xs font-medium text-text-muted">{label}</span>{children}</label> }
 function titleCase(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 function formatDate(value: string | null | undefined) { if (!value) return '—'; const date = new Date(value.length === 10 ? `${value}T00:00:00Z` : value); return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) }
+function formatPatientDemographics(gender: string | null | undefined, dateOfBirth: string | null | undefined) { const age = patientAge(dateOfBirth); return [gender || null, age === null ? null : `${age} yrs`].filter(Boolean).join(' | ') || 'Demographics not specified' }
+function patientAge(dateOfBirth: string | null | undefined) { if (!dateOfBirth) return null; const birth = new Date(`${dateOfBirth.slice(0, 10)}T00:00:00Z`); if (Number.isNaN(birth.getTime())) return null; const today = new Date(); let age = today.getUTCFullYear() - birth.getUTCFullYear(); const beforeBirthday = today.getUTCMonth() < birth.getUTCMonth() || (today.getUTCMonth() === birth.getUTCMonth() && today.getUTCDate() < birth.getUTCDate()); if (beforeBirthday) age -= 1; return age >= 0 ? age : null }
 function localDateValue(value: Date) { return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}` }
 const inputClass = 'h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10'

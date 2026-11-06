@@ -41,15 +41,15 @@ export function NewIDesignOrderForm() {
   return <IDesignCaseForm mode="create" />
 }
 
-export function IDesignCaseInformationEditor({ caseId, value, onSaved }: { caseId: number; value: IDesignCaseInformationData; onSaved: () => Promise<void> }) {
-  return <IDesignCaseForm mode="edit" caseId={caseId} initialData={value} onSaved={onSaved} />
+export function IDesignCaseInformationEditor({ caseId, value, onSaved, hideHeader = false }: { caseId: number; value: IDesignCaseInformationData; onSaved: () => Promise<void>; hideHeader?: boolean }) {
+  return <IDesignCaseForm mode="edit" caseId={caseId} initialData={value} onSaved={onSaved} hideHeader={hideHeader} />
 }
 
-export function IDesignCaseInformationViewer({ caseId, value }: { caseId: number; value: IDesignCaseInformationData }) {
-  return <IDesignCaseForm mode="view" caseId={caseId} initialData={value} />
+export function IDesignCaseInformationViewer({ caseId, value, hideHeader = false }: { caseId: number; value: IDesignCaseInformationData; hideHeader?: boolean }) {
+  return <IDesignCaseForm mode="view" caseId={caseId} initialData={value} hideHeader={hideHeader} />
 }
 
-function IDesignCaseForm({ mode, caseId, initialData, onSaved }: { mode: 'create' | 'edit' | 'view'; caseId?: number; initialData?: IDesignCaseInformationData; onSaved?: () => Promise<void> }) {
+function IDesignCaseForm({ mode, caseId, initialData, onSaved, hideHeader = false }: { mode: 'create' | 'edit' | 'view'; caseId?: number; initialData?: IDesignCaseInformationData; onSaved?: () => Promise<void>; hideHeader?: boolean }) {
   const router = useRouter()
   const pathname = usePathname()
   const listHref = pathname.startsWith('/portal') ? '/portal/idesign/orders' : '/admin/idesign/orders'
@@ -136,10 +136,10 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved }: { mode: 'create
   const setToothField = (field: ToothField, value: number[]) => setTeeth((current) => ({ ...current, [field]: value }))
 
   return <div className={`${mode === 'create' ? 'mx-auto max-w-6xl' : ''} space-y-4`}>
-    <header className="flex items-center gap-3">
+    {!hideHeader && <header className="flex items-center gap-3">
       {mode === 'create' && <Link href={listHref} title="Back to iDesign orders" className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /><span className="sr-only">Back to iDesign orders</span></Link>}
       <div><h1 className={`${mode === 'create' ? 'text-xl' : 'text-base'} font-semibold text-text`}>{mode === 'create' ? 'New Clear Aligner Order' : 'Case Information'}</h1><p className="mt-1 text-sm text-text-muted">{mode === 'create' ? 'Enter the patient records and clinical design preferences.' : mode === 'edit' ? 'Update patient records, case files and clinical design preferences.' : 'Patient records, case files and clinical design preferences.'}</p></div>
-    </header>
+    </header>}
 
     <StepIndicator step={step} />
     {submitError && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</div>}

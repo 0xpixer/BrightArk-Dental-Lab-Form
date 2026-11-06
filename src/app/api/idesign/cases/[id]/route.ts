@@ -5,6 +5,7 @@ import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import {
   adminUsers,
+  doctorClinics,
   idesignCaseActivities,
   idesignCases,
   idesignOrders,
@@ -61,10 +62,17 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     caseRow.salesAccountId,
     ...plans.flatMap((plan) => [plan.createdBy, plan.approvedBy]),
   ].filter((id): id is number => Boolean(id)))]
-  const accounts = accountIds.length
-    ? await db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(inArray(adminUsers.id, accountIds))
-    : []
+  const [accounts, doctorClinicRows] = await Promise.all([
+    accountIds.length
+      ? db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username, clinicName: adminUsers.clinicName }).from(adminUsers).where(inArray(adminUsers.id, accountIds))
+      : Promise.resolve([]),
+    caseRow.doctorAccountId
+      ? db.select({ name: doctorClinics.name }).from(doctorClinics).where(eq(doctorClinics.doctorId, caseRow.doctorAccountId)).orderBy(asc(doctorClinics.id)).limit(1)
+      : Promise.resolve([]),
+  ])
   const accountNames = new Map(accounts.map((account) => [account.id, account.name || account.username]))
+  const assignedDoctor = caseRow.doctorAccountId ? accounts.find((account) => account.id === caseRow.doctorAccountId) : null
+  const clinicName = assignedDoctor?.clinicName || doctorClinicRows[0]?.name || null
   const imported = importedRows[0] ?? null
   const canSeeCommercial = session!.user.role === 'superadmin' || session!.user.role === 'sales'
 
@@ -72,6 +80,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     case: {
       ...caseRow,
       doctorName: caseRow.doctorAccountId ? accountNames.get(caseRow.doctorAccountId) ?? null : imported?.doctorName ?? null,
+      clinicName,
       salesName: caseRow.salesAccountId ? accountNames.get(caseRow.salesAccountId) ?? null : imported?.salespersonName ?? null,
       createdByName: caseRow.createdBy ? accountNames.get(caseRow.createdBy) ?? null : null,
     },
@@ -109,6 +118,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
       canEditCaseInformation: session!.user.role === 'superadmin' || session!.user.role === 'admin',
+      showSales: session!.user.role !== 'doctor' && session!.user.role !== 'clinic_staff',
     },
   })
 }
