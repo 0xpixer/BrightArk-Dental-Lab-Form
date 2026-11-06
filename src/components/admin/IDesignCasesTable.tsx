@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import Link from 'next/link'
-import { BadgeCheck, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Link2, Plus, Save, Search, UserRound, UserRoundCheck, X } from 'lucide'
+import { BadgeCheck, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Link2, Plus, Save, Search, UserRoundCheck, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { usePathname } from 'next/navigation'
 import { IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
@@ -10,6 +10,7 @@ import { getIDesignPlanHref } from '@/lib/idesign/planLinks'
 import { IDesignNotifications } from '@/components/idesign/IDesignNotifications'
 import { WearSchedulePanel } from '@/components/idesign/IDesignCaseDetail'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
+import { IDesignPatientAvatar } from '@/components/idesign/IDesignPatientAvatar'
 
 interface CaseRow {
   id: number
@@ -157,7 +158,7 @@ function CasesTable({ cases, loading, detailBase, canApprovePlans, canAssignOrde
         const scheduleExpanded = expandedScheduleId === item.id && !item.course
         return <Fragment key={item.id}>
           <tr className="border-b border-border hover:bg-bg/60">
-            <td className="px-4 py-3"><div className="flex items-center gap-3"><PatientAvatar name={item.patientName} files={item.fileUrls} /><div className="min-w-0"><Link href={`${detailBase}/${item.id}`} className="block truncate text-sm font-semibold text-text underline-offset-4 hover:underline">{item.patientName}</Link><p className="mt-0.5 truncate text-xs text-text-muted">{item.orderNo}{item.gender ? ` · ${item.gender}` : ''}</p></div></div></td>
+            <td className="px-4 py-3"><div className="flex items-center gap-3"><IDesignPatientAvatar name={item.patientName} files={item.fileUrls} /><div className="min-w-0"><Link href={`${detailBase}/${item.id}`} className="block truncate text-sm font-semibold text-text underline-offset-4 hover:underline">{item.patientName}</Link><p className="mt-0.5 truncate text-xs text-text-muted">{item.orderNo}{item.gender ? ` · ${item.gender}` : ''}</p></div></div></td>
             <td className="px-4 py-3 text-sm text-text">{item.doctorName || 'Unassigned'}</td>
             {canAssignOrders && <td className="px-4 py-3"><p className="whitespace-nowrap text-xs text-text"><span className="text-text-muted">Doctor:</span> {item.assignedDoctorName || 'Unassigned'}</p><p className="mt-1 whitespace-nowrap text-xs text-text"><span className="text-text-muted">Sales:</span> {item.assignedSalesName || 'Unassigned'}</p><button type="button" onClick={() => setAssignmentCase(item)} className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-text underline-offset-4 hover:underline"><MorphIcon icon={Link2} hoverIcon={UserRoundCheck} className="h-3.5 w-3.5" />Manage access</button></td>}
             <td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[item.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{item.latestProgress}</span></td>
@@ -171,13 +172,6 @@ function CasesTable({ cases, loading, detailBase, canApprovePlans, canAssignOrde
     </table></div>
     <footer className="flex items-center justify-between border-t border-border px-4 py-3"><p className="text-xs text-text-muted">Page {page} of {totalPages}</p><div className="flex gap-1"><button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1 || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Previous page"><MorphIcon icon={ChevronLeft} hoverIcon={ChevronsLeft} className="h-4 w-4" /></button><button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page >= totalPages || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Next page"><MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4" /></button></div></footer>
   </div>
-}
-
-function PatientAvatar({ name, files }: { name: string; files: CaseRow['fileUrls'] }) {
-  const [failed, setFailed] = useState(false)
-  const source = files?.['frontal-view']?.[0]?.url
-  if (!source || failed) return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-bg text-text-muted"><MorphIcon icon={UserRound} className="h-5 w-5" /></span>
-  return <img src={source} alt={`${name} frontal view`} onError={() => setFailed(true)} className="h-10 w-10 shrink-0 rounded-full border border-border object-cover" />
 }
 
 function AssignmentDialog({ item, accounts, saving, onCancel, onSave }: { item: CaseRow; accounts: AssignableAccount[]; saving: boolean; onCancel: () => void; onSave: (doctorAccountId: number | null, salesAccountId: number | null) => Promise<void> }) {

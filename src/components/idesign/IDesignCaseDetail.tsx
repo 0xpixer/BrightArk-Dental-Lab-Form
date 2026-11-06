@@ -9,6 +9,7 @@ import { MorphIcon } from '@/components/ui/MorphIcon'
 import { IDesignNotifications } from './IDesignNotifications'
 import { IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
 import type { IDesignCaseInformationData } from '@/components/admin/NewIDesignOrderForm'
+import { IDesignPatientAvatar } from './IDesignPatientAvatar'
 
 const IDesignCaseInformationEditor = dynamic(
   () => import('@/components/admin/NewIDesignOrderForm').then((module) => module.IDesignCaseInformationEditor),
@@ -58,7 +59,7 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
 
   return <div className="mx-auto max-w-7xl space-y-5">
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canManagePlans ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{formatPatientDemographics(data.case.gender, data.case.dateOfBirth)}</p></div></div>
+      <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><IDesignPatientAvatar name={data.case.patientName} files={data.case.fileUrls} /><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canManagePlans ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{formatPatientDemographics(data.case.gender, data.case.dateOfBirth)}</p></div></div>
       <IDesignNotifications />
     </header>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -67,7 +68,7 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
       <Summary label="Doctor" value={data.case.doctorName || 'Unassigned'} />
       <Summary label="Clinic" value={data.case.clinicName || 'Unassigned'} />
       {data.permissions.showSales && <Summary label="Sales" value={data.case.salesName || 'Unassigned'} />}
-      <Summary label="Est. wear schedule" value={data.course ? `Finish ${formatDate(data.course.currentEstimatedFinish)}` : 'Not scheduled'} />
+      <Summary label="Est. wear schedule" value={data.course ? `Stage ${data.course.currentStep} of ${data.course.totalSteps}` : 'Not scheduled'} />
       <StatusSummary value={data.case.latestProgress} />
     </section>
 
