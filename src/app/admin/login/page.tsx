@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowUpRight, ExternalLink, Eye, EyeOff } from 'lucide'
+import { ArrowUpRight, CircleUserRound, ExternalLink, Eye, EyeOff, UserPlus } from 'lucide'
 import { getSafeLoginCallback } from '@/lib/siteRouting'
 import { PasswordResetForm } from '@/components/auth/PasswordResetForm'
 import { MorphIcon } from '@/components/ui/MorphIcon'
@@ -127,11 +127,16 @@ function LoginForm() {
           {loginFailed && <button type="button" onClick={() => setResetOpen(true)} className="w-full text-sm font-medium text-text underline underline-offset-2">Forgot your password?</button>}
         </form>}
 
-        {!resetOpen && <div className="mt-5 space-y-3 border-t border-border pt-5 text-center text-xs text-text-muted">
-          <p>
-            Doctors can <Link href="/register" className="font-medium text-text hover:underline">create an account</Link> to submit and manage orders.
-          </p>
-          <p>
+        {!resetOpen && <div className="mt-6 border-t border-border pt-5">
+          <div className="rounded-card border border-[#f6b978] bg-[#fff7ed] p-4 text-left">
+            <p className="text-sm font-semibold text-text">New to BrightArk?</p>
+            <p className="mt-1 text-xs leading-5 text-text-muted">Create a doctor account to submit cases and manage your orders.</p>
+            <Link href="/register" className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-[#e06d15]">
+              <MorphIcon icon={UserPlus} hoverIcon={CircleUserRound} className="h-4 w-4" />
+              Create a Doctor Account
+            </Link>
+          </div>
+          <p className="mt-4 text-center text-xs text-text-muted">
             Still using the previous iDesign workflow?{' '}
             <a href="https://thebrightark.com/pages/idesign" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-text hover:underline">
               Open the legacy iDesign portal
