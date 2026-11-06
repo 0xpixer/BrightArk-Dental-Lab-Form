@@ -83,9 +83,9 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
 
     <div id="treatment-progress-panel" role="tabpanel" aria-labelledby="treatment-progress-tab" hidden={activeTab !== 'treatment-progress'}>
       {activeTab === 'treatment-progress' && <div className="space-y-6">
-        <div className="grid items-start gap-5 xl:grid-cols-3">
+        <div className="grid items-start gap-5 xl:grid-cols-2">
           <TreatmentPlanPanel data={data} caseId={caseId} reload={load} />
-          <div className="xl:col-span-2"><WearSchedulePanel course={data.course} importedTotalSteps={Number(data.importedOrder?.totalSteps) || undefined} canManage={data.permissions.canManageSchedule} caseId={caseId} reload={load} /></div>
+          <WearSchedulePanel course={data.course} importedTotalSteps={Number(data.importedOrder?.totalSteps) || undefined} canManage={data.permissions.canManageSchedule} caseId={caseId} reload={load} />
         </div>
         <ActivityPanel activities={data.activities} />
       </div>
