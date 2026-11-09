@@ -8,6 +8,14 @@ import { normalizeActorName } from '@/lib/admin/accountIdentity'
 
 type ClinicInput = { id?: number; name: string; address: string }
 
+function parseLocation(value: unknown, label: string, maxLength: number) {
+  if (value === undefined || value === null) return { value: null }
+  if (typeof value !== 'string') return { error: `${label} must be text` }
+  const normalized = value.trim()
+  if (normalized.length > maxLength) return { error: `${label} must be ${maxLength} characters or fewer` }
+  return { value: normalized || null }
+}
+
 function parseClinics(value: unknown): ClinicInput[] | null {
   if (!Array.isArray(value)) return null
 
@@ -31,13 +39,23 @@ export async function GET() {
   const db = getDb()
   const [profile, [account]] = await Promise.all([
     getDoctorProfile(ownerId),
-    db.select({ fullName: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(eq(adminUsers.id, userId)).limit(1),
+    db.select({
+      fullName: adminUsers.fullName,
+      username: adminUsers.username,
+      country: adminUsers.country,
+      city: adminUsers.city,
+    }).from(adminUsers).where(eq(adminUsers.id, userId)).limit(1),
   ])
   if (!profile) return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 })
   if (!account) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   return NextResponse.json({
-    profile: { ...profile, actorName: account.fullName || account.username },
+    profile: {
+      ...profile,
+      actorName: account.fullName || account.username,
+      country: account.country,
+      city: account.city,
+    },
     editable: session!.user.role === 'doctor',
     clinicEditable: true,
   })
@@ -64,6 +82,12 @@ export async function PATCH(request: Request) {
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   if (session!.user.role === 'doctor' && (!fullName || !/^\S+@\S+\.\S+$/.test(email))) {
     return NextResponse.json({ error: 'Name and a valid email are required' }, { status: 400 })
+  }
+
+  const country = parseLocation(body.country, 'Country', 100)
+  const city = parseLocation(body.city, 'City', 120)
+  if (country.error || city.error) {
+    return NextResponse.json({ error: country.error ?? city.error }, { status: 400 })
   }
 
   const db = getDb()
@@ -103,6 +127,8 @@ export async function PATCH(request: Request) {
         phone: typeof body.phone === 'string' ? body.phone.trim() || null : null,
         clinicName: primaryClinic.name,
         address: primaryClinic.address,
+        country: country.value,
+        city: city.value,
       })
       .where(eq(adminUsers.id, ownerId))
   } else {
@@ -118,6 +144,20 @@ export async function PATCH(request: Request) {
     ])
   }
 
-  const profile = await getDoctorProfile(ownerId)
-  return NextResponse.json({ success: true, profile: profile && { ...profile, actorName: parsedActorName.value } })
+  const [profile, [account]] = await Promise.all([
+    getDoctorProfile(ownerId),
+    db.select({ country: adminUsers.country, city: adminUsers.city })
+      .from(adminUsers)
+      .where(eq(adminUsers.id, userId))
+      .limit(1),
+  ])
+  return NextResponse.json({
+    success: true,
+    profile: profile && {
+      ...profile,
+      actorName: parsedActorName.value,
+      country: account?.country ?? null,
+      city: account?.city ?? null,
+    },
+  })
 }

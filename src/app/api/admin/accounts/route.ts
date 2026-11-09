@@ -3,12 +3,12 @@ import bcrypt from 'bcryptjs'
 import { and, eq, desc } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, salesDoctorAssignments } from '@/lib/db/schema'
-import { requireSuperadmin } from '@/lib/admin/session'
+import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
 
 export async function GET() {
-  const { session, error } = await requireSuperadmin()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const db = getDb()
@@ -24,6 +24,8 @@ export async function GET() {
       email: u.email,
       fullName: u.fullName,
       clinicName: u.clinicName,
+      country: u.country,
+      city: u.city,
       role: u.role,
       linkedDoctorId: u.linkedDoctorId,
       servedDoctorIds: salesAssignments.filter((assignment) => assignment.salesId === u.id).map((assignment) => assignment.doctorId),
@@ -34,6 +36,7 @@ export async function GET() {
       lastLoginAt: u.lastLoginAt,
     })),
     doctors: visibleUsers.filter((u) => u.role === 'doctor').map((u) => ({ id: u.id, name: u.fullName ?? u.username })),
+    canManageAccounts: session!.user.role === 'superadmin',
   })
 }
 
@@ -44,6 +47,8 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { username, password, role, linkedDoctorId } = body
   const parsedName = normalizeActorName(body.fullName)
+  const country = typeof body.country === 'string' ? body.country.trim() : ''
+  const city = typeof body.city === 'string' ? body.city.trim() : ''
 
   if (!username || !password) {
     return NextResponse.json({ error: 'Username and password are required' }, { status: 400 })
@@ -51,6 +56,10 @@ export async function POST(request: Request) {
 
   if (parsedName.error) {
     return NextResponse.json({ error: parsedName.error }, { status: 400 })
+  }
+
+  if (country.length > 100 || city.length > 120) {
+    return NextResponse.json({ error: 'Country or city is too long' }, { status: 400 })
   }
 
   if (!isAccountRole(role)) {
@@ -92,6 +101,8 @@ export async function POST(request: Request) {
     .values({
       username,
       fullName: parsedName.value,
+      country: country || null,
+      city: city || null,
       passwordHash,
       role,
       linkedDoctorId: linkedDoctor,

@@ -12,6 +12,8 @@ type Profile = {
   email: string
   phone: string | null
   address: string | null
+  country: string | null
+  city: string | null
   clinics: Clinic[]
 }
 
@@ -44,7 +46,7 @@ export function DoctorProfileForm() {
 
   if (!profile) return <p className="text-text-muted">{message ?? 'Loading profile...'}</p>
 
-  const change = (key: 'fullName' | 'email' | 'phone', value: string) => {
+  const change = (key: 'fullName' | 'email' | 'phone' | 'country' | 'city', value: string) => {
     setProfile((current) => current ? { ...current, [key]: value } : current)
   }
 
@@ -112,6 +114,31 @@ export function DoctorProfileForm() {
               />
             </label>
           ))}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium">
+            <span className="mb-1 block">Country</span>
+            <input
+              value={profile.country ?? ''}
+              onChange={(event) => change('country', event.target.value)}
+              disabled={!editable}
+              maxLength={100}
+              autoComplete="country-name"
+              className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm disabled:opacity-60"
+            />
+          </label>
+          <label className="block text-sm font-medium">
+            <span className="mb-1 block">City</span>
+            <input
+              value={profile.city ?? ''}
+              onChange={(event) => change('city', event.target.value)}
+              disabled={!editable}
+              maxLength={120}
+              autoComplete="address-level2"
+              className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm disabled:opacity-60"
+            />
+          </label>
         </div>
 
         <div className="border-t border-border pt-5">

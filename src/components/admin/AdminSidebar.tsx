@@ -28,7 +28,7 @@ const MODULES: NavModule[] = [
   ] },
   { id: 'admin', label: 'Admin', icon: ShieldCheck, hoverIcon: UserRoundCog, roles: ['admin', 'superadmin'], items: [
     { href: '/admin/imported-orders', label: 'Imported Order Records', icon: Database, hoverIcon: DatabaseZap },
-    { href: '/admin/accounts', label: 'Accounts', icon: Users, hoverIcon: UsersRound, roles: ['superadmin'] },
+    { href: '/admin/accounts', label: 'Accounts', icon: Users, hoverIcon: UsersRound, roles: ['admin', 'superadmin'] },
   ] },
 ]
 

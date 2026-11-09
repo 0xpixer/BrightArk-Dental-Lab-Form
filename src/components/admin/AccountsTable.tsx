@@ -11,6 +11,8 @@ interface Account {
   id: number
   username: string
   fullName: string | null
+  country: string | null
+  city: string | null
   role: string
   linkedDoctorId: number | null
   servedDoctorIds: number[]
@@ -31,7 +33,7 @@ async function readResponseJson(response: Response): Promise<Record<string, any>
   }
 }
 
-export function AccountsTable({ currentUserId }: { currentUserId: number }) {
+export function AccountsTable({ currentUserId, currentUserRole }: { currentUserId: number; currentUserRole: string }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [doctors, setDoctors] = useState<{ id: number; name: string }[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +44,9 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
   const [error, setError] = useState<string | null>(null)
   const [pendingAccountId, setPendingAccountId] = useState<number | null>(null)
   const [actorNameDrafts, setActorNameDrafts] = useState<Record<number, string>>({})
+  const [locationDrafts, setLocationDrafts] = useState<Record<number, { country: string; city: string }>>({})
   const [servedDoctorDrafts, setServedDoctorDrafts] = useState<Record<number, number[]>>({})
+  const canManageAccounts = currentUserRole === 'superadmin'
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
@@ -133,6 +137,30 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     fetchAccounts()
   }
 
+  const updateLocation = async (account: Account) => {
+    const draft = locationDrafts[account.id] ?? { country: account.country ?? '', city: account.city ?? '' }
+    setPendingAccountId(account.id)
+    setError(null)
+    const res = await fetch(`/api/admin/accounts/${account.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(draft),
+    })
+    const data = await readResponseJson(res)
+    setPendingAccountId(null)
+    if (!res.ok) {
+      setError(data.error ?? 'Failed to update location')
+      return
+    }
+    setLocationDrafts((current) => {
+      const next = { ...current }
+      delete next[account.id]
+      return next
+    })
+    setToast('Location updated')
+    fetchAccounts()
+  }
+
   const updateServedDoctors = async (account: Account) => {
     const servedDoctorIds = servedDoctorDrafts[account.id] ?? account.servedDoctorIds
     setPendingAccountId(account.id)
@@ -195,19 +223,21 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
     <>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-text">Accounts</h1>
-        <Link
-          href="/admin/accounts/new"
-          className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15]"
-        >
-          <MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" /> Create Account
-        </Link>
+        {canManageAccounts && (
+          <Link
+            href="/admin/accounts/new"
+            className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15]"
+          >
+            <MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" /> Create Account
+          </Link>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-card border border-border bg-surface">
-        <table className="w-full min-w-[1080px]">
+        <table className="w-full min-w-[1280px]">
           <thead className="border-b border-border bg-bg">
             <tr>
-              {['Username', 'Actor Name', 'Role', 'Account Scope', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
+              {['Username', 'Actor Name', 'Location', 'Role', 'Account Scope', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted">
                   {h}
                 </th>
@@ -217,13 +247,13 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-text-muted">
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-text-muted">
                   Loading…
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-red-600">
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-red-600">
                   {error}
                 </td>
               </tr>
@@ -232,6 +262,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                 <tr key={acc.id} className="border-b border-border last:border-0 hover:bg-bg/50">
                   <td className="px-4 py-3 text-sm font-medium">{acc.username}</td>
                   <td className="w-52 px-4 py-3">
+                    {canManageAccounts ? (
                     <form onSubmit={(event) => { event.preventDefault(); updateActorName(acc) }} className="flex items-center gap-1">
                       <input
                         value={actorNameDrafts[acc.id] ?? acc.fullName ?? acc.username}
@@ -251,9 +282,47 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                         <span className="sr-only">Save actor name for {acc.username}</span>
                       </button>
                     </form>
+                    ) : <span className="text-sm">{acc.fullName ?? acc.username}</span>}
+                  </td>
+                  <td className="w-56 px-4 py-3">
+                    <form onSubmit={(event) => { event.preventDefault(); updateLocation(acc) }} className="flex items-center gap-1">
+                      <div className="grid min-w-0 flex-1 grid-cols-2 gap-1">
+                        <input
+                          value={locationDrafts[acc.id]?.country ?? acc.country ?? ''}
+                          maxLength={100}
+                          placeholder="Country"
+                          onChange={(event) => setLocationDrafts((current) => ({
+                            ...current,
+                            [acc.id]: { country: event.target.value, city: current[acc.id]?.city ?? acc.city ?? '' },
+                          }))}
+                          className="min-w-0 rounded border border-border bg-surface px-2 py-1 text-xs"
+                          aria-label={`Country for ${acc.username}`}
+                        />
+                        <input
+                          value={locationDrafts[acc.id]?.city ?? acc.city ?? ''}
+                          maxLength={120}
+                          placeholder="City"
+                          onChange={(event) => setLocationDrafts((current) => ({
+                            ...current,
+                            [acc.id]: { country: current[acc.id]?.country ?? acc.country ?? '', city: event.target.value },
+                          }))}
+                          className="min-w-0 rounded border border-border bg-surface px-2 py-1 text-xs"
+                          aria-label={`City for ${acc.username}`}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={pendingAccountId === acc.id || locationDrafts[acc.id] === undefined}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded text-text hover:bg-bg disabled:pointer-events-none disabled:opacity-20"
+                        title="Save location"
+                      >
+                        <MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-3.5 w-3.5" />
+                        <span className="sr-only">Save location for {acc.username}</span>
+                      </button>
+                    </form>
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {acc.id === currentUserId ? (
+                    {!canManageAccounts || acc.id === currentUserId ? (
                       <span className="font-medium">{formatAdminRole(acc.role)}</span>
                     ) : (
                       <select
@@ -271,7 +340,15 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {acc.role === 'clinic_staff' ? (
+                    {!canManageAccounts ? (
+                      <span className="text-text-muted">
+                        {acc.role === 'clinic_staff'
+                          ? doctors.find((doctor) => doctor.id === acc.linkedDoctorId)?.name ?? 'No linked doctor'
+                          : acc.role === 'sales'
+                            ? `${acc.servedDoctorIds.length} served doctor${acc.servedDoctorIds.length === 1 ? '' : 's'}`
+                            : '—'}
+                      </span>
+                    ) : acc.role === 'clinic_staff' ? (
                       <select value={acc.linkedDoctorId ?? ''} disabled={pendingAccountId === acc.id} onChange={(e) => updateLinkedDoctor(acc.id, e.target.value)} className="max-w-40 rounded border border-border bg-surface px-2 py-1 text-xs">
                         <option value="">Select doctor</option>
                         {doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}
@@ -312,7 +389,7 @@ export function AccountsTable({ currentUserId }: { currentUserId: number }) {
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{formatRelative(acc.lastLoginAt)}</td>
                   <td className="px-4 py-3">
-                    {acc.id !== currentUserId && (
+                    {canManageAccounts && acc.id !== currentUserId && (
                       <div className="flex gap-2">
                         <button
                           type="button"

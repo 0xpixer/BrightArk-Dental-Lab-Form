@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { and, eq, inArray } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignOrders, salesDoctorAssignments } from '@/lib/db/schema'
-import { requireSuperadmin } from '@/lib/admin/session'
+import { requireAdmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
 
@@ -11,7 +11,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const { session, error } = await requireSuperadmin()
+  const { session, error } = await requireAdmin()
   if (error) return error
 
   const id = parseInt(params.id, 10)
@@ -22,6 +22,12 @@ export async function PATCH(
   const body = await request.json()
   const currentUserId = parseInt(session!.user.id, 10)
   const isSelf = id === currentUserId
+  const canManageAccounts = session!.user.role === 'superadmin'
+  const locationFields = new Set(['country', 'city'])
+
+  if (!canManageAccounts && Object.keys(body).some((field) => !locationFields.has(field))) {
+    return NextResponse.json({ error: 'Lab Admin can only update country and city' }, { status: 403 })
+  }
 
   const db = getDb()
   const [existing] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1)
@@ -29,7 +35,7 @@ export async function PATCH(
   if (!existing || !canViewAccount(session!.user.username, existing.username)) {
     return NextResponse.json({ error: 'Account not found' }, { status: 404 })
   }
-  if (isSelf && Object.keys(body).some((field) => field !== 'fullName')) {
+  if (canManageAccounts && isSelf && Object.keys(body).some((field) => !['fullName', 'country', 'city'].includes(field))) {
     return NextResponse.json({ error: 'Use My Profile to change your own account settings' }, { status: 400 })
   }
 
@@ -39,6 +45,18 @@ export async function PATCH(
     const parsedName = normalizeActorName(body.fullName)
     if (parsedName.error) return NextResponse.json({ error: parsedName.error }, { status: 400 })
     updateData.fullName = parsedName.value
+  }
+
+  for (const [field, maxLength] of [['country', 100], ['city', 120]] as const) {
+    if (body[field] === undefined) continue
+    if (body[field] !== null && typeof body[field] !== 'string') {
+      return NextResponse.json({ error: `${field === 'country' ? 'Country' : 'City'} must be text` }, { status: 400 })
+    }
+    const value = typeof body[field] === 'string' ? body[field].trim() : ''
+    if (value.length > maxLength) {
+      return NextResponse.json({ error: `${field === 'country' ? 'Country' : 'City'} must be ${maxLength} characters or fewer` }, { status: 400 })
+    }
+    updateData[field] = value || null
   }
 
   if (body.isActive !== undefined) {
@@ -121,6 +139,8 @@ export async function PATCH(
         id: adminUsers.id,
         username: adminUsers.username,
         fullName: adminUsers.fullName,
+        country: adminUsers.country,
+        city: adminUsers.city,
         role: adminUsers.role,
         linkedDoctorId: adminUsers.linkedDoctorId,
         isActive: adminUsers.isActive,
@@ -129,6 +149,8 @@ export async function PATCH(
       id: existing.id,
       username: existing.username,
       fullName: existing.fullName,
+      country: existing.country,
+      city: existing.city,
       role: existing.role,
       linkedDoctorId: existing.linkedDoctorId,
       isActive: existing.isActive,

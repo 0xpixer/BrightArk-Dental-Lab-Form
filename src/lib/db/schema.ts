@@ -20,6 +20,8 @@ export const adminUsers = pgTable('admin_users', {
   clinicName: text('clinic_name'),
   phone: text('phone'),
   address: text('address'),
+  country: text('country'),
+  city: text('city'),
   linkedDoctorId: integer('linked_doctor_id'),
   passwordHash: text('password_hash').notNull(),
   role: text('role').notNull(),

@@ -9,6 +9,8 @@ export function NewAccountForm() {
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
+  const [country, setCountry] = useState('')
+  const [city, setCity] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [role, setRole] = useState<AccountRole>('admin')
@@ -41,7 +43,7 @@ export function NewAccountForm() {
     const res = await fetch('/api/admin/accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, fullName, password, role, linkedDoctorId }),
+      body: JSON.stringify({ username, fullName, country, city, password, role, linkedDoctorId }),
     })
     const data = await res.json()
     setLoading(false)
@@ -116,6 +118,31 @@ export function NewAccountForm() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="country" className="mb-1 block text-xs font-medium">Country</label>
+                <input
+                  id="country"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  maxLength={100}
+                  autoComplete="country-name"
+                  className="w-full rounded-card border border-border px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className="mb-1 block text-xs font-medium">City</label>
+                <input
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  maxLength={120}
+                  autoComplete="address-level2"
+                  className="w-full rounded-card border border-border px-3 py-2 text-sm"
+                />
+              </div>
             </div>
 
             {role === 'clinic_staff' && (
