@@ -7,7 +7,7 @@ import { canApproveIDesignPlans, canAssignIDesignOrders, canManageIDesignSchedul
 import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_SUBMITTED_PROGRESS } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
-import { recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
+import { persistIDesignSubmission, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 export async function GET(request: Request) {
   const { session, error } = await requireSession()
@@ -130,26 +130,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'This account is not linked to a doctor profile' }, { status: 403 })
   }
 
-  const [created] = await getDb().insert(idesignCases).values({
-    orderNo: createIDesignCaseOrderNo(),
-    orderType: 'clear_aligner',
-    ...parsed.data,
-    latestProgress: IDESIGN_SUBMITTED_PROGRESS,
-    createdBy: userId,
-    doctorAccountId,
-    salesAccountId: role === 'sales' ? userId : null,
-  }).returning()
-
+  const db = getDb()
   try {
-    await recordIDesignActivity({
-      caseId: created.id,
-      eventType: 'case_submitted',
-      detail: `Order submitted — status changed from Entering Info to ${IDESIGN_SUBMITTED_PROGRESS}`,
-      ...sessionActor(session!),
+    const created = await persistIDesignSubmission({
+      createCase: async () => {
+        const [caseRow] = await db.insert(idesignCases).values({
+          orderNo: createIDesignCaseOrderNo(),
+          orderType: 'clear_aligner',
+          ...parsed.data,
+          latestProgress: IDESIGN_SUBMITTED_PROGRESS,
+          createdBy: userId,
+          doctorAccountId,
+          salesAccountId: role === 'sales' ? userId : null,
+        }).returning()
+        return caseRow
+      },
+      recordActivity: (caseRow) => recordIDesignActivity({
+        caseId: caseRow.id,
+        eventType: 'case_submitted',
+        detail: `Order submitted — status changed from Entering Info to ${IDESIGN_SUBMITTED_PROGRESS}`,
+        ...sessionActor(session!),
+      }),
+      rollbackCase: async (caseRow) => {
+        await db.delete(idesignCases).where(eq(idesignCases.id, caseRow.id))
+      },
     })
+    return NextResponse.json({ case: created }, { status: 201 })
   } catch (activityError) {
     console.error('Unable to record iDesign submission activity', activityError)
+    return NextResponse.json({ error: 'The order could not be submitted. Please try again.' }, { status: 500 })
   }
-
-  return NextResponse.json({ case: created }, { status: 201 })
 }

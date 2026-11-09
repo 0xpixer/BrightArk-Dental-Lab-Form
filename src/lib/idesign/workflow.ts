@@ -21,6 +21,27 @@ export async function recordIDesignActivity(input: {
   await getDb().insert(idesignCaseActivities).values(input)
 }
 
+export async function persistIDesignSubmission<T extends { id: number }>(operations: {
+  createCase: () => Promise<T>
+  recordActivity: (created: T) => Promise<void>
+  rollbackCase: (created: T) => Promise<void>
+}) {
+  const created = await operations.createCase()
+
+  try {
+    await operations.recordActivity(created)
+  } catch (activityError) {
+    try {
+      await operations.rollbackCase(created)
+    } catch (rollbackError) {
+      throw new AggregateError([activityError, rollbackError], 'Unable to record or roll back the iDesign submission')
+    }
+    throw activityError
+  }
+
+  return created
+}
+
 export function sessionActor(session: { user: { id: string; role: string; name?: string | null; username: string } }) {
   return {
     actorId: Number(session.user.id),
