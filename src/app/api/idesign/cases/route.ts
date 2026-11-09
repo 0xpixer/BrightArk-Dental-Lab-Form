@@ -89,7 +89,7 @@ export async function GET(request: Request) {
       const importedOrder = row.importedOrderId ? importedOrdersById.get(row.importedOrderId) : null
       return {
         ...row,
-        doctorName: importedOrder?.doctorName ?? (row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null),
+        doctorName: row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? importedOrder?.doctorName ?? null : importedOrder?.doctorName ?? null,
         assignedDoctorName: row.doctorAccountId ? accountNames.get(row.doctorAccountId) ?? null : null,
         assignedSalesName: row.salesAccountId ? accountNames.get(row.salesAccountId) ?? null : null,
         updateTime: importedOrder?.sourceUpdatedOn ?? row.updatedAt,
