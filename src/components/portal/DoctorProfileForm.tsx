@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { CirclePlus, CircleX, Plus, Trash2 } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 
 type Clinic = { id?: number; name: string; address: string }
 type Profile = {
@@ -119,23 +120,21 @@ export function DoctorProfileForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium">
             <span className="mb-1 block">Country</span>
-            <input
+            <CountrySelect
               value={profile.country ?? ''}
-              onChange={(event) => change('country', event.target.value)}
+              onChange={(value) => change('country', value)}
               disabled={!editable}
-              maxLength={100}
-              autoComplete="country-name"
               className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm disabled:opacity-60"
             />
           </label>
           <label className="block text-sm font-medium">
             <span className="mb-1 block">City</span>
-            <input
+            <CityInput
               value={profile.city ?? ''}
-              onChange={(event) => change('city', event.target.value)}
+              country={profile.country ?? ''}
+              onChange={(value) => change('city', value)}
+              listId="doctor-profile-city-options"
               disabled={!editable}
-              maxLength={120}
-              autoComplete="address-level2"
               className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm disabled:opacity-60"
             />
           </label>

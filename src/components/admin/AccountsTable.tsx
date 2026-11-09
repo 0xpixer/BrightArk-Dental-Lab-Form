@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BadgeCheck, ChevronDown, ChevronsDown, CirclePlus, Key, KeyRound, Plus, Save } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 import { Toast } from './Toast'
 import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
 
@@ -287,25 +288,23 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
                   <td className="w-56 px-4 py-3">
                     <form onSubmit={(event) => { event.preventDefault(); updateLocation(acc) }} className="flex items-center gap-1">
                       <div className="grid min-w-0 flex-1 grid-cols-2 gap-1">
-                        <input
+                        <CountrySelect
                           value={locationDrafts[acc.id]?.country ?? acc.country ?? ''}
-                          maxLength={100}
-                          placeholder="Country"
-                          onChange={(event) => setLocationDrafts((current) => ({
+                          onChange={(value) => setLocationDrafts((current) => ({
                             ...current,
-                            [acc.id]: { country: event.target.value, city: current[acc.id]?.city ?? acc.city ?? '' },
+                            [acc.id]: { country: value, city: current[acc.id]?.city ?? acc.city ?? '' },
                           }))}
                           className="min-w-0 rounded border border-border bg-surface px-2 py-1 text-xs"
                           aria-label={`Country for ${acc.username}`}
                         />
-                        <input
+                        <CityInput
                           value={locationDrafts[acc.id]?.city ?? acc.city ?? ''}
-                          maxLength={120}
-                          placeholder="City"
-                          onChange={(event) => setLocationDrafts((current) => ({
+                          country={locationDrafts[acc.id]?.country ?? acc.country ?? ''}
+                          onChange={(value) => setLocationDrafts((current) => ({
                             ...current,
-                            [acc.id]: { country: current[acc.id]?.country ?? acc.country ?? '', city: event.target.value },
+                            [acc.id]: { country: current[acc.id]?.country ?? acc.country ?? '', city: value },
                           }))}
+                          listId={`account-${acc.id}-city-options`}
                           className="min-w-0 rounded border border-border bg-surface px-2 py-1 text-xs"
                           aria-label={`City for ${acc.username}`}
                         />

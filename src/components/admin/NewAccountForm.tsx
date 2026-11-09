@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ACCOUNT_ROLES, formatAdminRole, type AccountRole } from '@/lib/admin/roles'
+import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 
 export function NewAccountForm() {
   const router = useRouter()
@@ -123,23 +124,21 @@ export function NewAccountForm() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="country" className="mb-1 block text-xs font-medium">Country</label>
-                <input
+                <CountrySelect
                   id="country"
                   value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  maxLength={100}
-                  autoComplete="country-name"
+                  onChange={setCountry}
                   className="w-full rounded-card border border-border px-3 py-2 text-sm"
                 />
               </div>
               <div>
                 <label htmlFor="city" className="mb-1 block text-xs font-medium">City</label>
-                <input
+                <CityInput
                   id="city"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  maxLength={120}
-                  autoComplete="address-level2"
+                  country={country}
+                  onChange={setCity}
+                  listId="new-account-city-options"
                   className="w-full rounded-card border border-border px-3 py-2 text-sm"
                 />
               </div>
