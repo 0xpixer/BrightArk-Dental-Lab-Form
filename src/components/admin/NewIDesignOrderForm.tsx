@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, BadgeCheck, Check, MoveLeft, MoveRight, Plus, Save, X } from 'lucide'
+import { ArrowLeft, ArrowRight, BadgeCheck, Check, MoveLeft, MoveRight, Plus, Save, Send, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -194,7 +194,13 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, hideHeader = fals
             <ClinicalSection title="Other remarks and design instructions"><textarea disabled={readOnly} value={remarks} maxLength={500} onChange={(event) => setRemarks(event.target.value)} placeholder="Please Enter Notes" rows={5} className={`${inputClass(false)} h-auto resize-y py-2.5`} /><p className="mt-1 text-right text-xs text-text-muted">{remarks.length} / 500</p></ClinicalSection>
           </div>
         </section>
-        <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-between sm:p-6"><button type="button" onClick={() => setStep(1)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" />Previous</button>{!readOnly && <div className="flex gap-2">{mode === 'create' && <Link href={listHref} className="inline-flex h-10 items-center rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg">Cancel</Link>}<button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"><MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-4 w-4" />{saving ? 'Saving...' : mode === 'create' ? 'Save' : 'Save Changes'}</button></div>}</div>
+        <div className="border-t border-border p-4 sm:p-6">
+          {mode === 'create' && <p className="mb-3 text-right text-xs leading-5 text-text-muted">Submitting sends this case to BrightArk for design. Case information will become read-only for doctor accounts.</p>}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+            <button type="button" onClick={() => setStep(1)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" />Previous</button>
+            {!readOnly && <div className="flex gap-2">{mode === 'create' && <Link href={listHref} className="inline-flex h-10 items-center rounded-card border border-border px-4 text-sm font-medium text-text hover:bg-bg">Cancel</Link>}<button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"><MorphIcon icon={mode === 'create' ? Send : Save} hoverIcon={BadgeCheck} className="h-4 w-4" />{saving ? mode === 'create' ? 'Submitting...' : 'Saving...' : mode === 'create' ? 'Submit Order' : 'Save Changes'}</button></div>}
+          </div>
+        </div>
       </div>}
     </form>
     {complaintDialogOpen && <ChiefComplaintDialog value={chiefComplaints} onCancel={() => setComplaintDialogOpen(false)} onConfirm={(value) => { setChiefComplaints(value); setComplaintDialogOpen(false); setSaved(false) }} />}

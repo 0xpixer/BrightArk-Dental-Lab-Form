@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const IDESIGN_GENDERS = ['Male', 'Female', 'Other'] as const
+export const IDESIGN_SUBMITTED_PROGRESS = 'Lab Designing' as const
 export const DENTITION_STAGES = ['Permanent Dentition', 'Mixed Dentition', 'Primary Dentition'] as const
 export const MIDLINE_OPTIONS = ['Auto', 'Move left', 'Move right', 'Maintain', 'Match opposing midline'] as const
 export const RELATIONSHIP_OPTIONS = [

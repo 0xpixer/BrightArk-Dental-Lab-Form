@@ -4,9 +4,10 @@ import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps } from '@/lib/db/schema'
 import { canApproveIDesignPlans, canAssignIDesignOrders, canManageIDesignSchedule, canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
-import { createIDesignCaseOrderNo, createIDesignCaseSchema } from '@/lib/idesign/cases'
+import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_SUBMITTED_PROGRESS } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
+import { recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 export async function GET(request: Request) {
   const { session, error } = await requireSession()
@@ -133,10 +134,22 @@ export async function POST(request: Request) {
     orderNo: createIDesignCaseOrderNo(),
     orderType: 'clear_aligner',
     ...parsed.data,
+    latestProgress: IDESIGN_SUBMITTED_PROGRESS,
     createdBy: userId,
     doctorAccountId,
     salesAccountId: role === 'sales' ? userId : null,
   }).returning()
+
+  try {
+    await recordIDesignActivity({
+      caseId: created.id,
+      eventType: 'case_submitted',
+      detail: `Order submitted — status changed from Entering Info to ${IDESIGN_SUBMITTED_PROGRESS}`,
+      ...sessionActor(session!),
+    })
+  } catch (activityError) {
+    console.error('Unable to record iDesign submission activity', activityError)
+  }
 
   return NextResponse.json({ case: created }, { status: 201 })
 }

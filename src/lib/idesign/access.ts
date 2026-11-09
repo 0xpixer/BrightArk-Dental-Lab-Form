@@ -46,3 +46,7 @@ export function canAssignIDesignOrders(role: string) {
 export function canDeleteIDesignOrders(role: string) {
   return isAdminRole(role)
 }
+
+export function canEditIDesignCaseInformation(role: string) {
+  return isAdminRole(role)
+}

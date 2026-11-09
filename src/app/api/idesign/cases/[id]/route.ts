@@ -13,7 +13,7 @@ import {
   idesignTreatmentPlans,
   idesignTreatmentSteps,
 } from '@/lib/db/schema'
-import { canAssignIDesignOrders, canDeleteIDesignOrders, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
+import { canAssignIDesignOrders, canDeleteIDesignOrders, canEditIDesignCaseInformation, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -117,7 +117,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
-      canEditCaseInformation: session!.user.role === 'superadmin' || session!.user.role === 'admin',
+      canEditCaseInformation: canEditIDesignCaseInformation(session!.user.role),
       canDeleteCase: canDeleteIDesignOrders(session!.user.role),
       showSales: session!.user.role !== 'doctor' && session!.user.role !== 'clinic_staff',
     },
@@ -205,6 +205,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   if ('action' in parsed.data && parsed.data.action === 'update_case_information') {
+    if (!canEditIDesignCaseInformation(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const now = new Date()
     const db = getDb()
     await db.update(idesignCases).set({ ...parsed.data.data, updatedAt: now }).where(eq(idesignCases.id, caseId))

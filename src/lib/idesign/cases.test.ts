@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_REQUIRED_FILE_SLOTS, updateIDesignCaseInformationSchema } from './cases'
+import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_REQUIRED_FILE_SLOTS, IDESIGN_SUBMITTED_PROGRESS, updateIDesignCaseInformationSchema } from './cases'
 
 const requiredFiles = Object.fromEntries(IDESIGN_REQUIRED_FILE_SLOTS.map((slot) => {
   const extension = slot.endsWith('model') ? 'stl' : 'jpg'
@@ -45,6 +45,10 @@ const validCase = {
 test('accepts a complete clear aligner case with FDI tooth selections', () => {
   const parsed = createIDesignCaseSchema.safeParse(validCase)
   assert.equal(parsed.success, true)
+})
+
+test('newly submitted cases enter the lab design workflow', () => {
+  assert.equal(IDESIGN_SUBMITTED_PROGRESS, 'Lab Designing')
 })
 
 test('rejects missing required scans or facial photos and invalid teeth', () => {
