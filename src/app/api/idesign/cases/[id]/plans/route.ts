@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders, idesignTreatmentPlans } from '@/lib/db/schema'
-import { canApproveIDesignPlans, canManageIDesignPlans, canViewIDesign } from '@/lib/idesign/access'
+import { canApproveIDesignPlans, canPublishIDesignPlans, canViewIDesign } from '@/lib/idesign/access'
 import { notifyIDesignCase } from '@/lib/idesign/notifications'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
@@ -23,7 +23,7 @@ const actionSchema = z.discriminatedUnion('action', [
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const { session, error } = await requireSession()
   if (error) return error
-  if (!canManageIDesignPlans(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!canPublishIDesignPlans(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const caseId = Number(params.id)
   const caseRow = await getAccessibleIDesignCase(caseId, Number(session!.user.id), session!.user.role)
   if (!caseRow) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
@@ -76,7 +76,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (!parsed.success) return NextResponse.json({ error: 'Invalid plan action' }, { status: 400 })
 
   if (parsed.data.action === 'update_editable') {
-    if (!canManageIDesignPlans(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!canPublishIDesignPlans(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const db = getDb()
     const [latestPlan] = await db.select({ id: idesignTreatmentPlans.id }).from(idesignTreatmentPlans).where(eq(idesignTreatmentPlans.caseId, caseId)).orderBy(desc(idesignTreatmentPlans.versionNumber)).limit(1)
     await db.update(idesignCases).set({ currentEditableUrl: parsed.data.editableUrl, updatedAt: new Date() }).where(eq(idesignCases.id, caseId))

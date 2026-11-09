@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps } from '@/lib/db/schema'
-import { canApproveIDesignPlans, canAssignIDesignOrders, canManageIDesignSchedule, canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
+import { canApproveIDesignPlans, canAssignIDesignOrders, canCreateIDesignCases, canManageIDesignSchedule, canViewIDesign, getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_SUBMITTED_PROGRESS } from '@/lib/idesign/cases'
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -104,6 +104,7 @@ export async function GET(request: Request) {
     permissions: {
       canApprovePlans: canApproveIDesignPlans(session!.user.role),
       canAssignOrders,
+      canCreateCases: canCreateIDesignCases(session!.user.role),
       canEditUpdateTime: session!.user.role === 'superadmin' || session!.user.role === 'admin',
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
     },
@@ -116,7 +117,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { session, error } = await requireSession()
   if (error) return error
-  if (!canViewIDesign(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!canCreateIDesignCases(session!.user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const parsed = createIDesignCaseSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {

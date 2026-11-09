@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { PgDialect } from 'drizzle-orm/pg-core'
-import { canAssignIDesignOrders, canDeleteIDesignOrders, canDownloadIDesignCaseFiles, canEditIDesignCaseInformation, canManageIDesignSchedule, canViewIDesign, getIDesignAccessCondition, getIDesignCaseAccessCondition } from './access'
+import { canAssignIDesignOrders, canCreateIDesignCases, canDeleteIDesignOrders, canDownloadIDesignCaseFiles, canEditIDesignCaseInformation, canManageIDesignPlans, canManageIDesignSchedule, canPublishIDesignPlans, canViewIDesign, getIDesignAccessCondition, getIDesignCaseAccessCondition } from './access'
 
 const dialect = new PgDialect()
 
@@ -25,6 +25,20 @@ test('Superadmin and Lab Admin receive an unrestricted iDesign scope', async () 
   }
 })
 
+test('Treatment Plan Designers can read every iDesign order and publish plans only', async () => {
+  assert.equal(await getIDesignAccessCondition(8, 'treatment_designer'), undefined)
+  assert.equal(await getIDesignCaseAccessCondition(8, 'treatment_designer'), undefined)
+  assert.equal(canViewIDesign('treatment_designer'), true)
+  assert.equal(canPublishIDesignPlans('treatment_designer'), true)
+  assert.equal(canDownloadIDesignCaseFiles('treatment_designer'), true)
+  assert.equal(canManageIDesignPlans('treatment_designer'), false)
+  assert.equal(canCreateIDesignCases('treatment_designer'), false)
+  assert.equal(canManageIDesignSchedule('treatment_designer'), false)
+  assert.equal(canAssignIDesignOrders('treatment_designer'), false)
+  assert.equal(canDeleteIDesignOrders('treatment_designer'), false)
+  assert.equal(canEditIDesignCaseInformation('treatment_designer'), false)
+})
+
 test('new clinical cases use the same Doctor and Sales ownership rules', async () => {
   for (const [role, column] of [['sales', 'sales_account_id'], ['doctor', 'doctor_account_id']]) {
     const condition = await getIDesignCaseAccessCondition(7, role)
@@ -46,7 +60,7 @@ test('allows admin and clinical roles to manage iDesign wear schedules', () => {
 test('allows only Superadmin and Lab Admin to assign iDesign order access', () => {
   assert.equal(canAssignIDesignOrders('superadmin'), true)
   assert.equal(canAssignIDesignOrders('admin'), true)
-  for (const role of ['sales', 'doctor', 'clinic_staff']) {
+  for (const role of ['sales', 'doctor', 'clinic_staff', 'treatment_designer']) {
     assert.equal(canAssignIDesignOrders(role), false)
   }
 })
@@ -54,7 +68,7 @@ test('allows only Superadmin and Lab Admin to assign iDesign order access', () =
 test('allows only Superadmin and Lab Admin to delete iDesign orders', () => {
   assert.equal(canDeleteIDesignOrders('superadmin'), true)
   assert.equal(canDeleteIDesignOrders('admin'), true)
-  for (const role of ['sales', 'doctor', 'clinic_staff']) {
+  for (const role of ['sales', 'doctor', 'clinic_staff', 'treatment_designer']) {
     assert.equal(canDeleteIDesignOrders(role), false)
   }
 })
@@ -62,14 +76,15 @@ test('allows only Superadmin and Lab Admin to delete iDesign orders', () => {
 test('locks submitted case information for clinical and sales accounts', () => {
   assert.equal(canEditIDesignCaseInformation('superadmin'), true)
   assert.equal(canEditIDesignCaseInformation('admin'), true)
-  for (const role of ['doctor', 'clinic_staff', 'sales']) {
+  for (const role of ['doctor', 'clinic_staff', 'sales', 'treatment_designer']) {
     assert.equal(canEditIDesignCaseInformation(role), false)
   }
 })
 
-test('allows only Lab Admin and Superadmin to download case files as a ZIP', () => {
+test('allows Lab Admin, Superadmin and Treatment Plan Designers to download case files as a ZIP', () => {
   assert.equal(canDownloadIDesignCaseFiles('superadmin'), true)
   assert.equal(canDownloadIDesignCaseFiles('admin'), true)
+  assert.equal(canDownloadIDesignCaseFiles('treatment_designer'), true)
   for (const role of ['doctor', 'clinic_staff', 'sales']) {
     assert.equal(canDownloadIDesignCaseFiles(role), false)
   }

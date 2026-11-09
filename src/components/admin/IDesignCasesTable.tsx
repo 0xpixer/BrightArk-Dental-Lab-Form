@@ -48,6 +48,7 @@ export function IDesignCasesTable() {
   const [totalPages, setTotalPages] = useState(1)
   const [canApprovePlans, setCanApprovePlans] = useState(false)
   const [canAssignOrders, setCanAssignOrders] = useState(false)
+  const [canCreateCases, setCanCreateCases] = useState(false)
   const [assignableAccounts, setAssignableAccounts] = useState<AssignableAccount[]>([])
   const [canEditUpdateTime, setCanEditUpdateTime] = useState(false)
   const [canManageSchedule, setCanManageSchedule] = useState(false)
@@ -73,6 +74,7 @@ export function IDesignCasesTable() {
       setTotalPages(payload.pagination.totalPages)
       setCanApprovePlans(Boolean(payload.permissions?.canApprovePlans))
       setCanAssignOrders(Boolean(payload.permissions?.canAssignOrders))
+      setCanCreateCases(Boolean(payload.permissions?.canCreateCases))
       setAssignableAccounts(payload.options?.assignableAccounts ?? [])
       setCanEditUpdateTime(Boolean(payload.permissions?.canEditUpdateTime))
       setCanManageSchedule(Boolean(payload.permissions?.canManageSchedule))
@@ -120,7 +122,7 @@ export function IDesignCasesTable() {
   }
 
   return <section className="space-y-4">
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-xl font-semibold text-text">iDesign | Clear Aligners</h1><p className="mt-1 text-sm text-text-muted">{loading ? 'Loading orders...' : `${total} clear aligner order${total === 1 ? '' : 's'}`}</p></div><div className="flex items-center gap-2"><IDesignNotifications /><Link href={newHref} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />New Order</Link></div></header>
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-xl font-semibold text-text">iDesign | Clear Aligners</h1><p className="mt-1 text-sm text-text-muted">{loading ? 'Loading orders...' : `${total} clear aligner order${total === 1 ? '' : 's'}`}</p></div><div className="flex items-center gap-2"><IDesignNotifications />{canCreateCases && <Link href={newHref} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />New Order</Link>}</div></header>
     <div className="rounded-card border border-border bg-surface p-3"><label className="relative block max-w-md"><span className="sr-only">Search clear aligner orders</span><span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Search patient or order number" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" /></label></div>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <CasesTable cases={cases} loading={loading} detailBase={detailBase} canApprovePlans={canApprovePlans} canAssignOrders={canAssignOrders} canEditUpdateTime={canEditUpdateTime} canManageSchedule={canManageSchedule} expandedScheduleId={expandedScheduleId} setExpandedScheduleId={setExpandedScheduleId} setApprovalCase={setApprovalCase} setAssignmentCase={setAssignmentCase} reload={load} setError={setError} page={page} totalPages={totalPages} setPage={setPage} />

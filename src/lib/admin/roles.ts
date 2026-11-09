@@ -1,12 +1,14 @@
 export const ADMIN_ROLES = ['admin', 'superadmin'] as const
 export const SALES_ROLES = ['sales'] as const
+export const DESIGNER_ROLES = ['treatment_designer'] as const
 export const PORTAL_ROLES = ['doctor', 'clinic_staff'] as const
-export const DASHBOARD_ROLES = [...ADMIN_ROLES, ...SALES_ROLES] as const
-export const ACCOUNT_ROLES = [...ADMIN_ROLES, ...SALES_ROLES, ...PORTAL_ROLES] as const
+export const DASHBOARD_ROLES = [...ADMIN_ROLES, ...SALES_ROLES, ...DESIGNER_ROLES] as const
+export const ACCOUNT_ROLES = [...ADMIN_ROLES, ...SALES_ROLES, ...DESIGNER_ROLES, ...PORTAL_ROLES] as const
 
 export type AdminRole = (typeof ADMIN_ROLES)[number]
 export type PortalRole = (typeof PORTAL_ROLES)[number]
 export type SalesRole = (typeof SALES_ROLES)[number]
+export type DesignerRole = (typeof DESIGNER_ROLES)[number]
 export type DashboardRole = (typeof DASHBOARD_ROLES)[number]
 export type AccountRole = (typeof ACCOUNT_ROLES)[number]
 
@@ -20,6 +22,10 @@ export function isPortalRole(value: unknown): value is PortalRole {
 
 export function isSalesRole(value: unknown): value is SalesRole {
   return typeof value === 'string' && SALES_ROLES.includes(value as SalesRole)
+}
+
+export function isDesignerRole(value: unknown): value is DesignerRole {
+  return typeof value === 'string' && DESIGNER_ROLES.includes(value as DesignerRole)
 }
 
 export function isDashboardRole(value: unknown): value is DashboardRole {
@@ -36,5 +42,6 @@ export function formatAdminRole(role: string): string {
   if (role === 'clinic_staff') return 'Clinic Staff'
   if (role === 'doctor') return 'Doctor'
   if (role === 'sales') return 'Sales'
+  if (role === 'treatment_designer') return 'Treatment Plan Designer'
   return role
 }

@@ -1,9 +1,12 @@
 import { SubmissionsTable } from '@/components/admin/SubmissionsTable'
 import { auth } from '@/auth'
 import { normalizeOrderStatusFilters } from '@/lib/orderStatus'
+import { isDesignerRole } from '@/lib/admin/roles'
+import { redirect } from 'next/navigation'
 
 export default async function SubmissionsPage({ searchParams }: { searchParams?: { status?: string | string[] } }) {
   const session = await auth()
   const role = session?.user.role
+  if (isDesignerRole(role)) redirect('/admin/idesign/orders')
   return <SubmissionsTable canUpdateStatus={role === 'admin' || role === 'superadmin'} canEditNotes={role === 'admin' || role === 'superadmin'} canDelete={role === 'superadmin'} initialStatuses={normalizeOrderStatusFilters(searchParams?.status)} />
 }

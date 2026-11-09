@@ -22,6 +22,7 @@ test('routes portal and dashboard roles to their own overview', () => {
   assert.equal(getIDesignOverviewPath('doctor'), '/portal/overview')
   assert.equal(getIDesignOverviewPath('clinic_staff'), '/portal/overview')
   assert.equal(getIDesignOverviewPath('sales'), '/admin/overview?view=aligners')
+  assert.equal(getIDesignOverviewPath('treatment_designer'), '/admin/overview?view=aligners')
   assert.equal(getIDesignOverviewPath('superadmin'), '/admin/overview?view=aligners')
   assert.equal(getIDesignOverviewPath(undefined), '/admin/overview?view=aligners')
 })

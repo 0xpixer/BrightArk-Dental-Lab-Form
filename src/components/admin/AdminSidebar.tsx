@@ -17,10 +17,10 @@ interface NavItem { href: string; label: string; icon: IconNode; hoverIcon: Icon
 interface NavModule { id: string; label: string; icon: IconNode; hoverIcon: IconNode; roles: string[]; items: NavItem[] }
 
 const MODULES: NavModule[] = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'admin', 'sales'], items: [
+  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'admin', 'sales', 'treatment_designer'], items: [
     { href: '/admin/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
-    { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
-    { href: 'https://bright-ark.myshopify.com/pages/idesign', label: 'Old iDesign Portal', icon: Globe2, hoverIcon: ExternalLink, external: true },
+    { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus, roles: ['superadmin', 'admin', 'sales'] },
+    { href: 'https://bright-ark.myshopify.com/pages/idesign', label: 'Old iDesign Portal', icon: Globe2, hoverIcon: ExternalLink, external: true, roles: ['superadmin', 'admin', 'sales'] },
   ] },
   { id: 'dental', label: 'Dental Lab Orders', icon: ToothIcon, hoverIcon: ToothPolishedIcon, roles: ['admin', 'superadmin', 'sales'], items: [
     { href: '/admin/submissions', label: 'Submissions', icon: List, hoverIcon: ListChecks },

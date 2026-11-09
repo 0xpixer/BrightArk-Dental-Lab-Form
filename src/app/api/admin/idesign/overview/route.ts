@@ -5,12 +5,12 @@ import { getDb } from '@/lib/db/client'
 import { idesignOrders } from '@/lib/db/schema'
 import { buildIDesignMetrics } from '@/lib/idesign/metrics'
 import { getIDesignAccessCondition } from '@/lib/idesign/access'
-import { isSalesRole } from '@/lib/admin/roles'
+import { isDesignerRole, isSalesRole } from '@/lib/admin/roles'
 
 export async function GET(request: Request) {
   const { session, error } = await requireSession()
   if (error) return error
-  if (session!.user.role !== 'superadmin' && !isSalesRole(session!.user.role)) {
+  if (session!.user.role !== 'superadmin' && !isSalesRole(session!.user.role) && !isDesignerRole(session!.user.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

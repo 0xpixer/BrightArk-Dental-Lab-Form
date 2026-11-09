@@ -31,7 +31,7 @@ interface DetailPayload {
   plans: PlanRow[]
   activities: Array<{ id: number; detail: string; actorName: string; createdAt: string }>
   course: CourseRow | null
-  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; canDownloadCaseFiles: boolean; canDeleteCase: boolean; showSales: boolean }
+  permissions: { canManagePlans: boolean; canUpdateStatus: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; canDownloadCaseFiles: boolean; canDeleteCase: boolean; showSales: boolean }
 }
 
 type DetailTab = 'case-information' | 'treatment-progress'
@@ -91,7 +91,7 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
 
   return <div className="mx-auto max-w-7xl space-y-5">
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><IDesignPatientAvatar name={data.case.patientName} files={data.case.fileUrls} /><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canManagePlans ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{formatPatientDemographics(data.case.gender, data.case.dateOfBirth)}</p></div></div>
+      <div className="flex items-center gap-3"><Link href={listHref} className="grid h-9 w-9 place-items-center rounded-card border border-border bg-surface text-text-muted hover:bg-bg hover:text-text" title="Back to orders"><MorphIcon icon={ArrowLeft} hoverIcon={MoveLeft} className="h-4 w-4" /></Link><IDesignPatientAvatar name={data.case.patientName} files={data.case.fileUrls} /><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-semibold text-text">{data.case.patientName}</h1>{data.permissions.canUpdateStatus ? <StatusSelect caseId={caseId} value={data.case.latestProgress} reload={load} /> : <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[data.case.latestProgress] ?? 'border-border bg-bg text-text-muted'}`}>{data.case.latestProgress}</span>}</div><p className="mt-1 text-sm text-text-muted">{formatPatientDemographics(data.case.gender, data.case.dateOfBirth)}</p></div></div>
       <div className="flex items-center gap-2">{data.permissions.canDeleteCase && <button type="button" onClick={() => { setDeleteError(null); setDeleteOpen(true) }} className="inline-flex h-9 items-center gap-2 rounded-card border border-red-200 bg-surface px-3 text-xs font-semibold text-red-600 hover:bg-red-50"><MorphIcon icon={Trash2} className="h-4 w-4" />Delete Order</button>}<IDesignNotifications /></div>
     </header>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
