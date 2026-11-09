@@ -305,7 +305,7 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
                           value={locationDrafts[acc.id]?.country ?? acc.country ?? ''}
                           onChange={(value) => setLocationDrafts((current) => ({
                             ...current,
-                            [acc.id]: { country: value, city: current[acc.id]?.city ?? acc.city ?? '' },
+                            [acc.id]: { country: value, city: '' },
                           }))}
                           className="min-w-0 rounded border border-border bg-surface px-2 py-1 text-xs"
                           aria-label={`Country for ${acc.username}`}

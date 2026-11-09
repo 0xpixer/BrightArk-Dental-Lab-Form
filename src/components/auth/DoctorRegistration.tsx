@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { Turnstile } from './Turnstile'
 import { REGISTRATION_LINK_TTL_LABEL } from '@/lib/signup/constants'
+import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 
 export function DoctorRegistration({ compact = false }: {
   compact?: boolean
 }) {
-  const [form, setForm] = useState({ fullName: '', clinicName: '', email: '', phone: '', address: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ fullName: '', clinicName: '', country: '', city: '', email: '', phone: '', address: '', password: '', confirmPassword: '' })
   const [emailSent, setEmailSent] = useState(false)
   const [token, setToken] = useState('')
   const [challenge, setChallenge] = useState(0)
@@ -39,6 +40,28 @@ export function DoctorRegistration({ compact = false }: {
     {!emailSent ? <>
       <Field label="Doctor name" value={form.fullName} onChange={(value) => update('fullName', value)} required maxLength={150} autoComplete="name" />
       <Field label="Clinic" value={form.clinicName} onChange={(value) => update('clinicName', value)} required maxLength={200} autoComplete="organization" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm font-medium text-text">
+          <span className="mb-1 block">Country *</span>
+          <CountrySelect
+            value={form.country}
+            onChange={(value) => setForm((current) => ({ ...current, country: value, city: '' }))}
+            required
+            className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 text-sm outline-none focus:border-text"
+          />
+        </label>
+        <label className="block text-sm font-medium text-text">
+          <span className="mb-1 block">City *</span>
+          <CityInput
+            value={form.city}
+            country={form.country}
+            onChange={(value) => update('city', value)}
+            listId="doctor-registration-city-options"
+            required
+            className="w-full rounded-card border border-border bg-grey-input px-3 py-2.5 text-sm outline-none focus:border-text"
+          />
+        </label>
+      </div>
       <Field label="Email" type="email" value={form.email} onChange={(value) => update('email', value)} required maxLength={254} autoComplete="email" />
       {!compact && <>
         <Field label="Phone" value={form.phone} onChange={(value) => update('phone', value)} maxLength={50} autoComplete="tel" />

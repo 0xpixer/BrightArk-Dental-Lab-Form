@@ -33,12 +33,12 @@ test('Turnstile supports a distinct password reset action', async () => {
 })
 
 test('registration validates bounded input, strips roles, and requires a captcha token', () => {
-  const body = { email: ' Doctor@Example.test ', password: '12345678', fullName: 'Doctor', clinicName: 'Clinic', turnstileToken: 'test', role: 'superadmin', isActive: true }
+  const body = { email: ' Doctor@Example.test ', password: '12345678', fullName: 'Doctor', clinicName: 'Clinic', country: 'Indonesia', city: 'Jakarta', turnstileToken: 'test', role: 'superadmin', isActive: true }
   const parsed = registrationSchema.parse(body)
   assert.equal(parsed.email, 'doctor@example.test')
   assert.equal('role' in parsed, false)
   assert.equal('isActive' in parsed, false)
-  for (const override of [{ turnstileToken: '' }, { password: 'short' }, { password: 'x'.repeat(73) }, { fullName: 'x'.repeat(151) }, { email: 'not-email' }]) {
+  for (const override of [{ turnstileToken: '' }, { password: 'short' }, { password: 'x'.repeat(73) }, { fullName: 'x'.repeat(151) }, { email: 'not-email' }, { country: '' }, { country: 'Not a country' }, { city: '' }]) {
     assert.equal(registrationSchema.safeParse({ ...body, ...override }).success, false)
   }
 })

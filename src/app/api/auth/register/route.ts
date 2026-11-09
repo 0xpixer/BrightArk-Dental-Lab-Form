@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const config = signupConfig()
     await limitSignup(config.secret, 'register-ip', requestIp(request), 10)
     const parsed = registrationSchema.safeParse(await readSignupJson(request))
-    if (!parsed.success) throw new SignupError('Check your name, clinic, email, password (8-72 characters), and security check.')
+    if (!parsed.success) throw new SignupError('Check your name, clinic, country, city, email, password (8-72 characters), and security check.')
     const { turnstileToken, ...values } = parsed.data
     await checkTurnstile(turnstileToken, config)
     const emailIdentity = emailLimitIdentity(values.email)

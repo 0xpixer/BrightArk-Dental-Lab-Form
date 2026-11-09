@@ -5,6 +5,7 @@ import { COUNTRY_OPTIONS, OTHER_COUNTRIES, PRIORITY_COUNTRIES, majorCitiesForCou
 type SharedProps = {
   value: string
   disabled?: boolean
+  required?: boolean
   className: string
   id?: string
   'aria-label'?: string
@@ -20,7 +21,7 @@ type CityInputProps = SharedProps & {
   listId: string
 }
 
-export function CountrySelect({ value, onChange, disabled, className, id, 'aria-label': ariaLabel }: CountrySelectProps) {
+export function CountrySelect({ value, onChange, disabled, required, className, id, 'aria-label': ariaLabel }: CountrySelectProps) {
   const hasLegacyValue = Boolean(value) && !COUNTRY_OPTIONS.includes(value)
 
   return (
@@ -29,6 +30,7 @@ export function CountrySelect({ value, onChange, disabled, className, id, 'aria-
       value={value}
       onChange={(event) => onChange(event.target.value)}
       disabled={disabled}
+      required={required}
       autoComplete="country-name"
       aria-label={ariaLabel}
       className={className}
@@ -45,7 +47,7 @@ export function CountrySelect({ value, onChange, disabled, className, id, 'aria-
   )
 }
 
-export function CityInput({ value, country, onChange, listId, disabled, className, id, 'aria-label': ariaLabel }: CityInputProps) {
+export function CityInput({ value, country, onChange, listId, disabled, required, className, id, 'aria-label': ariaLabel }: CityInputProps) {
   const cities = majorCitiesForCountry(country)
 
   return (
@@ -56,6 +58,7 @@ export function CityInput({ value, country, onChange, listId, disabled, classNam
         list={cities.length > 0 ? listId : undefined}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
+        required={required}
         maxLength={120}
         autoComplete="address-level2"
         placeholder={country ? 'Select or enter city' : 'Select country first'}

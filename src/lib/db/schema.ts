@@ -41,6 +41,8 @@ export const pendingRegistrations = pgTable('pending_registrations', {
   clinicName: text('clinic_name').notNull(),
   address: text('address').notNull(),
   phone: text('phone'),
+  country: text('country'),
+  city: text('city'),
   codeHash: text('code_hash').notNull(),
   attempts: integer('attempts').default(0).notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),

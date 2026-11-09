@@ -2,12 +2,15 @@ import { createHmac, randomBytes, randomInt } from 'node:crypto'
 import { isIP } from 'node:net'
 import { z } from 'zod'
 import { REGISTRATION_LINK_TTL_LABEL } from './constants'
+import { COUNTRY_OPTIONS } from '@/lib/accountLocations'
 
 export const registrationSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(8).max(72).refine((value) => Buffer.byteLength(value) <= 72, 'Password must be at most 72 bytes'),
   fullName: z.string().trim().min(1).max(150),
   clinicName: z.string().trim().min(1).max(200),
+  country: z.string().trim().min(1).max(100).refine((value) => COUNTRY_OPTIONS.includes(value), 'Select a valid country'),
+  city: z.string().trim().min(1).max(120),
   address: z.string().trim().max(1000).default(''),
   phone: z.string().trim().max(50).default(''),
   turnstileToken: z.string().min(1).max(2048),

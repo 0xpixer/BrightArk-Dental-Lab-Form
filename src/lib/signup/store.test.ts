@@ -20,8 +20,8 @@ test('signup migrations and security queries on isolated in-memory Postgres', as
     return db.query(sql, params)
   }
   const addPending = async (id: string, email = `${id}@example.test`, expires = "now() + interval '24 hours'") => {
-    await db.query(`INSERT INTO pending_registrations (id, email, password_hash, full_name, clinic_name, address, code_hash, expires_at)
-      VALUES ($1, $2, 'hashed-password', 'Test Doctor', 'Test Clinic', 'Test address', 'correct-hash', ${expires})`, [id, email])
+    await db.query(`INSERT INTO pending_registrations (id, email, password_hash, full_name, clinic_name, address, country, city, code_hash, expires_at)
+      VALUES ($1, $2, 'hashed-password', 'Test Doctor', 'Test Clinic', 'Test address', 'Indonesia', 'Jakarta', 'correct-hash', ${expires})`, [id, email])
   }
 
   await t.test('rate limits are atomic across callers, stop at the limit, and reset after expiry', async () => {
@@ -40,8 +40,10 @@ test('signup migrations and security queries on isolated in-memory Postgres', as
   await t.test('correct token creates only a Doctor and its clinic, then cannot be replayed', async () => {
     assert.equal((await run(verificationAttemptQuery('pending'))).rows.length, 1)
     assert.equal((await run(completeRegistrationQuery('pending', 'correct-hash'))).rows.length, 1)
-    const user = (await db.query<{ role: string; email_verified_at: Date }>('SELECT * FROM admin_users')).rows[0]
+    const user = (await db.query<{ role: string; email_verified_at: Date; country: string; city: string }>('SELECT * FROM admin_users')).rows[0]
     assert.equal(user.role, 'doctor')
+    assert.equal(user.country, 'Indonesia')
+    assert.equal(user.city, 'Jakarta')
     assert.ok(user.email_verified_at)
     assert.equal((await db.query('SELECT * FROM doctor_clinics')).rows.length, 1)
     assert.equal((await run(completeRegistrationQuery('pending', 'correct-hash'))).rows.length, 0)

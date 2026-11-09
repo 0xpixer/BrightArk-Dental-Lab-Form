@@ -122,7 +122,7 @@ export function DoctorProfileForm() {
             <span className="mb-1 block">Country</span>
             <CountrySelect
               value={profile.country ?? ''}
-              onChange={(value) => change('country', value)}
+              onChange={(value) => setProfile((current) => current ? { ...current, country: value, city: '' } : current)}
               disabled={!editable}
               className="w-full rounded-card border border-border bg-grey-input px-3 py-2 text-sm disabled:opacity-60"
             />

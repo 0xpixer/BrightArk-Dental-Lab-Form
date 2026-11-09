@@ -127,7 +127,7 @@ export function NewAccountForm() {
                 <CountrySelect
                   id="country"
                   value={country}
-                  onChange={setCountry}
+                  onChange={(value) => { setCountry(value); setCity('') }}
                   className="w-full rounded-card border border-border px-3 py-2 text-sm"
                 />
               </div>
