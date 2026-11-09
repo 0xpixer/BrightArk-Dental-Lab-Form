@@ -13,7 +13,7 @@ import {
   idesignTreatmentPlans,
   idesignTreatmentSteps,
 } from '@/lib/db/schema'
-import { canAssignIDesignOrders, canDeleteIDesignOrders, canEditIDesignCaseInformation, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
+import { canAssignIDesignOrders, canDeleteIDesignOrders, canDownloadIDesignCaseFiles, canEditIDesignCaseInformation, canManageIDesignPlans, canManageIDesignSchedule, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -118,6 +118,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
       canEditCaseInformation: canEditIDesignCaseInformation(session!.user.role),
+      canDownloadCaseFiles: canDownloadIDesignCaseFiles(session!.user.role),
       canDeleteCase: canDeleteIDesignOrders(session!.user.role),
       showSales: session!.user.role !== 'doctor' && session!.user.role !== 'clinic_staff',
     },

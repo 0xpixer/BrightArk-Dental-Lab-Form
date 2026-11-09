@@ -31,7 +31,7 @@ interface DetailPayload {
   plans: PlanRow[]
   activities: Array<{ id: number; detail: string; actorName: string; createdAt: string }>
   course: CourseRow | null
-  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; canDeleteCase: boolean; showSales: boolean }
+  permissions: { canManagePlans: boolean; canApprovePlans: boolean; canManageSchedule: boolean; canViewEditablePlan: boolean; canViewCommercial: boolean; canEditCaseInformation: boolean; canDownloadCaseFiles: boolean; canDeleteCase: boolean; showSales: boolean }
 }
 
 type DetailTab = 'case-information' | 'treatment-progress'
@@ -119,8 +119,8 @@ export function IDesignCaseDetail({ caseId }: { caseId: number }) {
 
     <div id="case-information-panel" role="tabpanel" aria-labelledby="case-information-tab" hidden={activeTab !== 'case-information'}>
       {activeTab === 'case-information' && (data.permissions.canEditCaseInformation
-        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} hideHeader />
-        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} hideHeader />)}
+        ? <IDesignCaseInformationEditor caseId={caseId} value={data.case} onSaved={load} downloadUrl={data.permissions.canDownloadCaseFiles ? `/api/idesign/cases/${caseId}/files/download` : undefined} hideHeader />
+        : <IDesignCaseInformationViewer caseId={caseId} value={data.case} downloadUrl={data.permissions.canDownloadCaseFiles ? `/api/idesign/cases/${caseId}/files/download` : undefined} hideHeader />)}
     </div>
 
     {deleteOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setDeleteOpen(false) }}><div role="dialog" aria-modal="true" aria-labelledby="delete-order-title" className="w-full max-w-md rounded-card border border-border bg-surface p-5"><div className="flex items-start justify-between gap-4"><div><h2 id="delete-order-title" className="text-base font-semibold text-text">Delete this order?</h2><p className="mt-2 text-sm leading-6 text-text-muted">This permanently deletes <span className="font-medium text-text">{data.case.patientName}</span> ({data.case.orderNo}) and all related treatment plans, schedule records and activity. This action cannot be undone.</p></div><button type="button" disabled={deleting} onClick={() => setDeleteOpen(false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-card text-text-muted hover:bg-bg hover:text-text disabled:opacity-40" aria-label="Close delete confirmation"><MorphIcon icon={X} className="h-4 w-4" /></button></div>{deleteError && <p role="alert" className="mt-3 rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{deleteError}</p>}<div className="mt-5 flex justify-end gap-2"><button type="button" disabled={deleting} onClick={() => setDeleteOpen(false)} className="h-9 rounded-card border border-border px-4 text-sm font-semibold text-text hover:bg-bg disabled:opacity-40">Cancel</button><button type="button" disabled={deleting} onClick={() => void deleteCase()} className="inline-flex h-9 items-center gap-2 rounded-card bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"><MorphIcon icon={Trash2} className="h-4 w-4" />{deleting ? 'Deleting...' : 'Delete Order'}</button></div></div></div>}

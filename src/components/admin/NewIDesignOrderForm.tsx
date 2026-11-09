@@ -41,15 +41,15 @@ export function NewIDesignOrderForm() {
   return <IDesignCaseForm mode="create" />
 }
 
-export function IDesignCaseInformationEditor({ caseId, value, onSaved, hideHeader = false }: { caseId: number; value: IDesignCaseInformationData; onSaved: () => Promise<void>; hideHeader?: boolean }) {
-  return <IDesignCaseForm mode="edit" caseId={caseId} initialData={value} onSaved={onSaved} hideHeader={hideHeader} />
+export function IDesignCaseInformationEditor({ caseId, value, onSaved, downloadUrl, hideHeader = false }: { caseId: number; value: IDesignCaseInformationData; onSaved: () => Promise<void>; downloadUrl?: string; hideHeader?: boolean }) {
+  return <IDesignCaseForm mode="edit" caseId={caseId} initialData={value} onSaved={onSaved} downloadUrl={downloadUrl} hideHeader={hideHeader} />
 }
 
-export function IDesignCaseInformationViewer({ caseId, value, hideHeader = false }: { caseId: number; value: IDesignCaseInformationData; hideHeader?: boolean }) {
-  return <IDesignCaseForm mode="view" caseId={caseId} initialData={value} hideHeader={hideHeader} />
+export function IDesignCaseInformationViewer({ caseId, value, downloadUrl, hideHeader = false }: { caseId: number; value: IDesignCaseInformationData; downloadUrl?: string; hideHeader?: boolean }) {
+  return <IDesignCaseForm mode="view" caseId={caseId} initialData={value} downloadUrl={downloadUrl} hideHeader={hideHeader} />
 }
 
-function IDesignCaseForm({ mode, caseId, initialData, onSaved, hideHeader = false }: { mode: 'create' | 'edit' | 'view'; caseId?: number; initialData?: IDesignCaseInformationData; onSaved?: () => Promise<void>; hideHeader?: boolean }) {
+function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hideHeader = false }: { mode: 'create' | 'edit' | 'view'; caseId?: number; initialData?: IDesignCaseInformationData; onSaved?: () => Promise<void>; downloadUrl?: string; hideHeader?: boolean }) {
   const router = useRouter()
   const pathname = usePathname()
   const listHref = pathname.startsWith('/portal') ? '/portal/idesign/orders' : '/admin/idesign/orders'
@@ -157,7 +157,7 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, hideHeader = fals
         </section>
         <section className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[180px_1fr]">
           <SectionHeading number="1.2" title="Case Data" />
-          <IDesignCaseUploads uploadId={uploadId} value={files} onChange={setFiles} errors={stepOneErrors} enforceRequired={mode === 'create'} readOnly={readOnly} />
+          <IDesignCaseUploads uploadId={uploadId} value={files} onChange={setFiles} errors={stepOneErrors} enforceRequired={mode === 'create'} readOnly={readOnly} downloadUrl={downloadUrl} />
         </section>
         <div className="flex justify-end p-4 sm:p-6"><button type="button" onClick={goNext} className="inline-flex h-10 items-center gap-2 rounded-card bg-primary px-5 text-sm font-semibold text-white hover:bg-orange-600">Next <MorphIcon icon={ArrowRight} hoverIcon={MoveRight} className="h-4 w-4" /></button></div>
       </div> : <div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { upload } from '@vercel/blob/client'
-import { CirclePlus, CircleX, Eye, File, FileCheck, Plus, RefreshCcw, RotateCcw, ScanEye, X } from 'lucide'
+import { CirclePlus, CircleX, Download, Eye, File, FileArchive, FileCheck, Plus, RefreshCcw, RotateCcw, ScanEye, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { UploadSlotCard, type SlotFile } from '@/components/fileUpload/UploadSlotCard'
 import type { FileSlotConfig } from '@/components/fileUpload/slotConfig'
@@ -58,7 +58,7 @@ const GROUPS: Array<{ heading: string; note?: string; slots: Array<FileSlotConfi
   },
 ]
 
-export function IDesignCaseUploads({ uploadId, value, onChange, errors = {}, enforceRequired = true, readOnly = false }: { uploadId: string; value: IDesignUploadState; onChange: Dispatch<SetStateAction<IDesignUploadState>>; errors?: Partial<Record<string, string>>; enforceRequired?: boolean; readOnly?: boolean }) {
+export function IDesignCaseUploads({ uploadId, value, onChange, errors = {}, enforceRequired = true, readOnly = false, downloadUrl }: { uploadId: string; value: IDesignUploadState; onChange: Dispatch<SetStateAction<IDesignUploadState>>; errors?: Partial<Record<string, string>>; enforceRequired?: boolean; readOnly?: boolean; downloadUrl?: string }) {
   const [preview, setPreview] = useState<PreviewFile | null>(null)
   const cbctInput = useRef<HTMLInputElement>(null)
   const filesRef = useRef(value)
@@ -105,7 +105,10 @@ export function IDesignCaseUploads({ uploadId, value, onChange, errors = {}, enf
     if (kind) setPreview({ url, filename: item.file.name, kind })
   }
 
+  const hasFiles = Object.values(value).some((items) => (items?.length ?? 0) > 0)
+
   return <div className="space-y-6">
+    {downloadUrl && hasFiles && <div className="flex justify-end"><a href={downloadUrl} className="inline-flex h-9 items-center gap-2 rounded-card border border-border bg-surface px-3 text-xs font-semibold text-text hover:border-neutral-400 hover:bg-bg"><MorphIcon icon={Download} hoverIcon={FileArchive} className="h-4 w-4" />Download All Files</a></div>}
     {GROUPS.map((group) => <section key={group.heading}>
       <div className="mb-3 flex items-baseline gap-2"><h3 className="text-sm font-semibold text-text">{group.heading}{enforceRequired && group.slots.some((slot) => slot.required) && <span className="text-red-500"> *</span>}</h3>{group.note && <span className="text-xs text-text-muted">{group.note}</span>}</div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
