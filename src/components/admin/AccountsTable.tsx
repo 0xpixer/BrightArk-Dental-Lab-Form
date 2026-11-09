@@ -235,7 +235,18 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
       </div>
 
       <div className="overflow-x-auto rounded-card border border-border bg-surface">
-        <table className="w-full min-w-[1280px]">
+        <table className="w-full min-w-[1380px] table-fixed">
+          <colgroup>
+            <col className="w-[140px]" />
+            <col className="w-[160px]" />
+            <col className="w-[360px]" />
+            <col className="w-[110px]" />
+            <col className="w-[170px]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+            <col className="w-[100px]" />
+            <col className="w-[140px]" />
+          </colgroup>
           <thead className="border-b border-border bg-bg">
             <tr>
               {['Username', 'Actor Name', 'Location', 'Role', 'Account Scope', 'Status', 'Created By', 'Last Login', 'Actions'].map((h) => (
@@ -261,8 +272,10 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
             ) : (
               accounts.map((acc) => (
                 <tr key={acc.id} className="border-b border-border last:border-0 hover:bg-bg/50">
-                  <td className="px-4 py-3 text-sm font-medium">{acc.username}</td>
-                  <td className="w-52 px-4 py-3">
+                  <td className="px-3 py-3 text-sm font-medium">
+                    <span className="block truncate" title={acc.username}>{acc.username}</span>
+                  </td>
+                  <td className="px-3 py-3">
                     {canManageAccounts ? (
                     <form onSubmit={(event) => { event.preventDefault(); updateActorName(acc) }} className="flex items-center gap-1">
                       <input
@@ -285,9 +298,9 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
                     </form>
                     ) : <span className="text-sm">{acc.fullName ?? acc.username}</span>}
                   </td>
-                  <td className="w-56 px-4 py-3">
+                  <td className="px-3 py-3">
                     <form onSubmit={(event) => { event.preventDefault(); updateLocation(acc) }} className="flex items-center gap-1">
-                      <div className="grid min-w-0 flex-1 grid-cols-2 gap-1">
+                      <div className="grid min-w-0 flex-1 grid-cols-[minmax(145px,1fr)_minmax(145px,1fr)] gap-2">
                         <CountrySelect
                           value={locationDrafts[acc.id]?.country ?? acc.country ?? ''}
                           onChange={(value) => setLocationDrafts((current) => ({
