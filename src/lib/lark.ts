@@ -1,3 +1,5 @@
+import { createHmac } from 'node:crypto'
+
 type LarkWebhookResponse = {
   code?: unknown
   msg?: unknown
@@ -47,11 +49,22 @@ export async function notifyLarkOfOrder(order: LarkOrder, options: LarkDeliveryO
   }
 }
 
-async function postLarkText(webhookUrl: string, text: string, fetcher: typeof fetch) {
+/** Lark custom-bot signature: base64(HMAC-SHA256(key = `${timestamp}\n${secret}`, message = '')). */
+export function signLarkWebhook(secret: string, timestamp: number) {
+  return createHmac('sha256', `${timestamp}\n${secret}`).update('').digest('base64')
+}
+
+async function postLarkText(webhookUrl: string, text: string, fetcher: typeof fetch, secret?: string) {
+  const signature = secret
+    ? (() => {
+      const timestamp = Math.floor(Date.now() / 1000)
+      return { timestamp: String(timestamp), sign: signLarkWebhook(secret, timestamp) }
+    })()
+    : {}
   const response = await fetcher(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ msg_type: 'text', content: { text } }),
+    body: JSON.stringify({ ...signature, msg_type: 'text', content: { text } }),
     signal: AbortSignal.timeout(10_000),
   })
   if (!response.ok) throw new Error(`Lark webhook returned HTTP ${response.status}`)
@@ -74,6 +87,8 @@ export interface LarkAlignerCase {
 
 interface LarkAlignerDeliveryOptions {
   webhookUrl: string | undefined
+  /** Signing secret, required when the Lark bot has signature verification enabled. */
+  secret?: string
   appUrl: string
   occurredAt?: Date
   fetcher?: typeof fetch
@@ -94,7 +109,7 @@ export async function notifyLarkOfAlignerCase(
   alignerCase: LarkAlignerCase,
   options: LarkAlignerDeliveryOptions,
 ): Promise<boolean> {
-  const { webhookUrl, appUrl, occurredAt = new Date(), fetcher = fetch, reportError = console.error } = options
+  const { webhookUrl, secret, appUrl, occurredAt = new Date(), fetcher = fetch, reportError = console.error } = options
   if (!webhookUrl) return false
   try {
     const timeLabel = event === 'approved' ? 'Approved' : 'Submitted'
@@ -108,7 +123,7 @@ export async function notifyLarkOfAlignerCase(
       `${timeLabel}: ${occurredAt.toLocaleString('en-AU', { timeZone: 'Asia/Jakarta' })} WIB`,
       `View: ${appUrl.replace(/\/$/, '')}/admin/idesign/orders/${alignerCase.id}`,
     ].join('\n')
-    await postLarkText(webhookUrl, text, fetcher)
+    await postLarkText(webhookUrl, text, fetcher, secret?.trim() || undefined)
     return true
   } catch (error) {
     reportError(`Lark aligner ${event} notification failed for order ${alignerCase.orderNo}: ${error instanceof Error ? error.message : 'Unknown error'}`)

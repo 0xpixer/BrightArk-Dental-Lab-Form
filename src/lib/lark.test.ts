@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
+import { createHmac } from 'node:crypto'
 import test from 'node:test'
-import { getLarkWebhookError, notifyLarkOfAlignerCase, notifyLarkOfOrder, type LarkOrder } from './lark'
+import { getLarkWebhookError, notifyLarkOfAlignerCase, signLarkWebhook, notifyLarkOfOrder, type LarkOrder } from './lark'
 
 test('accepts current and legacy Lark webhook success responses', () => {
   assert.equal(getLarkWebhookError({ code: 0, msg: 'success' }), null)
@@ -167,4 +168,19 @@ test('aligner notification skips silently without a webhook and swallows failure
     reportError: (message) => { errors.push(message) },
   }), false)
   assert.match(errors[0], /Lark aligner approved notification failed for order IDS-0001/)
+})
+
+test('signs aligner messages when a secret is configured', async () => {
+  let body: Record<string, unknown> = {}
+  assert.equal(await notifyLarkOfAlignerCase('submitted', alignerCase, {
+    webhookUrl: 'https://lark.example.test/aligner',
+    secret: 'test-secret',
+    appUrl: 'https://x.test',
+    fetcher: async (_url, init) => { body = JSON.parse(String(init?.body)); return Response.json({ code: 0 }) },
+  }), true)
+  const timestamp = Number(body.timestamp)
+  assert.ok(Math.abs(timestamp - Date.now() / 1000) < 5)
+  assert.equal(body.sign, signLarkWebhook('test-secret', timestamp))
+  // Known-answer check against Lark's documented algorithm (HMAC key = "timestamp\nsecret", empty message).
+  assert.equal(signLarkWebhook('test-secret', 1599360473), createHmac('sha256', '1599360473\ntest-secret').update('').digest('base64'))
 })

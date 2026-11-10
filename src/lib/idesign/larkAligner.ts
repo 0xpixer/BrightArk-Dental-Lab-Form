@@ -30,6 +30,7 @@ async function resolveDoctor(caseRow: AlignerCaseRow) {
 /**
  * Queues a Lark message for a clear aligner order in the background.
  * Never throws and never delays the response; skips when LARK_ALIGNER_WEBHOOK_URL is unset.
+ * Set LARK_ALIGNER_WEBHOOK_SECRET when the bot has signature verification enabled.
  */
 export function queueAlignerLarkNotification(
   event: LarkAlignerEvent,
@@ -51,7 +52,7 @@ export function queueAlignerLarkNotification(
         doctorName,
         clinic,
         planVersion: extra.planVersion,
-      }, { webhookUrl, appUrl, occurredAt })
+      }, { webhookUrl, secret: process.env.LARK_ALIGNER_WEBHOOK_SECRET, appUrl, occurredAt })
     } catch (error) {
       console.error(`Lark aligner ${event} notification failed for order ${caseRow.orderNo}:`, error)
     }
