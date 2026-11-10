@@ -11,7 +11,7 @@ export function DentalAnatomyFrame() {
   const anatomyUrl = process.env.NEXT_PUBLIC_DENTAL_ANATOMY_URL || DEFAULT_ANATOMY_URL
 
   return (
-    <section className="relative h-[calc(100dvh-1.5rem)] min-h-[620px] overflow-hidden rounded-card border border-border bg-surface sm:h-[calc(100dvh-2rem)] md:h-[calc(100dvh-3rem)]">
+    <section className="relative h-[calc(100dvh-1.5rem)] min-h-[620px] overflow-hidden bg-surface sm:h-[calc(100dvh-2rem)] md:h-[calc(100dvh-3rem)]">
       {loading && (
         <div className="absolute inset-0 z-10 grid place-items-center bg-bg" role="status" aria-live="polite">
           <div className="text-center">
