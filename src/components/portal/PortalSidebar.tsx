@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { ChevronDown, ChevronUp, CirclePlus, DoorOpen, ExternalLink, Globe2, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, UserCircle, UserRoundCog, type IconNode } from 'lucide'
+import { Boxes, Box, ChevronDown, ChevronUp, CirclePlus, DoorOpen, ExternalLink, Globe2, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, UserCircle, UserRoundCog, type IconNode } from 'lucide'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
@@ -38,6 +38,7 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
       <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}<NavLink href="/portal/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/portal/profile')} showLabels={showLabels} /></div>
     </nav>
     <div className="border-t border-border p-2">
+      <NavLink href="/portal/dental-anatomy" label="3D Dental Anatomy" icon={Box} hoverIcon={Boxes} active={pathname.startsWith('/portal/dental-anatomy')} showLabels={showLabels} />
       <a href="https://www.thebrightark.com" target="_blank" rel="noreferrer" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`} title="BrightArk Website"><MorphIcon icon={Globe2} hoverIcon={ExternalLink} className="h-4 w-4" />{showLabels && <span className="hidden md:inline">BrightArk Website</span>}</a>
       {showLabels && <div className="mb-2 hidden px-2 pt-1 md:block"><p className="text-sm font-medium text-text">{username}</p><p className="text-xs capitalize text-text-muted">{role.replace('_', ' ')}</p></div>}
       <button type="button" onClick={() => signOut({ callbackUrl: '/admin/login' })} title="Sign out" className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-xs font-medium text-text-muted hover:bg-bg hover:text-text ${showLabels ? 'md:justify-start md:px-3' : ''}`}><MorphIcon icon={LogOut} hoverIcon={DoorOpen} className="h-4 w-4" />{showLabels && <span className="hidden md:inline">Sign Out</span>}</button>
