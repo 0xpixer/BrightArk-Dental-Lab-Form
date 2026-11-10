@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { upload } from '@vercel/blob/client'
 import { ArrowDown, ArrowUp, Check, CirclePlus, ImagePlus, Link2, LoaderCircle, Save, Trash2, UploadCloud } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { BANNER_ACCEPT, BannerMedia, bannerContentType, validateBannerFile } from '@/components/sidebar/BannerMedia'
 
 interface Banner {
   id: number
@@ -13,8 +14,6 @@ interface Banner {
   position: number
   isActive: boolean
 }
-
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 export function SidebarBannersManager() {
   const [banners, setBanners] = useState<Banner[]>([])
@@ -42,9 +41,9 @@ export function SidebarBannersManager() {
   useEffect(() => { void loadBanners() }, [loadBanners])
 
   async function addBanner() {
-    if (!newFile) return setMessage({ tone: 'error', text: 'Choose an image before adding the banner.' })
-    if (!ACCEPTED_TYPES.includes(newFile.type)) return setMessage({ tone: 'error', text: 'Use a JPG, PNG, WebP or GIF image.' })
-    if (newFile.size > 10 * 1024 * 1024) return setMessage({ tone: 'error', text: 'Banner images must be 10 MB or smaller.' })
+    if (!newFile) return setMessage({ tone: 'error', text: 'Choose an image or video before adding the banner.' })
+    const fileError = validateBannerFile(newFile)
+    if (fileError) return setMessage({ tone: 'error', text: fileError })
 
     setPendingId('new')
     setMessage(null)
@@ -53,6 +52,7 @@ export function SidebarBannersManager() {
       const blob = await upload(`sidebar-banners/${crypto.randomUUID()}-${safeName}`, newFile, {
         access: 'public',
         handleUploadUrl: '/api/upload',
+        contentType: bannerContentType(newFile),
       })
       const response = await fetch('/api/admin/sidebar-banners', {
         method: 'POST',
@@ -94,8 +94,8 @@ export function SidebarBannersManager() {
   }
 
   async function replaceImage(banner: Banner, file: File) {
-    if (!ACCEPTED_TYPES.includes(file.type)) return setMessage({ tone: 'error', text: 'Use a JPG, PNG, WebP or GIF image.' })
-    if (file.size > 10 * 1024 * 1024) return setMessage({ tone: 'error', text: 'Banner images must be 10 MB or smaller.' })
+    const fileError = validateBannerFile(file)
+    if (fileError) return setMessage({ tone: 'error', text: fileError })
     setPendingId(banner.id)
     setMessage(null)
     try {
@@ -103,6 +103,7 @@ export function SidebarBannersManager() {
       const blob = await upload(`sidebar-banners/${crypto.randomUUID()}-${safeName}`, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
+        contentType: bannerContentType(file),
       })
       await saveBanner({ ...banner, imageUrl: blob.url })
     } catch (error) {
@@ -172,18 +173,18 @@ export function SidebarBannersManager() {
     <section className="overflow-hidden rounded-card border border-border bg-surface">
       <div className="border-b border-border px-5 py-4">
         <h2 className="font-semibold text-text">Active carousel</h2>
-        <p className="mt-1 text-xs text-text-muted">Use a 3:1 image for the cleanest result. GIF animation is supported.</p>
+        <p className="mt-1 text-xs text-text-muted">Use 3:1 media for the cleanest result. JPG, PNG, WebP, GIF and SVG images (10 MB) and MP4 videos (50 MB, autoplay muted) are supported.</p>
       </div>
       {loading ? <div className="flex items-center gap-2 px-5 py-10 text-sm text-text-muted"><MorphIcon icon={LoaderCircle} className="h-4 w-4 animate-spin" /> Loading banners...</div>
         : banners.length === 0 ? <div className="px-5 py-10 text-center text-sm text-text-muted">No sidebar banners yet.</div>
           : <div className="divide-y divide-border">
             {banners.map((banner, index) => <div key={banner.id} className="grid gap-4 p-5 md:grid-cols-[220px_minmax(0,1fr)_auto] md:items-center">
-              <div className="aspect-[3/1] overflow-hidden rounded-card border border-border bg-bg"><img src={banner.imageUrl} alt={banner.altText} className="h-full w-full object-cover" /></div>
+              <div className="aspect-[3/1] overflow-hidden rounded-card border border-border bg-bg"><BannerMedia url={banner.imageUrl} alt={banner.altText} /></div>
               <div className="space-y-3">
                 <label className="block"><span className="mb-1 block text-xs font-semibold text-text-muted">Destination link (optional)</span><div className="relative"><MorphIcon icon={Link2} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="url" value={banner.linkUrl ?? ''} onChange={(event) => updateBanner(banner.id, { linkUrl: event.target.value })} placeholder="https://..." className="h-10 w-full rounded-card border border-border bg-bg pl-9 pr-3 text-sm text-text outline-none focus:border-text" /></div></label>
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-text"><input type="checkbox" checked={banner.isActive} onChange={(event) => updateBanner(banner.id, { isActive: event.target.checked })} className="h-4 w-4 accent-primary" /> Show in sidebar</label>
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-text-muted hover:text-text"><MorphIcon icon={UploadCloud} className="h-4 w-4" /> Replace image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void replaceImage(banner, file); event.currentTarget.value = '' }} /></label>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-text-muted hover:text-text"><MorphIcon icon={UploadCloud} className="h-4 w-4" /> Replace media<input type="file" accept={BANNER_ACCEPT} className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void replaceImage(banner, file); event.currentTarget.value = '' }} /></label>
                 </div>
               </div>
               <div className="flex items-center gap-1 md:flex-col">
@@ -199,7 +200,7 @@ export function SidebarBannersManager() {
     {banners.length < 3 && <section className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-center gap-2"><MorphIcon icon={ImagePlus} className="h-5 w-5 text-primary" /><h2 className="font-semibold text-text">Add banner</h2></div>
       <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-        <label className="block"><span className="mb-1 block text-xs font-semibold text-text-muted">Image or animated GIF</span><input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setNewFile(event.target.files?.[0] ?? null)} className="block h-10 w-full rounded-card border border-border bg-bg px-3 py-2 text-xs text-text file:mr-3 file:border-0 file:bg-transparent file:text-xs file:font-semibold" /></label>
+        <label className="block"><span className="mb-1 block text-xs font-semibold text-text-muted">Image (JPG, PNG, WebP, GIF, SVG) or MP4 video</span><input ref={fileInputRef} type="file" accept={BANNER_ACCEPT} onChange={(event) => setNewFile(event.target.files?.[0] ?? null)} className="block h-10 w-full rounded-card border border-border bg-bg px-3 py-2 text-xs text-text file:mr-3 file:border-0 file:bg-transparent file:text-xs file:font-semibold" /></label>
         <label className="block"><span className="mb-1 block text-xs font-semibold text-text-muted">Destination link (optional)</span><input type="url" value={newLink} onChange={(event) => setNewLink(event.target.value)} placeholder="https://..." className="h-10 w-full rounded-card border border-border bg-bg px-3 text-sm text-text outline-none focus:border-text" /></label>
         <button type="button" onClick={() => void addBanner()} disabled={!newFile || pendingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={CirclePlus} hoverIcon={ImagePlus} className="h-4 w-4" />{pendingId === 'new' ? 'Uploading...' : 'Add banner'}</button>
       </div>

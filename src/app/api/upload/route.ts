@@ -30,8 +30,8 @@ export async function POST(request: Request): Promise<NextResponse> {
             throw new Error('Only administrators can upload sidebar banners.')
           }
           return {
-            allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
-            maximumSizeInBytes: 10 * 1024 * 1024,
+            allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4'],
+            maximumSizeInBytes: pathname.toLowerCase().endsWith('.mp4') ? 50 * 1024 * 1024 : 10 * 1024 * 1024,
             addRandomSuffix: false,
           }
         }

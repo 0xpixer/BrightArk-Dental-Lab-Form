@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { BannerMedia } from './BannerMedia'
 
 interface Banner {
   id: number
@@ -31,7 +32,7 @@ export function SidebarBannerCarousel() {
 
   if (!banners.length) return null
   const banner = banners[Math.min(activeIndex, banners.length - 1)]
-  const image = <img src={banner.imageUrl} alt={banner.altText} className="h-full w-full object-cover" />
+  const image = <BannerMedia key={banner.id} url={banner.imageUrl} alt={banner.altText} />
 
   return <div className="space-y-1.5" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
     <div className="aspect-[3/1] overflow-hidden rounded-card border border-border bg-bg">
