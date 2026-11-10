@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { usePathname, useRouter } from 'next/navigation'
-import { ArrowLeft, CirclePause, ExternalLink, MoveLeft, Play, Plus, Save, Trash2, X } from 'lucide'
+import { ArrowLeft, CirclePause, MoveLeft, Play, Plus, Save, Trash2, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { IDesignNotifications } from './IDesignNotifications'
 import { IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
 import type { IDesignCaseInformationData } from '@/components/admin/NewIDesignOrderForm'
 import { IDesignPatientAvatar } from './IDesignPatientAvatar'
-import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
+import { approveIDesignPlan, TreatmentPlanHeader, TreatmentPlanList, type IDesignPlanRow } from './IDesignTreatmentPlans'
 
 const IDesignCaseInformationEditor = dynamic(
   () => import('@/components/admin/NewIDesignOrderForm').then((module) => module.IDesignCaseInformationEditor),
@@ -22,7 +22,7 @@ const IDesignCaseInformationViewer = dynamic(
   { loading: () => <div className="rounded-card border border-border bg-surface p-8 text-center text-sm text-text-muted">Loading case information...</div> },
 )
 
-interface PlanRow { id: number; versionNumber: number; summary: string | null; status: string; editableUrl: string | null; publishedAt: string; approvedAt: string | null; createdByName: string | null; approvedByName: string | null }
+type PlanRow = IDesignPlanRow
 interface StepRow { id: number; stepNumber: number; durationDays: number; suggestedStartDate: string; suggestedEndDate: string; actualStartDate: string | null; status: string }
 interface CourseRow { id: number; startDate: string; totalSteps: number; defaultDurationDays: number; currentStep: number; originalEstimatedFinish: string; currentEstimatedFinish: string; nextSuggestedChange: string | null; status: string; steps: StepRow[] }
 interface DetailPayload {
@@ -147,11 +147,6 @@ function TreatmentPlanPanel({ data, caseId, reload }: { data: DetailPayload; cas
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const latest = data.plans[0]
-  const approvedPlan = data.plans.find((plan) => plan.status === 'approved')
-  const implicitApproval = Boolean(latest && !approvedPlan && getIDesignPlanApprovalState(data.case.latestProgress, latest.status).approved)
-  const featuredPlan = approvedPlan ?? latest
-  const approvalLocked = Boolean(approvedPlan) || implicitApproval
-  const otherPlans = data.plans.filter((plan) => plan.id !== featuredPlan?.id)
 
   const publish = async () => {
     setBusy(true); setError(null)
@@ -161,35 +156,30 @@ function TreatmentPlanPanel({ data, caseId, reload }: { data: DetailPayload; cas
     else { setSummary(''); await reload() }
     setBusy(false)
   }
-  const action = async (name: 'approve' | 'update_editable', planId?: number) => {
+  const updateEditable = async () => {
     setBusy(true); setError(null)
-    const body = name === 'update_editable' ? { action: name, editableUrl } : { action: name, planId }
-    const response = await fetch(`/api/idesign/cases/${caseId}/plans`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const response = await fetch(`/api/idesign/cases/${caseId}/plans`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_editable', editableUrl }) })
     const payload = await response.json().catch(() => ({}))
     if (!response.ok) setError(payload.error ?? 'Unable to update review')
     else await reload()
     setBusy(false)
   }
-
-  const planActions = (plan: PlanRow) => {
-    const canView = data.permissions.canViewEditablePlan && Boolean(plan.editableUrl || data.case.currentEditableUrl)
-    const isApprovedPlan = plan.id === approvedPlan?.id || (implicitApproval && plan.id === latest?.id)
-    const readyForApproval = getIDesignPlanApprovalState(data.case.latestProgress, plan.status).readyForApproval
-    return <div className="flex shrink-0 items-center gap-2">
-      {canView ? <a href={`/api/idesign/cases/${caseId}/open?planId=${plan.id}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-card border border-border bg-surface px-2.5 text-[11px] font-semibold text-text hover:bg-neutral-100"><MorphIcon icon={ExternalLink} className="h-3 w-3" />View Plan</a> : <span className="inline-flex h-8 items-center rounded-card border border-border bg-neutral-100 px-2.5 text-[11px] font-semibold text-text-muted">No Link</span>}
-      <button type="button" disabled={busy || approvalLocked || !data.permissions.canApprovePlans || !readyForApproval} onClick={() => void action('approve', plan.id)} className={`inline-flex h-8 items-center justify-center rounded-card px-2.5 text-[11px] font-semibold ${isApprovedPlan ? 'bg-neutral-100 text-text-muted' : 'bg-primary text-white hover:bg-orange-600 disabled:bg-neutral-100 disabled:text-text-muted'}`}>{isApprovedPlan ? 'Approved' : 'Approve'}</button>
-    </div>
+  const approve = async (plan: PlanRow) => {
+    setBusy(true); setError(null)
+    const approvalError = await approveIDesignPlan(caseId, plan.id)
+    if (approvalError) setError(approvalError)
+    else await reload()
+    setBusy(false)
   }
 
   return <section className="overflow-hidden rounded-card border border-border bg-surface">
-    <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><span className="h-4 w-1 shrink-0 rounded-full bg-primary" aria-hidden /><h2 className="text-sm font-semibold text-text">Treatment Plan</h2></div><p className="mt-1 text-xs text-text-muted">Review and approve a clinical design.</p></div>{featuredPlan && <span className="w-fit rounded bg-bg px-2 py-1 text-xs font-semibold text-text">{approvedPlan || implicitApproval ? 'Approved' : 'Latest'}: V{featuredPlan.versionNumber}</span>}</div>
+    <TreatmentPlanHeader plans={data.plans} latestProgress={data.case.latestProgress} />
     <div className="space-y-4 p-4">
-      {!featuredPlan ? <div className="rounded-card border border-dashed border-border py-10 text-center"><p className="text-sm font-medium text-text">No treatment plan published</p><p className="mt-1 text-xs text-text-muted">The plan will appear here when it is ready for review.</p></div> : <div className="flex flex-col gap-3 rounded-card border border-border bg-bg p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-text">Treatment Plan V{featuredPlan.versionNumber}</p><span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium capitalize text-text-muted">{featuredPlan.status}</span></div><p className="mt-1 text-xs text-text-muted">Published {formatDate(featuredPlan.publishedAt)}{featuredPlan.summary ? ` · ${featuredPlan.summary}` : ''}</p></div>{planActions(featuredPlan)}</div>}
-
+      <TreatmentPlanList caseId={caseId} plans={data.plans} latestProgress={data.case.latestProgress} currentEditableUrl={data.case.currentEditableUrl} canApprovePlans={data.permissions.canApprovePlans} canViewEditablePlan={data.permissions.canViewEditablePlan} busy={busy} onApprove={(plan) => void approve(plan)}>
       {data.permissions.canManagePlans && <details className="rounded-card border border-border"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-text">Publish a new plan version</summary><div className="space-y-3 border-t border-border p-4"><Field label="Editable link"><input type="url" value={editableUrl} onChange={(event) => setEditableUrl(event.target.value)} placeholder="https://..." className={inputClass} /></Field><label><span className="mb-1 block text-xs font-medium text-text-muted">Version summary</span><input value={summary} onChange={(event) => setSummary(event.target.value)} maxLength={500} placeholder="Optional internal summary" className={inputClass} /></label><button type="button" disabled={busy || !editableUrl} onClick={() => void publish()} className="inline-flex h-10 items-center gap-2 rounded-card bg-text px-4 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={Save} className="h-4 w-4" />{busy ? 'Publishing...' : `Publish V${(latest?.versionNumber ?? 0) + 1}`}</button></div></details>}
-      {data.permissions.canManagePlans && latest && <details className="rounded-card border border-border"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-text">Manage current plan editor link</summary><div className="flex flex-col gap-3 border-t border-border p-4 sm:flex-row sm:items-end"><Field label="Editable link"><input type="url" value={editableUrl} onChange={(event) => setEditableUrl(event.target.value)} placeholder="https://..." className={inputClass} /></Field><button type="button" disabled={busy || !editableUrl} onClick={() => void action('update_editable')} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-card bg-text px-4 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-40"><MorphIcon icon={Save} className="h-4 w-4" />Save Editor Link</button></div></details>}
+      {data.permissions.canManagePlans && latest && <details className="rounded-card border border-border"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-text">Manage current plan editor link</summary><div className="flex flex-col gap-3 border-t border-border p-4 sm:flex-row sm:items-end"><Field label="Editable link"><input type="url" value={editableUrl} onChange={(event) => setEditableUrl(event.target.value)} placeholder="https://..." className={inputClass} /></Field><button type="button" disabled={busy || !editableUrl} onClick={() => void updateEditable()} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-card bg-text px-4 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-40"><MorphIcon icon={Save} className="h-4 w-4" />Save Editor Link</button></div></details>}
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      {otherPlans.length > 0 && <details><summary className="cursor-pointer text-xs font-semibold text-text-muted">View {otherPlans.length} other version{otherPlans.length === 1 ? '' : 's'}</summary><div className="mt-3 divide-y divide-border rounded-card border border-border">{otherPlans.map((plan) => <div key={plan.id} className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium text-text">V{plan.versionNumber}</p><p className="text-xs capitalize text-text-muted">{formatDate(plan.publishedAt)} · {plan.status}</p></div>{planActions(plan)}</div>)}</div></details>}
+      </TreatmentPlanList>
     </div>
   </section>
 }
