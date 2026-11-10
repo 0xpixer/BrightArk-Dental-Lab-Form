@@ -44,7 +44,7 @@ interface OrderFormProps {
 
 function OrderFormShell({ account, embedded, children }: { account?: OrderFormProps['account']; embedded?: boolean; children: ReactNode }) {
   if (embedded) return <>{children}</>
-  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin' || account?.role === 'sales'
+  const isAdmin = account?.role === 'admin' || account?.role === 'superadmin' || account?.role === 'sales' || account?.role === 'sales_director'
   const isPortal = account?.role === 'doctor' || account?.role === 'clinic_staff'
 
   return (

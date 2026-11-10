@@ -34,7 +34,7 @@ interface CaseRow {
 interface AssignableAccount {
   id: number
   name: string
-  role: 'doctor' | 'sales'
+  role: 'doctor' | 'sales' | 'sales_director'
 }
 
 export function IDesignCasesTable() {
@@ -180,7 +180,7 @@ function AssignmentDialog({ item, accounts, saving, onCancel, onSave }: { item: 
   const [doctorAccountId, setDoctorAccountId] = useState(item.doctorAccountId ? String(item.doctorAccountId) : '')
   const [salesAccountId, setSalesAccountId] = useState(item.salesAccountId ? String(item.salesAccountId) : '')
   const doctors = accounts.filter((account) => account.role === 'doctor')
-  const salespeople = accounts.filter((account) => account.role === 'sales')
+  const salespeople = accounts.filter((account) => account.role === 'sales' || account.role === 'sales_director')
   const selectedId = (value: string) => value ? Number(value) : null
 
   return <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onCancel() }}>

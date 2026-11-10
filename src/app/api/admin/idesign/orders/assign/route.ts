@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
   const db = getDb()
   const [account] = await db.select({ id: adminUsers.id, role: adminUsers.role }).from(adminUsers).where(and(eq(adminUsers.id, accountId), eq(adminUsers.isActive, true))).limit(1)
-  if (!account || !['sales', 'doctor'].includes(account.role)) {
+  if (!account || !['sales', 'sales_director', 'doctor'].includes(account.role)) {
     return NextResponse.json({ error: 'Choose an active Sales or Doctor account' }, { status: 400 })
   }
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     conditions.push(or(ilike(idesignOrders.patientName, pattern), ilike(idesignOrders.doctorName, pattern), ilike(idesignOrders.salespersonName, pattern))!)
   }
 
-  const assignment = account.role === 'sales'
+  const assignment = account.role !== 'doctor'
     ? { salesAccountId: account.id, assignmentUpdatedBy: Number(session!.user.id), assignmentUpdatedAt: new Date() }
     : { doctorAccountId: account.id, assignmentUpdatedBy: Number(session!.user.id), assignmentUpdatedAt: new Date() }
   const updated = await db.update(idesignOrders).set(assignment).where(and(...conditions)).returning({ id: idesignOrders.id })

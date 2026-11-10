@@ -1,10 +1,12 @@
-import { eq, sql, type SQL } from 'drizzle-orm'
+import { eq, inArray, sql, type SQL } from 'drizzle-orm'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
-import { isAdminRole, isDesignerRole, isPortalRole, isSalesRole } from '@/lib/admin/roles'
+import { isAdminRole, isDesignerRole, isPortalRole, isSalesDirectorRole, isSalesRole } from '@/lib/admin/roles'
 import { getOrderOwnerId } from '@/lib/portal/access'
+import { getSalesScopeIds } from '@/lib/sales/access'
 
 export async function getIDesignAccessCondition(userId: number, role: string): Promise<SQL | undefined> {
   if (role === 'superadmin' || role === 'admin' || isDesignerRole(role)) return undefined
+  if (isSalesDirectorRole(role)) return inArray(idesignOrders.salesAccountId, await getSalesScopeIds(userId))
   if (isSalesRole(role)) return eq(idesignOrders.salesAccountId, userId)
   if (isPortalRole(role)) {
     const ownerId = await getOrderOwnerId(userId, role)
@@ -15,6 +17,7 @@ export async function getIDesignAccessCondition(userId: number, role: string): P
 
 export async function getIDesignCaseAccessCondition(userId: number, role: string): Promise<SQL | undefined> {
   if (role === 'superadmin' || role === 'admin' || isDesignerRole(role)) return undefined
+  if (isSalesDirectorRole(role)) return inArray(idesignCases.salesAccountId, await getSalesScopeIds(userId))
   if (isSalesRole(role)) return eq(idesignCases.salesAccountId, userId)
   if (isPortalRole(role)) {
     const ownerId = await getOrderOwnerId(userId, role)

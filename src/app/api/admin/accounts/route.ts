@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { and, eq, desc } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, salesDoctorAssignments } from '@/lib/db/schema'
+import { adminUsers, salesDirectorAssignments, salesDoctorAssignments } from '@/lib/db/schema'
 import { requireAdmin, requireSuperadmin } from '@/lib/admin/session'
 import { isAccountRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
@@ -15,6 +15,7 @@ export async function GET() {
   const users = await db.select().from(adminUsers).orderBy(desc(adminUsers.createdAt))
   const visibleUsers = users.filter((user) => canViewAccount(session!.user.username, user.username))
   const salesAssignments = await db.select().from(salesDoctorAssignments)
+  const directorAssignments = await db.select().from(salesDirectorAssignments)
   const usernameById = new Map(visibleUsers.map((user) => [user.id, user.username]))
 
   return NextResponse.json({
@@ -29,6 +30,7 @@ export async function GET() {
       role: u.role,
       linkedDoctorId: u.linkedDoctorId,
       servedDoctorIds: salesAssignments.filter((assignment) => assignment.salesId === u.id).map((assignment) => assignment.doctorId),
+      assignedSalesIds: directorAssignments.filter((assignment) => assignment.directorId === u.id).map((assignment) => assignment.salesId),
       isActive: u.isActive,
       createdBy: u.createdBy && usernameById.has(u.createdBy) ? u.createdBy : null,
       createdByUsername: u.createdBy ? usernameById.get(u.createdBy) ?? null : null,
@@ -36,6 +38,7 @@ export async function GET() {
       lastLoginAt: u.lastLoginAt,
     })),
     doctors: visibleUsers.filter((u) => u.role === 'doctor').map((u) => ({ id: u.id, name: u.fullName ?? u.username })),
+    salesAccounts: visibleUsers.filter((u) => u.role === 'sales').map((u) => ({ id: u.id, name: u.fullName ?? u.username, isActive: u.isActive })),
     canManageAccounts: session!.user.role === 'superadmin',
   })
 }

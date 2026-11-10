@@ -1,12 +1,26 @@
-import { and, eq, sql, type SQL } from 'drizzle-orm'
+import { and, eq, inArray, sql, type SQL } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, orders, salesDoctorAssignments } from '@/lib/db/schema'
+import { adminUsers, orders, salesDirectorAssignments, salesDoctorAssignments } from '@/lib/db/schema'
 import { isAdminRole, isSalesRole } from '@/lib/admin/roles'
 import { doctorOrderScope } from '@/lib/portal/orderScope'
 
-async function getAssignedDoctors(salesId: number, activeOnly: boolean) {
+/**
+ * Sales account IDs whose scope this user inherits: the user itself plus, for a
+ * Sales Director, every active Sales account assigned to them.
+ */
+export async function getSalesScopeIds(userId: number): Promise<number[]> {
+  const rows = await getDb()
+    .select({ salesId: salesDirectorAssignments.salesId })
+    .from(salesDirectorAssignments)
+    .innerJoin(adminUsers, eq(adminUsers.id, salesDirectorAssignments.directorId))
+    .where(and(eq(salesDirectorAssignments.directorId, userId), eq(adminUsers.role, 'sales_director')))
+  return [...new Set([userId, ...rows.map((row) => row.salesId)])]
+}
+
+async function getAssignedDoctors(userId: number, activeOnly: boolean) {
+  const salesIds = await getSalesScopeIds(userId)
   return getDb()
-    .select({
+    .selectDistinct({
       id: adminUsers.id,
       fullName: adminUsers.fullName,
       email: adminUsers.email,
@@ -16,7 +30,7 @@ async function getAssignedDoctors(salesId: number, activeOnly: boolean) {
     .from(salesDoctorAssignments)
     .innerJoin(adminUsers, eq(adminUsers.id, salesDoctorAssignments.doctorId))
     .where(and(
-      eq(salesDoctorAssignments.salesId, salesId),
+      inArray(salesDoctorAssignments.salesId, salesIds),
       eq(adminUsers.role, 'doctor'),
       activeOnly ? eq(adminUsers.isActive, true) : undefined,
     ))
@@ -32,10 +46,11 @@ export async function getSalesDoctorIds(salesId: number) {
 }
 
 export async function isDoctorAssignedToSales(salesId: number, doctorId: number) {
+  const salesIds = await getSalesScopeIds(salesId)
   const [assignment] = await getDb()
     .select({ doctorId: salesDoctorAssignments.doctorId })
     .from(salesDoctorAssignments)
-    .where(and(eq(salesDoctorAssignments.salesId, salesId), eq(salesDoctorAssignments.doctorId, doctorId)))
+    .where(and(inArray(salesDoctorAssignments.salesId, salesIds), eq(salesDoctorAssignments.doctorId, doctorId)))
     .limit(1)
   return Boolean(assignment)
 }

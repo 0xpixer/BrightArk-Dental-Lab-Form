@@ -225,6 +225,13 @@
       "when": 1794293560823,
       "tag": "0031_melted_ma_gnuci",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794294987396,
+      "tag": "0032_typical_namorita",
+      "breakpoints": true
     }
   ]
 }

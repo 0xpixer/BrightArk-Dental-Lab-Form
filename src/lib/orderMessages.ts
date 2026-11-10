@@ -12,7 +12,7 @@ export function getMessageAuthor(role: string): MessageAuthor | null {
   if (role === 'doctor' || role === 'clinic_staff') return 'Doctor'
   if (role === 'admin') return 'Lab'
   if (role === 'superadmin') return 'Admin'
-  if (role === 'sales') return 'Sales'
+  if (role === 'sales' || role === 'sales_director') return 'Sales'
   return null
 }
 

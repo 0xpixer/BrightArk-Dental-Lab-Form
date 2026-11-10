@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { isSalesRole } from '@/lib/admin/roles'
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
     canAssignOrders
       ? db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role })
         .from(adminUsers)
-        .where(and(inArray(adminUsers.role, ['doctor', 'sales']), eq(adminUsers.isActive, true)))
+        .where(and(inArray(adminUsers.role, ['doctor', 'sales', 'sales_director']), eq(adminUsers.isActive, true)))
         .orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
       : Promise.resolve([]),
   ])
@@ -142,7 +143,7 @@ export async function POST(request: Request) {
           latestProgress: IDESIGN_SUBMITTED_PROGRESS,
           createdBy: userId,
           doctorAccountId,
-          salesAccountId: role === 'sales' ? userId : null,
+          salesAccountId: isSalesRole(role) ? userId : null,
         }).returning()
         return caseRow
       },

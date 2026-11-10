@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     db.selectDistinct({ name: idesignOrders.doctorName }).from(idesignOrders).orderBy(asc(idesignOrders.doctorName)),
     db.selectDistinct({ name: idesignOrders.purchasedProducts }).from(idesignOrders).orderBy(asc(idesignOrders.purchasedProducts)),
     session!.user.role === 'superadmin'
-      ? db.select({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role }).from(adminUsers).where(and(or(eq(adminUsers.role, 'sales'), eq(adminUsers.role, 'doctor')), eq(adminUsers.isActive, true))).orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
+      ? db.select({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role }).from(adminUsers).where(and(inArray(adminUsers.role, ['sales', 'sales_director', 'doctor']), eq(adminUsers.isActive, true))).orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
       : Promise.resolve([]),
   ])
 

@@ -30,7 +30,7 @@ interface IDesignOrderRow {
   clinicalCaseId: number | null
 }
 
-interface AssignableAccount { id: number; name: string; role: 'sales' | 'doctor' }
+interface AssignableAccount { id: number; name: string; role: 'sales' | 'sales_director' | 'doctor' }
 
 export function IDesignOrdersTable({ initialProgress = '', canManage = false }: { initialProgress?: string; canManage?: boolean }) {
   const [orders, setOrders] = useState<IDesignOrderRow[]>([])
@@ -147,7 +147,7 @@ export function IDesignOrdersTable({ initialProgress = '', canManage = false }: 
       {canManage && <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-3 sm:flex-row sm:items-end sm:justify-between">
         <div><h2 className="text-sm font-semibold text-text">Assign filtered orders</h2><p className="mt-1 text-xs text-text-muted">{salesperson || doctor ? `${total} records in the selected scope` : 'Select a Sales or Doctor scope'}</p></div>
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-          <label><span className="sr-only">Assignment account</span><select value={assignmentAccountId} onChange={(event) => setAssignmentAccountId(event.target.value)} className="h-10 min-w-56 rounded-card border border-border bg-surface px-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Select account</option>{options.assignableAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} ({account.role === 'sales' ? 'Sales' : 'Doctor'})</option>)}</select></label>
+          <label><span className="sr-only">Assignment account</span><select value={assignmentAccountId} onChange={(event) => setAssignmentAccountId(event.target.value)} className="h-10 min-w-56 rounded-card border border-border bg-surface px-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Select account</option>{options.assignableAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} ({account.role === 'doctor' ? 'Doctor' : account.role === 'sales_director' ? 'Sales Director' : 'Sales'})</option>)}</select></label>
           <button type="button" onClick={assignFilteredOrders} disabled={assigning || !assignmentAccountId || (!salesperson && !doctor)} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-text px-4 text-sm font-semibold text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-35"><MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-4 w-4" />{assigning ? 'Assigning...' : `Assign ${total} matching`}</button>
         </div>
       </section>}

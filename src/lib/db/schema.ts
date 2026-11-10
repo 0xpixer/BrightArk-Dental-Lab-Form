@@ -83,6 +83,16 @@ export const salesDoctorAssignments = pgTable('sales_doctor_assignments', {
   doctorIdx: index('sales_doctor_assignments_doctor_idx').on(table.doctorId),
 }))
 
+export const salesDirectorAssignments = pgTable('sales_director_assignments', {
+  directorId: integer('director_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  salesId: integer('sales_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  assignedBy: integer('assigned_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.directorId, table.salesId] }),
+  salesIdx: index('sales_director_assignments_sales_idx').on(table.salesId),
+}))
+
 export const orders = pgTable('orders', {
   id: serial('id').primaryKey(),
   orderNo: text('order_no').notNull().unique(),
@@ -377,6 +387,7 @@ export type OrderActivity = typeof orderActivities.$inferSelect
 export type AdminUser = typeof adminUsers.$inferSelect
 export type DoctorClinic = typeof doctorClinics.$inferSelect
 export type SalesDoctorAssignment = typeof salesDoctorAssignments.$inferSelect
+export type SalesDirectorAssignment = typeof salesDirectorAssignments.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect
 export type LarkNotification = typeof larkNotifications.$inferSelect
 export type SidebarBanner = typeof sidebarBanners.$inferSelect

@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { isSalesRole } from '@/lib/admin/roles'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireSession } from '@/lib/admin/session'
@@ -74,7 +75,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const assignedDoctor = caseRow.doctorAccountId ? accounts.find((account) => account.id === caseRow.doctorAccountId) : null
   const clinicName = assignedDoctor?.clinicName || doctorClinicRows[0]?.name || null
   const imported = importedRows[0] ?? null
-  const canSeeCommercial = session!.user.role === 'superadmin' || session!.user.role === 'sales'
+  const canSeeCommercial = session!.user.role === 'superadmin' || isSalesRole(session!.user.role)
 
   return NextResponse.json({
     case: {
@@ -116,7 +117,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       canUpdateStatus: canManageIDesignPlans(session!.user.role),
       canApprovePlans: session!.user.role === 'doctor' || session!.user.role === 'clinic_staff',
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
-      canViewEditablePlan: ['superadmin', 'admin', 'sales', 'doctor', 'clinic_staff', 'treatment_designer'].includes(session!.user.role),
+      canViewEditablePlan: ['superadmin', 'admin', 'sales', 'sales_director', 'doctor', 'clinic_staff', 'treatment_designer'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
       canEditCaseInformation: canEditIDesignCaseInformation(session!.user.role),
       canDownloadCaseFiles: canDownloadIDesignCaseFiles(session!.user.role),
@@ -179,7 +180,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (parsed.data.doctorAccountId && doctor?.role !== 'doctor') {
       return NextResponse.json({ error: 'Choose an active Doctor account' }, { status: 400 })
     }
-    if (parsed.data.salesAccountId && sales?.role !== 'sales') {
+    if (parsed.data.salesAccountId && !isSalesRole(sales?.role)) {
       return NextResponse.json({ error: 'Choose an active Sales account' }, { status: 400 })
     }
 

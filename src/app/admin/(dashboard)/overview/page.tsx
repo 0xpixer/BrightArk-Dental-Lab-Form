@@ -2,12 +2,12 @@ import { OverviewDashboard } from '@/components/overview/OverviewDashboard'
 import { AlignerOverviewDashboard } from '@/components/overview/AlignerOverviewDashboard'
 import { auth } from '@/auth'
 import Link from 'next/link'
-import { isAdminRole, isDesignerRole } from '@/lib/admin/roles'
+import { isAdminRole, isDesignerRole, isSalesRole } from '@/lib/admin/roles'
 
 export default async function AdminOverviewPage({ searchParams }: { searchParams?: { view?: string } }) {
   const session = await auth()
   const designer = isDesignerRole(session?.user.role)
-  const canViewAligners = session?.user.role === 'superadmin' || session?.user.role === 'sales' || designer
+  const canViewAligners = session?.user.role === 'superadmin' || isSalesRole(session?.user.role) || designer
   const view = designer || (canViewAligners && searchParams?.view === 'aligners') ? 'aligners' : 'dental-lab'
 
   return <div className="space-y-5">

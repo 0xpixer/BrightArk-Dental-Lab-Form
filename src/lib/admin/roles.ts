@@ -1,5 +1,5 @@
 export const ADMIN_ROLES = ['admin', 'superadmin'] as const
-export const SALES_ROLES = ['sales'] as const
+export const SALES_ROLES = ['sales', 'sales_director'] as const
 export const DESIGNER_ROLES = ['treatment_designer'] as const
 export const PORTAL_ROLES = ['doctor', 'clinic_staff'] as const
 export const DASHBOARD_ROLES = [...ADMIN_ROLES, ...SALES_ROLES, ...DESIGNER_ROLES] as const
@@ -24,6 +24,10 @@ export function isSalesRole(value: unknown): value is SalesRole {
   return typeof value === 'string' && SALES_ROLES.includes(value as SalesRole)
 }
 
+export function isSalesDirectorRole(value: unknown): value is 'sales_director' {
+  return value === 'sales_director'
+}
+
 export function isDesignerRole(value: unknown): value is DesignerRole {
   return typeof value === 'string' && DESIGNER_ROLES.includes(value as DesignerRole)
 }
@@ -42,6 +46,7 @@ export function formatAdminRole(role: string): string {
   if (role === 'clinic_staff') return 'Clinic Staff'
   if (role === 'doctor') return 'Doctor'
   if (role === 'sales') return 'Sales'
+  if (role === 'sales_director') return 'Sales Director'
   if (role === 'treatment_designer') return 'Treatment Plan Designer'
   return role
 }

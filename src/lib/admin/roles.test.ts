@@ -11,3 +11,11 @@ test('Treatment Plan Designer is a dashboard account without other role privileg
   assert.equal(isPortalRole('treatment_designer'), false)
   assert.equal(formatAdminRole('treatment_designer'), 'Treatment Plan Designer')
 })
+
+test('Sales Director inherits Sales permissions', () => {
+  assert.equal(isSalesRole('sales_director'), true)
+  assert.equal(isDashboardRole('sales_director'), true)
+  assert.equal(isAccountRole('sales_director'), true)
+  assert.equal(isAdminRole('sales_director'), false)
+  assert.equal(formatAdminRole('sales_director'), 'Sales Director')
+})

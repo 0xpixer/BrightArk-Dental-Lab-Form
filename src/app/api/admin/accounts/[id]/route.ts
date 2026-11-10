@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { and, eq, inArray } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, idesignOrders, salesDoctorAssignments } from '@/lib/db/schema'
+import { adminUsers, idesignOrders, salesDirectorAssignments, salesDoctorAssignments } from '@/lib/db/schema'
 import { requireAdmin } from '@/lib/admin/session'
-import { isAccountRole } from '@/lib/admin/roles'
+import { isAccountRole, isSalesRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
 
 export async function PATCH(
@@ -105,15 +105,15 @@ export async function PATCH(
   }
 
   if (Object.keys(updateData).length === 0) {
-    if (body.servedDoctorIds === undefined) {
+    if (body.servedDoctorIds === undefined && body.assignedSalesIds === undefined) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
   }
 
   let servedDoctorIds: number[] | undefined
   if (body.servedDoctorIds !== undefined) {
-    if (nextRole !== 'sales' || !Array.isArray(body.servedDoctorIds)) {
-      return NextResponse.json({ error: 'Served doctors can only be assigned to Sales accounts' }, { status: 400 })
+    if (!isSalesRole(nextRole) || !Array.isArray(body.servedDoctorIds)) {
+      return NextResponse.json({ error: 'Served doctors can only be assigned to Sales or Sales Director accounts' }, { status: 400 })
     }
     const parsedServedDoctorIds = [
       ...new Set<number>(body.servedDoctorIds.map((value: unknown) => Number(value))),
@@ -128,6 +128,24 @@ export async function PATCH(
         return NextResponse.json({ error: 'One or more served doctors are unavailable' }, { status: 400 })
       }
     }
+  }
+
+  let assignedSalesIds: number[] | undefined
+  if (body.assignedSalesIds !== undefined) {
+    if (nextRole !== 'sales_director' || !Array.isArray(body.assignedSalesIds)) {
+      return NextResponse.json({ error: 'Sales accounts can only be assigned to Sales Director accounts' }, { status: 400 })
+    }
+    const parsedSalesIds = [...new Set<number>(body.assignedSalesIds.map((value: unknown) => Number(value)))]
+    if (parsedSalesIds.some((salesId) => !Number.isInteger(salesId) || salesId <= 0 || salesId === id)) {
+      return NextResponse.json({ error: 'Invalid sales list' }, { status: 400 })
+    }
+    if (parsedSalesIds.length > 0) {
+      const salesAccounts = await db.select({ id: adminUsers.id }).from(adminUsers).where(and(inArray(adminUsers.id, parsedSalesIds), eq(adminUsers.role, 'sales')))
+      if (salesAccounts.length !== parsedSalesIds.length) {
+        return NextResponse.json({ error: 'One or more sales accounts are unavailable' }, { status: 400 })
+      }
+    }
+    assignedSalesIds = parsedSalesIds
   }
 
   const updated = Object.keys(updateData).length > 0
@@ -161,7 +179,7 @@ export async function PATCH(
   }
 
   let persistedServedDoctorIds: number[] = []
-  if (nextRole !== 'sales') {
+  if (!isSalesRole(nextRole)) {
     await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.salesId, id))
   } else if (servedDoctorIds !== undefined) {
     const currentAssignments = await db
@@ -190,14 +208,29 @@ export async function PATCH(
   if (nextRole !== 'doctor') {
     await db.delete(salesDoctorAssignments).where(eq(salesDoctorAssignments.doctorId, id))
   }
-  if (existing.role === 'sales' && nextRole !== 'sales') {
+  if (nextRole !== 'sales_director') {
+    await db.delete(salesDirectorAssignments).where(eq(salesDirectorAssignments.directorId, id))
+  } else if (assignedSalesIds !== undefined) {
+    await db.delete(salesDirectorAssignments).where(eq(salesDirectorAssignments.directorId, id))
+    if (assignedSalesIds.length > 0) {
+      await db.insert(salesDirectorAssignments).values(assignedSalesIds.map((salesId) => ({
+        directorId: id,
+        salesId,
+        assignedBy: currentUserId,
+      }))).onConflictDoNothing()
+    }
+  }
+  if (nextRole !== 'sales') {
+    await db.delete(salesDirectorAssignments).where(eq(salesDirectorAssignments.salesId, id))
+  }
+  if (isSalesRole(existing.role) && !isSalesRole(nextRole)) {
     await db.update(idesignOrders).set({ salesAccountId: null, assignmentUpdatedBy: currentUserId, assignmentUpdatedAt: new Date() }).where(eq(idesignOrders.salesAccountId, id))
   }
   if (existing.role === 'doctor' && nextRole !== 'doctor') {
     await db.update(idesignOrders).set({ doctorAccountId: null, assignmentUpdatedBy: currentUserId, assignmentUpdatedAt: new Date() }).where(eq(idesignOrders.doctorAccountId, id))
   }
 
-  if (nextRole === 'sales') {
+  if (isSalesRole(nextRole)) {
     const persistedAssignments = await db
       .select({ doctorId: salesDoctorAssignments.doctorId })
       .from(salesDoctorAssignments)
@@ -213,7 +246,13 @@ export async function PATCH(
 
   return NextResponse.json({
     success: true,
-    account: { ...updated, servedDoctorIds: persistedServedDoctorIds },
+    account: {
+      ...updated,
+      servedDoctorIds: persistedServedDoctorIds,
+      assignedSalesIds: nextRole === 'sales_director'
+        ? (await db.select({ salesId: salesDirectorAssignments.salesId }).from(salesDirectorAssignments).where(eq(salesDirectorAssignments.directorId, id))).map((row) => row.salesId)
+        : [],
+    },
     temporaryPassword: body.password ?? undefined,
   })
 }
