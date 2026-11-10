@@ -22,6 +22,11 @@
   }
 }
 
+main:has(> .dental-anatomy-frame) {
+  overflow: hidden;
+  padding: 0;
+}
+
 .react-datepicker-wrapper {
   @apply w-full;
 }
