@@ -9,6 +9,7 @@ import { Boxes, Box, ChevronDown, ChevronUp, CirclePlus, DoorOpen, ExternalLink,
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
+import { SidebarBannerCarousel } from '@/components/sidebar/SidebarBannerCarousel'
 
 const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: IconNode; items: Array<{ href: string; label: string; icon: IconNode; hoverIcon: IconNode; external?: boolean }> }> = [
   { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, items: [
@@ -36,6 +37,7 @@ export function PortalSidebar({ username, role }: { username: string; role: stri
       <NavLink href="/portal/overview" label="Overview" icon={LayoutDashboard} hoverIcon={LayoutGrid} active={pathname.startsWith('/portal/overview')} showLabels={showLabels} />
       {MODULES.map((module) => { const open = openModule === module.id; return <div key={module.id}><button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${open ? 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}><MorphIcon icon={module.icon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><span className="hidden md:inline-flex"><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span></>}</button>{open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}</div> })}
       <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}<NavLink href="/portal/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/portal/profile')} showLabels={showLabels} /></div>
+      {showLabels && <div className="hidden px-1 pt-2 md:block"><SidebarBannerCarousel /></div>}
     </nav>
     <div className="border-t border-border p-2">
       <NavLink href="/portal/dental-anatomy" label="3D Dental Anatomy" icon={Box} hoverIcon={Boxes} active={pathname.startsWith('/portal/dental-anatomy')} showLabels={showLabels} />

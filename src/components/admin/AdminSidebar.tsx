@@ -5,11 +5,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { Boxes, Box, ChevronDown, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, Globe2, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
+import { Boxes, Box, ChevronDown, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
+import { SidebarBannerCarousel } from '@/components/sidebar/SidebarBannerCarousel'
 
 interface AdminSidebarProps { username: string; role: string }
 
@@ -29,6 +30,7 @@ const MODULES: NavModule[] = [
   { id: 'admin', label: 'Admin', icon: ShieldCheck, hoverIcon: UserRoundCog, roles: ['admin', 'superadmin'], items: [
     { href: '/admin/imported-orders', label: 'Imported Order Records', icon: Database, hoverIcon: DatabaseZap },
     { href: '/admin/accounts', label: 'Accounts', icon: Users, hoverIcon: UsersRound, roles: ['admin', 'superadmin'] },
+    { href: '/admin/sidebar-banners', label: 'Sidebar Banners', icon: GalleryHorizontal, hoverIcon: Images, roles: ['admin', 'superadmin'] },
   ] },
 ]
 
@@ -62,6 +64,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
       <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}
         <NavLink href="/admin/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/admin/profile')} showLabels={showLabels} />
       </div>
+      {showLabels && <div className="hidden px-1 pt-2 md:block"><SidebarBannerCarousel /></div>}
     </nav>
 
     <div className="border-t border-border p-2">

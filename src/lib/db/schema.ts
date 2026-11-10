@@ -346,6 +346,19 @@ export const larkNotifications = pgTable('lark_notifications', {
   sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const sidebarBanners = pgTable('sidebar_banners', {
+  id: serial('id').primaryKey(),
+  imageUrl: text('image_url').notNull(),
+  linkUrl: text('link_url'),
+  altText: text('alt_text').default('BrightArk promotion').notNull(),
+  position: integer('position').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  positionIdx: index('sidebar_banners_position_idx').on(table.position),
+}))
+
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type IDesignOrder = typeof idesignOrders.$inferSelect
@@ -366,3 +379,4 @@ export type DoctorClinic = typeof doctorClinics.$inferSelect
 export type SalesDoctorAssignment = typeof salesDoctorAssignments.$inferSelect
 export type SharedLink = typeof sharedLinks.$inferSelect
 export type LarkNotification = typeof larkNotifications.$inferSelect
+export type SidebarBanner = typeof sidebarBanners.$inferSelect

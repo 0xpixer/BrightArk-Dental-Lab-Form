@@ -25,6 +25,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       onBeforeGenerateToken: async (pathname) => {
         const session = await auth()
         if (!session?.user) throw new Error('Please sign in before uploading files.')
+        if (pathname.startsWith('sidebar-banners/')) {
+          if (!['admin', 'superadmin'].includes(session.user.role)) {
+            throw new Error('Only administrators can upload sidebar banners.')
+          }
+          return {
+            allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+            maximumSizeInBytes: 10 * 1024 * 1024,
+            addRandomSuffix: false,
+          }
+        }
         if (pathname.split('/').includes('messages')) {
           return {
             allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
