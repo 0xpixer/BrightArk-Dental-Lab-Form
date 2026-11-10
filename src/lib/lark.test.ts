@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getLarkWebhookError, notifyLarkOfOrder, type LarkOrder } from './lark'
+import { getLarkWebhookError, notifyLarkOfAlignerCase, notifyLarkOfOrder, type LarkOrder } from './lark'
 
 test('accepts current and legacy Lark webhook success responses', () => {
   assert.equal(getLarkWebhookError({ code: 0, msg: 'success' }), null)
@@ -114,4 +114,57 @@ test('a delivery-record failure is logged without resending an acknowledged mess
   }), false)
   assert.equal(calls, 1)
   assert.match(errors[0], /Database unavailable/)
+})
+
+const alignerCase = {
+  id: 7,
+  orderNo: 'IDS-0001',
+  patientName: 'Aligner Patient',
+  doctorName: 'Dr Test',
+  clinic: 'Smile Clinic',
+  planVersion: 2,
+}
+
+test('sends clear aligner submission and approval messages with the order link', async () => {
+  for (const event of ['submitted', 'approved'] as const) {
+    const texts: string[] = []
+    const sent = await notifyLarkOfAlignerCase(event, alignerCase, {
+      webhookUrl: 'https://lark.example.test/aligner',
+      appUrl: 'https://brightark.example.test/',
+      occurredAt: new Date('2026-09-17T01:00:00Z'),
+      fetcher: async (url, init) => {
+        assert.equal(url, 'https://lark.example.test/aligner')
+        texts.push(JSON.parse(String(init?.body)).content.text)
+        return Response.json({ code: 0 })
+      },
+    })
+    assert.equal(sent, true)
+    const [text] = texts
+    assert.match(text, event === 'submitted' ? /order submitted/ : /plan approved/)
+    assert.match(text, /Order: IDS-0001 \(ID 7\)/)
+    assert.match(text, /Doctor: Dr Test/)
+    assert.match(text, /Clinic: Smile Clinic/)
+    assert.match(text, /Patient: Aligner Patient/)
+    assert.match(text, event === 'approved' ? /Approved: / : /Submitted: /)
+    assert.equal(/Plan: V2/.test(text), event === 'approved')
+    assert.match(text, /https:\/\/brightark.example.test\/admin\/idesign\/orders\/7/)
+  }
+})
+
+test('aligner notification skips silently without a webhook and swallows failures', async () => {
+  const errors: string[] = []
+  assert.equal(await notifyLarkOfAlignerCase('submitted', alignerCase, {
+    webhookUrl: undefined,
+    appUrl: 'https://x.test',
+    fetcher: async () => assert.fail('Unexpected request'),
+    reportError: (message) => { errors.push(message) },
+  }), false)
+  assert.equal(errors.length, 0)
+  assert.equal(await notifyLarkOfAlignerCase('approved', alignerCase, {
+    webhookUrl: 'https://lark.example.test/aligner',
+    appUrl: 'https://x.test',
+    fetcher: async () => { throw new Error('fetch failed') },
+    reportError: (message) => { errors.push(message) },
+  }), false)
+  assert.match(errors[0], /Lark aligner approved notification failed for order IDS-0001/)
 })

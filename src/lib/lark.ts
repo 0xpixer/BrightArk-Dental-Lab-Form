@@ -36,23 +36,82 @@ export async function notifyLarkOfOrder(order: LarkOrder, options: LarkDeliveryO
       `View: ${appUrl.replace(/\/$/, '')}/admin/submissions/${order.id}`,
     ].join('\n')
 
-    const response = await fetcher(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ msg_type: 'text', content: { text } }),
-      signal: AbortSignal.timeout(10_000),
-    })
-    if (!response.ok) throw new Error(`Lark webhook returned HTTP ${response.status}`)
-
-    const responseBody: unknown = await response.json().catch(() => null)
-    const error = getLarkWebhookError(responseBody)
-    if (error) throw new Error(error)
+    await postLarkText(webhookUrl, text, fetcher)
 
     // Delivery is recorded only after Lark acknowledges the message.
     await recordDelivery(order.id)
     return true
   } catch (error) {
     reportError(`Lark notification failed for order ${order.orderNo}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    return false
+  }
+}
+
+async function postLarkText(webhookUrl: string, text: string, fetcher: typeof fetch) {
+  const response = await fetcher(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ msg_type: 'text', content: { text } }),
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (!response.ok) throw new Error(`Lark webhook returned HTTP ${response.status}`)
+
+  const responseBody: unknown = await response.json().catch(() => null)
+  const error = getLarkWebhookError(responseBody)
+  if (error) throw new Error(error)
+}
+
+export type LarkAlignerEvent = 'submitted' | 'approved'
+
+export interface LarkAlignerCase {
+  id: number
+  orderNo: string
+  patientName: string
+  doctorName: string | null
+  clinic: string | null
+  planVersion?: number | null
+}
+
+interface LarkAlignerDeliveryOptions {
+  webhookUrl: string | undefined
+  appUrl: string
+  occurredAt?: Date
+  fetcher?: typeof fetch
+  reportError?: (message: string) => void
+}
+
+const ALIGNER_EVENT_TITLES: Record<LarkAlignerEvent, string> = {
+  submitted: 'New BrightArk clear aligner order submitted',
+  approved: 'BrightArk clear aligner treatment plan approved',
+}
+
+/**
+ * Fire-and-forget Lark notification for clear aligner (iDesign) orders.
+ * Silently skips when the aligner webhook is not configured and never throws.
+ */
+export async function notifyLarkOfAlignerCase(
+  event: LarkAlignerEvent,
+  alignerCase: LarkAlignerCase,
+  options: LarkAlignerDeliveryOptions,
+): Promise<boolean> {
+  const { webhookUrl, appUrl, occurredAt = new Date(), fetcher = fetch, reportError = console.error } = options
+  if (!webhookUrl) return false
+  try {
+    const timeLabel = event === 'approved' ? 'Approved' : 'Submitted'
+    const text = [
+      ALIGNER_EVENT_TITLES[event],
+      `Order: ${alignerCase.orderNo} (ID ${alignerCase.id})`,
+      `Doctor: ${alignerCase.doctorName?.trim() || 'Not assigned'}`,
+      `Clinic: ${alignerCase.clinic?.trim() || 'Not provided'}`,
+      `Patient: ${alignerCase.patientName.trim() || 'Not provided'}`,
+      ...(event === 'approved' && alignerCase.planVersion ? [`Plan: V${alignerCase.planVersion}`] : []),
+      `${timeLabel}: ${occurredAt.toLocaleString('en-AU', { timeZone: 'Asia/Jakarta' })} WIB`,
+      `View: ${appUrl.replace(/\/$/, '')}/admin/idesign/orders/${alignerCase.id}`,
+    ].join('\n')
+    await postLarkText(webhookUrl, text, fetcher)
+    return true
+  } catch (error) {
+    reportError(`Lark aligner ${event} notification failed for order ${alignerCase.orderNo}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     return false
   }
 }
