@@ -5,6 +5,11 @@ import { BadgeCheck, ExternalLink } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
 
+/** Shared button styles for clear aligner plans: view/review actions are black, approve actions are orange. */
+export const IDESIGN_VIEW_BUTTON_CLASS = 'inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-card bg-text px-2.5 text-[11px] font-semibold text-white hover:bg-neutral-700'
+export const IDESIGN_APPROVE_BUTTON_CLASS = 'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-card bg-primary px-2.5 text-[11px] font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary'
+const APPROVED_BADGE_CLASS = 'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-card bg-neutral-100 px-2.5 text-[11px] font-semibold text-text-muted'
+
 export interface IDesignPlanRow { id: number; versionNumber: number; summary: string | null; status: string; editableUrl: string | null; publishedAt: string; approvedAt: string | null; createdByName: string | null; approvedByName: string | null }
 
 export function getTreatmentPlanOverview(plans: IDesignPlanRow[], latestProgress: string) {
@@ -35,8 +40,8 @@ export function TreatmentPlanList({ caseId, plans, latestProgress, currentEditab
     const isApprovedPlan = plan.id === approvedPlan?.id || (implicitApproval && plan.id === latest?.id)
     const readyForApproval = getIDesignPlanApprovalState(latestProgress, plan.status).readyForApproval
     return <div className="flex shrink-0 items-center gap-2">
-      {canView ? <a href={`/api/idesign/cases/${caseId}/open?planId=${plan.id}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-card border border-border bg-surface px-2.5 text-[11px] font-semibold text-text hover:bg-neutral-100"><MorphIcon icon={ExternalLink} className="h-3 w-3" />View Plan</a> : <span className="inline-flex h-8 items-center rounded-card border border-border bg-neutral-100 px-2.5 text-[11px] font-semibold text-text-muted">No Link</span>}
-      <button type="button" disabled={busy || approvalLocked || !canApprovePlans || !readyForApproval} onClick={() => onApprove(plan)} className={`inline-flex h-8 items-center justify-center rounded-card px-2.5 text-[11px] font-semibold ${isApprovedPlan ? 'bg-neutral-100 text-text-muted' : 'bg-primary text-white hover:bg-orange-600 disabled:bg-neutral-100 disabled:text-text-muted'}`}>{isApprovedPlan ? 'Approved' : 'Approve'}</button>
+      {canView ? <a href={`/api/idesign/cases/${caseId}/open?planId=${plan.id}`} target="_blank" rel="noreferrer" className={IDESIGN_VIEW_BUTTON_CLASS}><MorphIcon icon={ExternalLink} className="h-3 w-3" />View Plan</a> : <span className="inline-flex h-8 items-center rounded-card border border-border bg-neutral-100 px-2.5 text-[11px] font-semibold text-text-muted">No Link</span>}
+      {isApprovedPlan ? <span className={APPROVED_BADGE_CLASS}>Approved</span> : <button type="button" disabled={busy || approvalLocked || !canApprovePlans || !readyForApproval} onClick={() => onApprove(plan)} className={IDESIGN_APPROVE_BUTTON_CLASS}>Approve</button>}
     </div>
   }
 

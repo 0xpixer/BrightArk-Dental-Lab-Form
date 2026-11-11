@@ -10,7 +10,7 @@ import { IDesignNotifications } from './IDesignNotifications'
 import { IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
 import type { IDesignCaseInformationData } from '@/components/admin/NewIDesignOrderForm'
 import { IDesignPatientAvatar } from './IDesignPatientAvatar'
-import { approveIDesignPlan, TreatmentPlanHeader, TreatmentPlanList, type IDesignPlanRow } from './IDesignTreatmentPlans'
+import { IDESIGN_VIEW_BUTTON_CLASS, approveIDesignPlan, TreatmentPlanHeader, TreatmentPlanList, type IDesignPlanRow } from './IDesignTreatmentPlans'
 
 const IDesignCaseInformationEditor = dynamic(
   () => import('@/components/admin/NewIDesignOrderForm').then((module) => module.IDesignCaseInformationEditor),
@@ -251,7 +251,7 @@ function ActivityPanel({ activities }: { activities: DetailPayload['activities']
 }
 
 function Summary({ label, value, valueClassName = 'text-text' }: { label: string; value: string; valueClassName?: string }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">{label}</p><p className={`mt-1 truncate text-sm font-medium ${valueClassName}`}>{value}</p></div> }
-function StatusSummary({ value, onReview }: { value: string; onReview: () => void }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">Status</p><div className="mt-1 flex flex-wrap items-center gap-2"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[value] ?? 'border-border bg-bg text-text-muted'}`}>{value}</span>{value === 'Awaiting Approval' && <button type="button" onClick={onReview} className="inline-flex h-7 items-center rounded-card border border-primary px-2.5 text-[11px] font-semibold text-primary hover:bg-orange-50">Review &amp; Approval</button>}</div></div> }
+function StatusSummary({ value, onReview }: { value: string; onReview: () => void }) { return <div className="bg-surface px-4 py-3"><p className="text-[10px] font-semibold uppercase text-text-muted">Status</p><div className="mt-1 flex flex-wrap items-center gap-2"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${IDESIGN_PROGRESS_STYLES[value] ?? 'border-border bg-bg text-text-muted'}`}>{value}</span>{value === 'Awaiting Approval' && <button type="button" onClick={onReview} className={IDESIGN_VIEW_BUTTON_CLASS}>Review &amp; Approval</button>}</div></div> }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label><span className="mb-1 block text-xs font-medium text-text-muted">{label}</span>{children}</label> }
 function titleCase(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 function formatDate(value: string | null | undefined) { if (!value) return '—'; const date = new Date(value.length === 10 ? `${value}T00:00:00Z` : value); return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) }
