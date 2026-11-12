@@ -1,6 +1,9 @@
 import { and, eq, inArray, isNull, or } from 'drizzle-orm'
+import { DESIGNER_ROLES } from '@/lib/admin/roles'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignNotifications } from '@/lib/db/schema'
+
+export type IDesignNotificationAudience = 'clinical' | 'lab' | 'clinical_and_sales' | 'designers'
 
 type CaseOwner = Pick<typeof idesignCases.$inferSelect, 'id' | 'orderNo' | 'patientName' | 'doctorAccountId' | 'salesAccountId'>
 
@@ -9,7 +12,7 @@ export async function notifyIDesignCase(caseRow: CaseOwner, event: {
   title: string
   body: string
   dedupeKey: string
-  audience: 'clinical' | 'lab' | 'clinical_and_sales'
+  audience: IDesignNotificationAudience
 }) {
   const recipients = await recipientAccounts(caseRow, event.audience)
   if (recipients.length === 0) return 0
@@ -37,7 +40,7 @@ export async function notifyIDesignCase(caseRow: CaseOwner, event: {
   return inserted.length
 }
 
-async function recipientAccounts(caseRow: CaseOwner, audience: 'clinical' | 'lab' | 'clinical_and_sales') {
+async function recipientAccounts(caseRow: CaseOwner, audience: IDesignNotificationAudience) {
   const db = getDb()
   const clinicalIds = [caseRow.doctorAccountId].filter((id): id is number => Boolean(id))
   const conditions = []
@@ -46,6 +49,7 @@ async function recipientAccounts(caseRow: CaseOwner, audience: 'clinical' | 'lab
     if (caseRow.doctorAccountId) conditions.push(and(eq(adminUsers.role, 'clinic_staff'), eq(adminUsers.linkedDoctorId, caseRow.doctorAccountId)))
   }
   if (audience === 'lab') conditions.push(or(eq(adminUsers.role, 'admin'), eq(adminUsers.role, 'superadmin'))!)
+  if (audience === 'designers') conditions.push(inArray(adminUsers.role, [...DESIGNER_ROLES]))
   if (audience === 'clinical_and_sales' && caseRow.salesAccountId) conditions.push(eq(adminUsers.id, caseRow.salesAccountId))
   if (conditions.length === 0) return []
 

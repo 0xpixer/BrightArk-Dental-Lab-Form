@@ -9,6 +9,7 @@ import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_SUBMITTED_PR
 import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
 import { queueAlignerLarkNotification } from '@/lib/idesign/larkAligner'
+import { queueDesignerAlignerNotification } from '@/lib/idesign/designerNotifications'
 import { persistIDesignSubmission, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 export async function GET(request: Request) {
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
       },
     })
     queueAlignerLarkNotification('submitted', created, request)
+    queueDesignerAlignerNotification('submitted', created)
     return NextResponse.json({ case: created }, { status: 201 })
   } catch (activityError) {
     console.error('Unable to record iDesign submission activity', activityError)

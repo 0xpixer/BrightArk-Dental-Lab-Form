@@ -8,6 +8,7 @@ import { canApproveIDesignPlans, canPublishIDesignPlans, canViewIDesign } from '
 import { notifyIDesignCase } from '@/lib/idesign/notifications'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 import { queueAlignerLarkNotification } from '@/lib/idesign/larkAligner'
+import { queueDesignerAlignerNotification } from '@/lib/idesign/designerNotifications'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
 
 const httpsUrl = z.string().trim().url().refine((value) => value.startsWith('https://'), 'Use an HTTPS link')
@@ -108,6 +109,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     await recordIDesignActivity({ caseId, eventType: 'plan_approved', detail: `V${selectedPlan.versionNumber} approved`, ...sessionActor(session!) })
     await notifyIDesignCase(caseRow, { type: 'plan_approved', title: 'Treatment plan approved', body: `${caseRow.patientName}'s treatment plan V${selectedPlan.versionNumber} was approved.`, dedupeKey: `plan-approved-${selectedPlan.id}`, audience: 'lab' })
     queueAlignerLarkNotification('approved', caseRow, request, { planVersion: selectedPlan.versionNumber })
+    queueDesignerAlignerNotification('approved', caseRow, { planId: selectedPlan.id, planVersion: selectedPlan.versionNumber })
   } else {
     const [latestPlan] = await db.select().from(idesignTreatmentPlans).where(eq(idesignTreatmentPlans.caseId, caseId)).orderBy(desc(idesignTreatmentPlans.versionNumber)).limit(1)
     if (!latestPlan) return NextResponse.json({ error: 'No treatment plan has been published' }, { status: 400 })

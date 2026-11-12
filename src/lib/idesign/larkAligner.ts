@@ -4,7 +4,7 @@ import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignOrders } from '@/lib/db/schema'
 import { notifyLarkOfAlignerCase, type LarkAlignerEvent } from '@/lib/lark'
 
-interface AlignerCaseRow {
+export interface AlignerCaseRow {
   id: number
   orderNo: string
   patientName: string
@@ -12,7 +12,7 @@ interface AlignerCaseRow {
   importedOrderId: number | null
 }
 
-async function resolveDoctor(caseRow: AlignerCaseRow) {
+export async function resolveAlignerDoctor(caseRow: AlignerCaseRow) {
   const db = getDb()
   const [doctor] = caseRow.doctorAccountId
     ? await db.select({ fullName: adminUsers.fullName, username: adminUsers.username, clinicName: adminUsers.clinicName })
@@ -44,7 +44,7 @@ export function queueAlignerLarkNotification(
   const occurredAt = new Date()
   waitUntil((async () => {
     try {
-      const { doctorName, clinic } = await resolveDoctor(caseRow)
+      const { doctorName, clinic } = await resolveAlignerDoctor(caseRow)
       await notifyLarkOfAlignerCase(event, {
         id: caseRow.id,
         orderNo: caseRow.orderNo,
