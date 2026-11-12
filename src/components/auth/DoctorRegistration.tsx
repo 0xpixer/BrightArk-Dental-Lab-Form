@@ -38,7 +38,7 @@ export function DoctorRegistration({ compact = false }: {
   return <form onSubmit={(event) => { event.preventDefault(); if (!busy && !emailSent) void sendLink() }} className="space-y-4">
     <fieldset disabled={busy} className="min-w-0 space-y-4">
     {!emailSent ? <>
-      <Field label="Doctor name" value={form.fullName} onChange={(value) => update('fullName', value)} required maxLength={150} autoComplete="name" />
+      <Field label="Full name" value={form.fullName} onChange={(value) => update('fullName', value)} required maxLength={150} autoComplete="name" />
       <Field label="Clinic" value={form.clinicName} onChange={(value) => update('clinicName', value)} required maxLength={200} autoComplete="organization" />
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium text-text">

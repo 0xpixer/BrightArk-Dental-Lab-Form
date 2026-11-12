@@ -130,10 +130,10 @@ function LoginForm() {
         {!resetOpen && <div className="mt-6 border-t border-border pt-5">
           <div className="rounded-card border border-[#f6b978] bg-[#fff7ed] p-4 text-left">
             <p className="text-sm font-semibold text-text">New to BrightArk?</p>
-            <p className="mt-1 text-xs leading-5 text-text-muted">Create a doctor account to submit cases and manage your orders.</p>
+            <p className="mt-1 text-xs leading-5 text-text-muted">Create an account to submit cases and manage your orders.</p>
             <Link href="/register" className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-[#e06d15]">
               <MorphIcon icon={UserPlus} hoverIcon={CircleUserRound} className="h-4 w-4" />
-              Create a Doctor Account
+              Create Account
             </Link>
           </div>
           <p className="mt-4 text-center text-xs text-text-muted">
