@@ -43,7 +43,7 @@ export function canCreateIDesignCases(role: string) {
 }
 
 export function canApproveIDesignPlans(role: string) {
-  return role === 'doctor' || role === 'clinic_staff'
+  return role === 'superadmin' || role === 'doctor' || role === 'clinic_staff'
 }
 
 export function canManageIDesignSchedule(role: string) {

@@ -14,7 +14,7 @@ import {
   idesignTreatmentPlans,
   idesignTreatmentSteps,
 } from '@/lib/db/schema'
-import { canAssignIDesignOrders, canDeleteIDesignOrders, canDownloadIDesignCaseFiles, canEditIDesignCaseInformation, canManageIDesignPlans, canManageIDesignSchedule, canPublishIDesignPlans, canViewIDesign } from '@/lib/idesign/access'
+import { canApproveIDesignPlans, canAssignIDesignOrders, canDeleteIDesignOrders, canDownloadIDesignCaseFiles, canEditIDesignCaseInformation, canManageIDesignPlans, canManageIDesignSchedule, canPublishIDesignPlans, canViewIDesign } from '@/lib/idesign/access'
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
@@ -115,7 +115,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     permissions: {
       canManagePlans: canPublishIDesignPlans(session!.user.role),
       canUpdateStatus: canManageIDesignPlans(session!.user.role),
-      canApprovePlans: session!.user.role === 'doctor' || session!.user.role === 'clinic_staff',
+      canApprovePlans: canApproveIDesignPlans(session!.user.role),
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
       canViewEditablePlan: ['superadmin', 'admin', 'sales', 'sales_director', 'doctor', 'clinic_staff', 'treatment_designer'].includes(session!.user.role),
       canViewCommercial: canSeeCommercial,
