@@ -239,6 +239,13 @@
       "when": 1794541462322,
       "tag": "0033_reserve_space_gaps",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794543514108,
+      "tag": "0034_finance_records",
+      "breakpoints": true
     }
   ]
 }

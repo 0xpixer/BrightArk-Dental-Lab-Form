@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { Boxes, Box, ChevronDown, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, type IconNode } from 'lucide'
+import { Boxes, Box, ChevronDown, CircleDollarSign, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
@@ -51,15 +51,17 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
 
     <nav className="flex-1 space-y-2 overflow-y-auto p-2">
       <NavLink href="/admin/overview" label="Overview" icon={LayoutDashboard} hoverIcon={LayoutGrid} active={pathname.startsWith('/admin/overview')} showLabels={showLabels} />
-      {MODULES.filter((module) => module.roles.includes(role)).map((module) => {
+      {MODULES.filter((module) => module.roles.includes(role)).flatMap((module) => {
         const open = openModule === module.id
         const ModuleIcon = module.icon
-        return <div key={module.id}>
+        const moduleNav = <div key={module.id}>
           <button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-center gap-3 rounded-card px-2 text-sm font-semibold transition-colors ${showLabels ? 'md:justify-start md:px-3' : ''} ${open ? 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}>
             <MorphIcon icon={ModuleIcon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />{showLabels && <><span className="hidden min-w-0 flex-1 truncate text-left md:inline">{module.label}</span><span className="hidden md:inline-flex"><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span></>}
           </button>
           {open && <div className={`mt-1 space-y-1 ${showLabels ? 'md:ml-5 md:border-l md:border-border md:pl-2' : ''}`}>{module.items.filter((item) => !item.roles || item.roles.includes(role)).map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}
         </div>
+        // Finance sits directly below Dental Lab Orders.
+        return module.id === 'dental' ? [moduleNav, <NavLink key="finance" href="/admin/finance" label="Finance" icon={Wallet} hoverIcon={CircleDollarSign} active={pathname.startsWith('/admin/finance')} showLabels={showLabels} />] : [moduleNav]
       })}
       <div className="pt-2">{showLabels ? <p className="hidden px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted md:block">Account</p> : <div className="mx-2 mb-2 border-t border-border" />}
         <NavLink href="/admin/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/admin/profile')} showLabels={showLabels} />

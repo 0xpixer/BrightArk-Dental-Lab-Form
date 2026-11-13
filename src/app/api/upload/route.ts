@@ -35,6 +35,16 @@ export async function POST(request: Request): Promise<NextResponse> {
             addRandomSuffix: false,
           }
         }
+        if (pathname.startsWith('finance-invoices/')) {
+          if (!['admin', 'superadmin'].includes(session.user.role)) {
+            throw new Error('Only administrators can upload invoices.')
+          }
+          return {
+            allowedContentTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+            maximumSizeInBytes: 20 * 1024 * 1024,
+            addRandomSuffix: true,
+          }
+        }
         if (pathname.split('/').includes('messages')) {
           return {
             allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],

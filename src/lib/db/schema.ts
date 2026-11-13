@@ -162,6 +162,11 @@ export const idesignOrders = pgTable('idesign_orders', {
   salesCommissionRate: text('sales_commission_rate'),
   attributedMonth: text('attributed_month'),
   salesCommission: text('sales_commission'),
+  orderNo: text('order_no'),
+  dueDate: date('due_date', { mode: 'string' }),
+  invoiceFileUrl: text('invoice_file_url'),
+  invoiceFileName: text('invoice_file_name'),
+  paymentLink: text('payment_link'),
   assignmentUpdatedBy: integer('assignment_updated_by').references(() => adminUsers.id, { onDelete: 'set null' }),
   assignmentUpdatedAt: timestamp('assignment_updated_at', { withTimezone: true, mode: 'date' }),
   createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
@@ -357,6 +362,13 @@ export const larkNotifications = pgTable('lark_notifications', {
   sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
 
+export const appSettings = pgTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedBy: integer('updated_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})
+
 export const sidebarBanners = pgTable('sidebar_banners', {
   id: serial('id').primaryKey(),
   imageUrl: text('image_url').notNull(),
@@ -392,3 +404,4 @@ export type SalesDirectorAssignment = typeof salesDirectorAssignments.$inferSele
 export type SharedLink = typeof sharedLinks.$inferSelect
 export type LarkNotification = typeof larkNotifications.$inferSelect
 export type SidebarBanner = typeof sidebarBanners.$inferSelect
+export type AppSetting = typeof appSettings.$inferSelect
