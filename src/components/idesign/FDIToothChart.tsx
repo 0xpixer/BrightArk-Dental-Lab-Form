@@ -1,11 +1,6 @@
 'use client'
 
-const ROWS = [
-  { label: 'Upper primary', right: [55, 54, 53, 52, 51], left: [61, 62, 63, 64, 65] },
-  { label: 'Upper permanent', right: [18, 17, 16, 15, 14, 13, 12, 11], left: [21, 22, 23, 24, 25, 26, 27, 28] },
-  { label: 'Lower permanent', right: [48, 47, 46, 45, 44, 43, 42, 41], left: [31, 32, 33, 34, 35, 36, 37, 38] },
-  { label: 'Lower primary', right: [85, 84, 83, 82, 81], left: [71, 72, 73, 74, 75] },
-]
+import { TOOTH_CHART_ROWS as ROWS } from '@/lib/idesign/cases'
 
 /**
  * `value` holds the teeth the user picked in this chart. `lockedTeeth` are shown

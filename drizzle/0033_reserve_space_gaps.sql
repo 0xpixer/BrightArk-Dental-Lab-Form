@@ -1,0 +1,1 @@
+ALTER TABLE "idesign_cases" ADD COLUMN "reserve_space_gaps" jsonb DEFAULT '[]'::jsonb NOT NULL;

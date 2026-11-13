@@ -192,6 +192,7 @@ export const idesignCases = pgTable('idesign_cases', {
   attachmentRestrictedTeeth: jsonb('attachment_restricted_teeth').notNull().default([]),
   iprRestrictedTeeth: jsonb('ipr_restricted_teeth').notNull().default([]),
   reserveSpaceTeeth: jsonb('reserve_space_teeth').notNull().default([]),
+  reserveSpaceGaps: jsonb('reserve_space_gaps').notNull().default([]),
   maxillaryMidline: text('maxillary_midline'),
   mandibularMidline: text('mandibular_midline'),
   leftRelationship: text('left_relationship'),

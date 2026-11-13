@@ -73,6 +73,39 @@ export const PRIMARY_TEETH = [
 ] as const
 
 const validTeeth = new Set<number>([...PERMANENT_TEETH, ...PRIMARY_TEETH])
+
+/** Tooth chart rows as shown on screen, patient's right on the left. */
+export const TOOTH_CHART_ROWS = [
+  { label: 'Upper primary', right: [55, 54, 53, 52, 51], left: [61, 62, 63, 64, 65] },
+  { label: 'Upper permanent', right: [18, 17, 16, 15, 14, 13, 12, 11], left: [21, 22, 23, 24, 25, 26, 27, 28] },
+  { label: 'Lower permanent', right: [48, 47, 46, 45, 44, 43, 42, 41], left: [31, 32, 33, 34, 35, 36, 37, 38] },
+  { label: 'Lower primary', right: [85, 84, 83, 82, 81], left: [71, 72, 73, 74, 75] },
+] as const
+
+/** A reserve-space value between two neighbouring teeth, in mm. `teeth` is in on-screen order. */
+export type ReserveSpaceGap = { teeth: [number, number]; mm: number }
+export const RESERVE_SPACE_MIN_MM = 0.01
+export const RESERVE_SPACE_MAX_MM = 25
+
+/** Every pair of neighbouring teeth in a chart row, in on-screen order (e.g. "55-54", "51-61"). */
+export const RESERVE_SPACE_GAP_KEYS: string[] = TOOTH_CHART_ROWS.flatMap((row) => {
+  const sequence = [...row.right, ...row.left]
+  return sequence.slice(1).map((tooth, index) => `${sequence[index]}-${tooth}`)
+})
+const validGapKeys = new Set(RESERVE_SPACE_GAP_KEYS)
+
+export function clampReserveSpaceMm(value: number) {
+  if (!Number.isFinite(value) || value < RESERVE_SPACE_MIN_MM) return RESERVE_SPACE_MIN_MM
+  return Math.min(RESERVE_SPACE_MAX_MM, Math.round(value * 100) / 100)
+}
+
+const reserveSpaceGaps = z.array(z.object({
+  teeth: z.tuple([z.number().int(), z.number().int()]),
+  mm: z.number().min(RESERVE_SPACE_MIN_MM).max(RESERVE_SPACE_MAX_MM),
+}).refine((gap) => validGapKeys.has(gap.teeth.join('-')), 'Reserve space must be between neighbouring teeth'))
+  .max(RESERVE_SPACE_GAP_KEYS.length)
+  .refine((gaps) => new Set(gaps.map((gap) => gap.teeth.join('-'))).size === gaps.length, 'Duplicate reserve space position')
+  .default([])
 const toothSelection = z.array(z.number().int().refine((tooth) => validTeeth.has(tooth), 'Invalid FDI tooth number')).max(validTeeth.size).default([])
 
 const fileReferenceSchema = z.object({
@@ -108,6 +141,7 @@ const clinicalCaseFields = {
   attachmentRestrictedTeeth: toothSelection,
   iprRestrictedTeeth: toothSelection,
   reserveSpaceTeeth: toothSelection,
+  reserveSpaceGaps,
   maxillaryMidline: z.string().trim().max(80).optional().nullable(),
   mandibularMidline: z.string().trim().max(80).optional().nullable(),
   leftRelationship: z.enum(RELATIONSHIP_OPTIONS).optional().nullable(),

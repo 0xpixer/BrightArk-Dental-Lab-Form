@@ -7,12 +7,13 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { FDIToothChart } from '@/components/idesign/FDIToothChart'
 import { IDesignCaseUploads, type IDesignUploadState } from '@/components/idesign/IDesignCaseUploads'
-import { CHIEF_COMPLAINT_GROUPS, DENTITION_STAGES, IDESIGN_GENDERS, IDESIGN_REQUIRED_FILE_SLOTS, RELATIONSHIP_OPTIONS } from '@/lib/idesign/cases'
+import { ReserveSpaceChart } from '@/components/idesign/ReserveSpaceChart'
+import { CHIEF_COMPLAINT_GROUPS, DENTITION_STAGES, IDESIGN_GENDERS, IDESIGN_REQUIRED_FILE_SLOTS, RELATIONSHIP_OPTIONS, type ReserveSpaceGap } from '@/lib/idesign/cases'
 
 type StepOneErrors = Partial<Record<'patientName' | 'gender' | 'dateOfBirth' | string, string>>
 type ToothField = 'extractionTeeth' | DerivedToothField
-type DerivedToothField = 'lockedTeeth' | 'attachmentRestrictedTeeth' | 'iprRestrictedTeeth' | 'reserveSpaceTeeth'
-const EXTRACTION_DERIVED_FIELDS: DerivedToothField[] = ['lockedTeeth', 'attachmentRestrictedTeeth', 'iprRestrictedTeeth', 'reserveSpaceTeeth']
+type DerivedToothField = 'lockedTeeth' | 'attachmentRestrictedTeeth' | 'iprRestrictedTeeth'
+const EXTRACTION_DERIVED_FIELDS: DerivedToothField[] = ['lockedTeeth', 'attachmentRestrictedTeeth', 'iprRestrictedTeeth']
 const EXTRACTION_LOCK_REASON = 'Selected under Extraction'
 type StoredFile = { url: string; name: string; size?: number; type?: string }
 
@@ -27,7 +28,9 @@ export interface IDesignCaseInformationData {
   lockedTeeth: number[]
   attachmentRestrictedTeeth: number[]
   iprRestrictedTeeth: number[]
+  /** Legacy per-tooth reserve space selection; new cases use reserveSpaceGaps. */
   reserveSpaceTeeth: number[]
+  reserveSpaceGaps?: ReserveSpaceGap[]
   maxillaryMidline: string | null
   mandibularMidline: string | null
   leftRelationship: string | null
@@ -65,7 +68,7 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
   const [dentitionStage, setDentitionStage] = useState(initialData?.dentitionStage ?? 'Permanent Dentition')
   const [chiefComplaints, setChiefComplaints] = useState(initialData?.chiefComplaints ?? [])
   const [complaintDialogOpen, setComplaintDialogOpen] = useState(false)
-  // Extraction teeth are automatically part of the other four sections. Those four
+  // Extraction teeth are automatically part of Lock, attachment and IPR. Those
   // sections keep only the doctor's own picks in state; extraction teeth are merged
   // in for display and on submit. Saved lists already contain the extraction teeth,
   // so on load they are split back out (and shown locked).
@@ -73,9 +76,10 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
     const extractionTeeth = initialData?.extractionTeeth ?? []
     const manual = (stored: number[] | undefined) => (stored ?? []).filter((tooth) => !extractionTeeth.includes(tooth))
     return {
-      extractionTeeth, lockedTeeth: manual(initialData?.lockedTeeth), attachmentRestrictedTeeth: manual(initialData?.attachmentRestrictedTeeth), iprRestrictedTeeth: manual(initialData?.iprRestrictedTeeth), reserveSpaceTeeth: manual(initialData?.reserveSpaceTeeth),
+      extractionTeeth, lockedTeeth: manual(initialData?.lockedTeeth), attachmentRestrictedTeeth: manual(initialData?.attachmentRestrictedTeeth), iprRestrictedTeeth: manual(initialData?.iprRestrictedTeeth),
     }
   })
+  const [reserveSpaceGaps, setReserveSpaceGaps] = useState<ReserveSpaceGap[]>(() => Array.isArray(initialData?.reserveSpaceGaps) ? initialData.reserveSpaceGaps : [])
   const withExtraction = (field: DerivedToothField) => [...teeth[field], ...teeth.extractionTeeth.filter((tooth) => !teeth[field].includes(tooth))]
   const [maxillaryMidline, setMaxillaryMidline] = useState(initialData?.maxillaryMidline ?? 'Auto')
   const [mandibularMidline, setMandibularMidline] = useState(initialData?.mandibularMidline ?? 'Auto')
@@ -123,6 +127,7 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
     const caseInformation = {
       patientName, gender: gender || null, dateOfBirth: dateOfBirth || null, fileUrls, dentitionStage: dentitionStage || null, chiefComplaints, extractionTeeth: teeth.extractionTeeth,
       ...Object.fromEntries(EXTRACTION_DERIVED_FIELDS.map((field) => [field, withExtraction(field)])) as Record<DerivedToothField, number[]>,
+      reserveSpaceTeeth: initialData?.reserveSpaceTeeth ?? [], reserveSpaceGaps,
       maxillaryMidline: maxillaryMidline || null, mandibularMidline: mandibularMidline || null,
       leftRelationship: leftRelationship || null, rightRelationship: rightRelationship || null,
       posteriorExpansionNotAllowed: posteriorExpansion, iprNotAllowed: ipr, molarDistalizationNotAllowed: distalization, remarks,
@@ -184,7 +189,7 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
             <ClinicalSection title="Lock"><ToothChartPanel value={teeth.lockedTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('lockedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
             <ClinicalSection title="Teeth restricted from attachment bonding"><ToothChartPanel value={teeth.attachmentRestrictedTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('attachmentRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
             <ClinicalSection title="Teeth restricted from IPR"><ToothChartPanel value={teeth.iprRestrictedTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('iprRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
-            <ClinicalSection title="Reserve space"><ToothChartPanel helper="Minimum Scale Division: 0.01mm" value={teeth.reserveSpaceTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('reserveSpaceTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Reserve space"><div className="rounded-card bg-bg px-4 py-5"><ReserveSpaceChart helper="Minimum Scale Division: 0.01mm" value={reserveSpaceGaps} onChange={setReserveSpaceGaps} extractedTeeth={teeth.extractionTeeth} lockedTeeth={withExtraction('lockedTeeth')} readOnly={readOnly} /></div></ClinicalSection>
             <ClinicalSection title="Midline target position"><RadioPanel readOnly={readOnly} rows={[
               { title: 'Maxillary', name: 'maxillary-midline', options: [...MIDLINE_OPTIONS, 'Match upper midline to lower midline'], value: maxillaryMidline, onChange: setMaxillaryMidline },
               { title: 'Mandibular', name: 'mandibular-midline', options: [...MIDLINE_OPTIONS, 'Match lower midline to upper midline'], value: mandibularMidline, onChange: setMandibularMidline },

@@ -232,6 +232,13 @@
       "when": 1794294987396,
       "tag": "0032_typical_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794541462322,
+      "tag": "0033_reserve_space_gaps",
+      "breakpoints": true
     }
   ]
 }

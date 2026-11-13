@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createIDesignCaseOrderNo, createIDesignCaseSchema, IDESIGN_REQUIRED_FILE_SLOTS, IDESIGN_SUBMITTED_PROGRESS, updateIDesignCaseInformationSchema } from './cases'
+import { clampReserveSpaceMm, createIDesignCaseOrderNo, RESERVE_SPACE_GAP_KEYS, createIDesignCaseSchema, IDESIGN_REQUIRED_FILE_SLOTS, IDESIGN_SUBMITTED_PROGRESS, updateIDesignCaseInformationSchema } from './cases'
 
 const requiredFiles = Object.fromEntries(IDESIGN_REQUIRED_FILE_SLOTS.map((slot) => {
   const extension = slot.endsWith('model') ? 'stl' : 'jpg'
@@ -93,4 +93,23 @@ test('creates recognisable, unique iDesign order numbers', () => {
   const second = createIDesignCaseOrderNo(now)
   assert.match(first, /^IDA-20260920-[A-F0-9]{6}$/)
   assert.notEqual(first, second)
+})
+
+test('reserve space is only accepted between neighbouring teeth within 0.01–25 mm', () => {
+  const ok = createIDesignCaseSchema.safeParse({ ...validCase, reserveSpaceGaps: [{ teeth: [55, 54], mm: 0.01 }, { teeth: [41, 31], mm: 25 }, { teeth: [74, 75], mm: 1.5 }] })
+  assert.equal(ok.success, true)
+  for (const teeth of [[54, 55], [55, 53], [18, 48], [11, 51]]) {
+    assert.equal(createIDesignCaseSchema.safeParse({ ...validCase, reserveSpaceGaps: [{ teeth, mm: 1 }] }).success, false, `teeth ${teeth}`)
+  }
+  assert.equal(createIDesignCaseSchema.safeParse({ ...validCase, reserveSpaceGaps: [{ teeth: [55, 54], mm: 25.01 }] }).success, false)
+  assert.equal(createIDesignCaseSchema.safeParse({ ...validCase, reserveSpaceGaps: [{ teeth: [55, 54], mm: 1 }, { teeth: [55, 54], mm: 2 }] }).success, false)
+})
+
+test('reserve space gap positions exclude the outer side of the last teeth', () => {
+  for (const key of ['55-54', '51-61', '64-65', '18-17', '27-28', '48-47', '41-31', '37-38', '85-84', '74-75']) assert.ok(RESERVE_SPACE_GAP_KEYS.includes(key), key)
+  assert.equal(RESERVE_SPACE_GAP_KEYS.length, 9 + 15 + 15 + 9)
+  assert.equal(clampReserveSpaceMm(30), 25)
+  assert.equal(clampReserveSpaceMm(0), 0.01)
+  assert.equal(clampReserveSpaceMm(Number.NaN), 0.01)
+  assert.equal(clampReserveSpaceMm(1.234), 1.23)
 })
