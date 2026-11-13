@@ -10,7 +10,10 @@ import { IDesignCaseUploads, type IDesignUploadState } from '@/components/idesig
 import { CHIEF_COMPLAINT_GROUPS, DENTITION_STAGES, IDESIGN_GENDERS, IDESIGN_REQUIRED_FILE_SLOTS, RELATIONSHIP_OPTIONS } from '@/lib/idesign/cases'
 
 type StepOneErrors = Partial<Record<'patientName' | 'gender' | 'dateOfBirth' | string, string>>
-type ToothField = 'extractionTeeth' | 'lockedTeeth' | 'attachmentRestrictedTeeth' | 'iprRestrictedTeeth' | 'reserveSpaceTeeth'
+type ToothField = 'extractionTeeth' | DerivedToothField
+type DerivedToothField = 'lockedTeeth' | 'attachmentRestrictedTeeth' | 'iprRestrictedTeeth' | 'reserveSpaceTeeth'
+const EXTRACTION_DERIVED_FIELDS: DerivedToothField[] = ['lockedTeeth', 'attachmentRestrictedTeeth', 'iprRestrictedTeeth', 'reserveSpaceTeeth']
+const EXTRACTION_LOCK_REASON = 'Selected under Extraction'
 type StoredFile = { url: string; name: string; size?: number; type?: string }
 
 export interface IDesignCaseInformationData {
@@ -62,9 +65,18 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
   const [dentitionStage, setDentitionStage] = useState(initialData?.dentitionStage ?? 'Permanent Dentition')
   const [chiefComplaints, setChiefComplaints] = useState(initialData?.chiefComplaints ?? [])
   const [complaintDialogOpen, setComplaintDialogOpen] = useState(false)
-  const [teeth, setTeeth] = useState<Record<ToothField, number[]>>(() => ({
-    extractionTeeth: initialData?.extractionTeeth ?? [], lockedTeeth: initialData?.lockedTeeth ?? [], attachmentRestrictedTeeth: initialData?.attachmentRestrictedTeeth ?? [], iprRestrictedTeeth: initialData?.iprRestrictedTeeth ?? [], reserveSpaceTeeth: initialData?.reserveSpaceTeeth ?? [],
-  }))
+  // Extraction teeth are automatically part of the other four sections. Those four
+  // sections keep only the doctor's own picks in state; extraction teeth are merged
+  // in for display and on submit. Saved lists already contain the extraction teeth,
+  // so on load they are split back out (and shown locked).
+  const [teeth, setTeeth] = useState<Record<ToothField, number[]>>(() => {
+    const extractionTeeth = initialData?.extractionTeeth ?? []
+    const manual = (stored: number[] | undefined) => (stored ?? []).filter((tooth) => !extractionTeeth.includes(tooth))
+    return {
+      extractionTeeth, lockedTeeth: manual(initialData?.lockedTeeth), attachmentRestrictedTeeth: manual(initialData?.attachmentRestrictedTeeth), iprRestrictedTeeth: manual(initialData?.iprRestrictedTeeth), reserveSpaceTeeth: manual(initialData?.reserveSpaceTeeth),
+    }
+  })
+  const withExtraction = (field: DerivedToothField) => [...teeth[field], ...teeth.extractionTeeth.filter((tooth) => !teeth[field].includes(tooth))]
   const [maxillaryMidline, setMaxillaryMidline] = useState(initialData?.maxillaryMidline ?? 'Auto')
   const [mandibularMidline, setMandibularMidline] = useState(initialData?.mandibularMidline ?? 'Auto')
   const [leftRelationship, setLeftRelationship] = useState(initialData?.leftRelationship ?? 'Auto')
@@ -109,7 +121,8 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
     setSubmitError(null)
     const fileUrls = Object.fromEntries(Object.entries(files).map(([slot, items]) => [slot, (items ?? []).filter((item) => item.status === 'success' && item.blobUrl).map((item) => ({ url: item.blobUrl!, name: item.file.name, size: item.storedSize ?? item.file.size, type: item.storedType ?? item.file.type }))]))
     const caseInformation = {
-      patientName, gender: gender || null, dateOfBirth: dateOfBirth || null, fileUrls, dentitionStage: dentitionStage || null, chiefComplaints, ...teeth,
+      patientName, gender: gender || null, dateOfBirth: dateOfBirth || null, fileUrls, dentitionStage: dentitionStage || null, chiefComplaints, extractionTeeth: teeth.extractionTeeth,
+      ...Object.fromEntries(EXTRACTION_DERIVED_FIELDS.map((field) => [field, withExtraction(field)])) as Record<DerivedToothField, number[]>,
       maxillaryMidline: maxillaryMidline || null, mandibularMidline: mandibularMidline || null,
       leftRelationship: leftRelationship || null, rightRelationship: rightRelationship || null,
       posteriorExpansionNotAllowed: posteriorExpansion, iprNotAllowed: ipr, molarDistalizationNotAllowed: distalization, remarks,
@@ -168,10 +181,10 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
             <ClinicalSection title="Dentition Stage" first><div className="rounded-card bg-bg p-4"><RadioChoices name="dentition-stage" options={DENTITION_STAGES} value={dentitionStage} onChange={setDentitionStage} readOnly={readOnly} columns="md:grid-cols-3" /></div></ClinicalSection>
             <ClinicalSection title="Chief Complaint"><ChiefComplaintTags value={chiefComplaints} readOnly={readOnly} onAdd={() => setComplaintDialogOpen(true)} onRemove={(complaint) => setChiefComplaints((current) => current.filter((item) => item !== complaint))} /></ClinicalSection>
             <ClinicalSection title="Extraction"><ToothChartPanel value={teeth.extractionTeeth} onChange={(value) => setToothField('extractionTeeth', value)} readOnly={readOnly} /></ClinicalSection>
-            <ClinicalSection title="Lock"><ToothChartPanel value={teeth.lockedTeeth} onChange={(value) => setToothField('lockedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
-            <ClinicalSection title="Teeth restricted from attachment bonding"><ToothChartPanel value={teeth.attachmentRestrictedTeeth} onChange={(value) => setToothField('attachmentRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
-            <ClinicalSection title="Teeth restricted from IPR"><ToothChartPanel value={teeth.iprRestrictedTeeth} onChange={(value) => setToothField('iprRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
-            <ClinicalSection title="Reserve space"><ToothChartPanel helper="Minimum Scale Division: 0.01mm" value={teeth.reserveSpaceTeeth} onChange={(value) => setToothField('reserveSpaceTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Lock"><ToothChartPanel value={teeth.lockedTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('lockedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Teeth restricted from attachment bonding"><ToothChartPanel value={teeth.attachmentRestrictedTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('attachmentRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Teeth restricted from IPR"><ToothChartPanel value={teeth.iprRestrictedTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('iprRestrictedTeeth', value)} readOnly={readOnly} /></ClinicalSection>
+            <ClinicalSection title="Reserve space"><ToothChartPanel helper="Minimum Scale Division: 0.01mm" value={teeth.reserveSpaceTeeth} lockedTeeth={teeth.extractionTeeth} onChange={(value) => setToothField('reserveSpaceTeeth', value)} readOnly={readOnly} /></ClinicalSection>
             <ClinicalSection title="Midline target position"><RadioPanel readOnly={readOnly} rows={[
               { title: 'Maxillary', name: 'maxillary-midline', options: [...MIDLINE_OPTIONS, 'Match upper midline to lower midline'], value: maxillaryMidline, onChange: setMaxillaryMidline },
               { title: 'Mandibular', name: 'mandibular-midline', options: [...MIDLINE_OPTIONS, 'Match lower midline to upper midline'], value: mandibularMidline, onChange: setMandibularMidline },
@@ -207,8 +220,8 @@ function IDesignCaseForm({ mode, caseId, initialData, onSaved, downloadUrl, hide
   </div>
 }
 
-function ToothChartPanel({ helper, value, onChange, readOnly }: { helper?: string; value: number[]; onChange: (value: number[]) => void; readOnly: boolean }) {
-  return <div className="rounded-card bg-bg px-4 py-5"><FDIToothChart helper={helper} value={value} onChange={onChange} readOnly={readOnly} /></div>
+function ToothChartPanel({ helper, value, lockedTeeth, onChange, readOnly }: { helper?: string; value: number[]; lockedTeeth?: number[]; onChange: (value: number[]) => void; readOnly: boolean }) {
+  return <div className="rounded-card bg-bg px-4 py-5"><FDIToothChart helper={helper} value={value} lockedTeeth={lockedTeeth} lockedReason={EXTRACTION_LOCK_REASON} onChange={onChange} readOnly={readOnly} /></div>
 }
 
 function ChiefComplaintTags({ value, readOnly, onAdd, onRemove }: { value: string[]; readOnly: boolean; onAdd: () => void; onRemove: (value: string) => void }) {
