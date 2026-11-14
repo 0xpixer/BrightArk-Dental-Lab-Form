@@ -56,7 +56,7 @@ const LAB_LIST = '/admin/submissions'
 const FINANCE = '/admin/finance'
 
 // Follow-up queues scroll inside the panel so a long backlog does not push the rest of the page down.
-const FOLLOW_UP_SCROLL = '-mr-2 max-h-[440px] space-y-5 overflow-y-auto overscroll-contain pr-2 sm:max-h-[520px]'
+const FOLLOW_UP_SCROLL = '-mr-2 max-h-[360px] space-y-5 overflow-y-auto overscroll-contain pr-2 sm:max-h-[400px]'
 
 const CATEGORY_COLORS: Record<string, string> = { iAlign: '#171717', iScan: '#f97316', 'Dental Lab': '#06b6d4', Others: '#a3a3a3' }
 
