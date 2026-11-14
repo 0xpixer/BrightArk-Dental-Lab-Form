@@ -74,6 +74,8 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
   const [category, setCategory] = useState('')
   const [status, setStatus] = useState('')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  // The overview's overdue banner links here with ?overdue=1.
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('overdue') === '1') setOverdueOnly(true) }, [])
   const [canManage, setCanManage] = useState(false)
   const [overdueDays, setOverdueDays] = useState(30)
   const [overdueInput, setOverdueInput] = useState('30')
