@@ -16,7 +16,6 @@ const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: Ico
   { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, items: [
     { href: '/portal/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/portal/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
-    { href: 'https://bright-ark.myshopify.com/pages/idesign', label: 'Old iDesign Portal', icon: Globe2, hoverIcon: ExternalLink, external: true },
   ] },
   { id: 'dental', label: 'Dental Lab Orders', icon: ToothIcon, hoverIcon: ToothPolishedIcon, items: [
     { href: '/portal/orders', label: 'Orders', icon: List, hoverIcon: ListChecks },
