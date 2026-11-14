@@ -28,7 +28,7 @@ export function sidebarAsideClass(open: boolean, collapsed: boolean) {
 export function MobileTopBar({ open, onOpen }: { open: boolean; onOpen: () => void }) {
   return <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface/95 px-2 backdrop-blur md:hidden">
     <button type="button" onClick={onOpen} aria-label="Open navigation" aria-expanded={open} className="grid h-11 w-11 place-items-center rounded-card text-text hover:bg-bg"><MorphIcon icon={Menu} className="h-5 w-5" /></button>
-    <Image src="/Logo-SVG.svg" alt="BrightArk" width={110} height={28} className="h-7 w-auto" priority />
+    <Image src="/Logo-SVG.svg" alt="BrightArk" width={135} height={36} className="h-9 w-auto" priority />
   </header>
 }
 

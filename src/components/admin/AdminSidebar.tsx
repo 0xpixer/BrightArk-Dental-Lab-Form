@@ -49,7 +49,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
     <MobileDrawerBackdrop open={drawer.open} onClose={() => drawer.setOpen(false)} />
     <aside className={sidebarAsideClass(drawer.open, collapsed)} aria-label="Main navigation">
     <div className="flex h-16 items-center justify-between border-b border-border px-3">
-      <div className={`flex min-w-0 items-center ${showLabels ? 'md:gap-2' : ''}`}><Image src="/Logo-SVG.svg" alt="BrightArk" width={120} height={32} className={`h-8 w-auto ${showLabels ? '' : 'md:hidden'}`} /></div><MobileDrawerClose onClose={() => drawer.setOpen(false)} />
+      <div className={`flex min-w-0 items-center ${showLabels ? 'md:gap-2' : ''}`}><Image src="/Logo-SVG.svg" alt="BrightArk" width={150} height={40} className={`h-10 w-auto ${showLabels ? '' : 'md:hidden'}`} /></div><MobileDrawerClose onClose={() => drawer.setOpen(false)} />
       <button type="button" onClick={toggleCollapsed} className={`hidden h-8 w-8 shrink-0 place-items-center rounded-card text-text-muted hover:bg-bg hover:text-text md:grid ${collapsed ? 'mx-auto' : ''}`} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'} aria-expanded={!collapsed}><MorphIcon icon={collapsed ? PanelLeftOpen : PanelLeftClose} className="h-4 w-4" /></button>
     </div>
 
