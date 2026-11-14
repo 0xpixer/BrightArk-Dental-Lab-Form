@@ -262,7 +262,7 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-card border border-border bg-surface">
+      <div className="relative overflow-x-auto rounded-card border border-border bg-surface">
         <table className="w-full min-w-[1380px] table-fixed">
           <colgroup>
             <col className="w-[140px]" />

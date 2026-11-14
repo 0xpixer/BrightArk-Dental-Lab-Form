@@ -96,10 +96,11 @@ export function ReserveSpaceChart({ helper, value, onChange, readOnly = false, e
     {tooth(number)}
   </Fragment>)
 
-  return <fieldset className="py-1">
+  return <fieldset className="min-w-0 py-1">
     <legend className="sr-only">Reserve space between teeth</legend>
     {helper && <p className="mb-3 text-xs text-text-muted">{helper}</p>}
-    <div className="overflow-x-auto pb-1">
+    <p className="mb-2 text-[11px] text-text-muted md:hidden">Swipe sideways to see all teeth →</p>
+    <div className="overflow-x-auto overscroll-x-contain pb-1">
       <div className="min-w-[760px] space-y-1" onMouseLeave={() => setHoveredTooth(null)}>
         {TOOTH_CHART_ROWS.map((row, rowIndex) => <div key={row.label} className={`grid grid-cols-[20px_1fr_auto_1fr_20px] items-center gap-0 pt-9 ${rowIndex === 2 ? 'border-t border-border' : ''}`}>
           <span className="text-center text-[10px] font-semibold text-text-muted">R</span>

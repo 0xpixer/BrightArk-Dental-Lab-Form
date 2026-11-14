@@ -235,7 +235,7 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
           </label>
           <FilterSelect label="Categories" value={category} options={options.categories} onChange={(value) => updateFilter(setCategory, value)} />
           <FilterSelect label="Payment statuses" value={status} options={options.paymentStatuses} onChange={(value) => updateFilter(setStatus, value)} />
-          <label className="flex h-10 items-center gap-2 rounded-card border border-border bg-surface px-3 text-sm text-text"><input type="checkbox" checked={overdueOnly} onChange={(event) => updateFilter(setOverdueOnly, event.target.checked)} className="h-4 w-4 accent-[#f97316]" />Overdue only</label>
+          <label className="flex h-11 items-center gap-2 rounded-card border border-border bg-surface px-3 text-sm text-text md:h-10"><input type="checkbox" checked={overdueOnly} onChange={(event) => updateFilter(setOverdueOnly, event.target.checked)} className="h-4 w-4 accent-[#f97316]" />Overdue only</label>
         </div>
       </section>
 
@@ -251,7 +251,14 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
       {notice && <div role="status" className="rounded-card border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{notice}</div>}
 
       <section className="overflow-hidden rounded-card border border-border bg-surface">
-        <div className="overflow-x-auto">
+        {editingId === null && <div className="divide-y divide-border md:hidden">
+          {loading && rows.length === 0
+            ? <p className="px-4 py-12 text-center text-sm text-text-muted">Loading finance records...</p>
+            : rows.length === 0
+              ? <p className="px-4 py-12 text-center text-sm text-text-muted">No matching records</p>
+              : rows.map((row) => <FinanceCard key={row.id} row={row} doctorColumn={doctorColumn} canManage={canManage} onEdit={() => startEdit(row)} />)}
+        </div>}
+        <div className={`overflow-x-auto ${editingId === null ? 'hidden md:block' : ''}`}>
           <table className={`w-full ${canManage ? 'min-w-[1680px]' : 'min-w-[1240px]'}`}>
             <thead className="border-b border-border bg-bg text-left text-xs font-semibold uppercase text-text-muted">
               <tr>
@@ -284,8 +291,8 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
         <footer className="flex items-center justify-between border-t border-border px-4 py-3">
           <p className="text-xs text-text-muted">Page {page} of {totalPages}</p>
           <div className="flex gap-1">
-            <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Previous page"><MorphIcon icon={ChevronLeft} hoverIcon={ChevronsLeft} className="h-4 w-4" /><span className="sr-only">Previous page</span></button>
-            <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages || loading} className="grid h-8 w-8 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40" title="Next page"><MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4" /><span className="sr-only">Next page</span></button>
+            <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || loading} className="grid h-11 w-11 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40 md:h-8 md:w-8" title="Previous page"><MorphIcon icon={ChevronLeft} hoverIcon={ChevronsLeft} className="h-4 w-4" /><span className="sr-only">Previous page</span></button>
+            <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages || loading} className="grid h-11 w-11 place-items-center rounded border border-border text-text-muted hover:bg-bg disabled:opacity-40 md:h-8 md:w-8" title="Next page"><MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4" /><span className="sr-only">Next page</span></button>
           </div>
         </footer>
       </section>
@@ -320,6 +327,38 @@ function ViewRow({ row, doctorColumn, canManage, editDisabled, onEdit }: { row: 
       {doctorColumn && <td className="px-3 py-3 text-sm text-text">{row.doctorAccountId ? row.doctorName : <span className="text-text-muted">{row.doctorName} <span className="text-xs">(unlinked)</span></span>}</td>}
       {canManage && <td className="px-3 py-3 text-right"><button type="button" onClick={onEdit} disabled={editDisabled} className={`${IDESIGN_VIEW_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-35`}><MorphIcon icon={Pencil} hoverIcon={PencilLine} className="h-3 w-3" />Edit</button></td>}
     </tr>
+  )
+}
+
+function FinanceCard({ row, doctorColumn, canManage, onEdit }: { row: FinanceRow; doctorColumn: boolean; canManage: boolean; onEdit: () => void }) {
+  return (
+    <article className="space-y-3 px-4 py-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-text">{row.patientName}</p>
+          <p className="mt-0.5 truncate text-xs text-text-muted">{[row.orderNo, row.category].filter(Boolean).join(' · ')}</p>
+        </div>
+        <p className="shrink-0 text-right text-base font-semibold text-text">{formatMoney(row.totalAmount, row.currency)}</p>
+      </div>
+      {row.purchasedProducts && <p className="line-clamp-2 text-sm text-text">{row.purchasedProducts}</p>}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[row.paymentStatus] ?? 'border-border bg-bg text-text-muted'}`}>{row.paymentStatus}</span>
+        {row.overdue && <span className="inline-flex whitespace-nowrap rounded-full border border-red-200 bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">Overdue</span>}
+        {row.paymentDate && <span className="text-xs text-text-muted">Paid {formatDate(row.paymentDate)}</span>}
+        {!row.paymentDate && row.effectiveDueDate && (row.overdue || row.paymentStatus === 'Unpaid') && <span className="text-xs text-text-muted">Due {formatDate(row.effectiveDueDate)}</span>}
+      </div>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <dt className="text-text-muted">Original price</dt><dd className="text-right text-text">{formatMoney(parseFinanceAmount(row.originalPrice), row.currency)}</dd>
+        <dt className="text-text-muted">Discount</dt><dd className="text-right text-text">{row.discount || '0%'}</dd>
+        {(row.invoiceNo || row.invoiceDate) && <><dt className="text-text-muted">Invoice</dt><dd className="text-right text-text">{[row.invoiceNo, formatDate(row.invoiceDate)].filter(Boolean).join(' · ')}</dd></>}
+        {doctorColumn && <><dt className="text-text-muted">Doctor</dt><dd className="truncate text-right text-text">{row.doctorName}{!row.doctorAccountId && <span className="text-text-muted"> (unlinked)</span>}</dd></>}
+      </dl>
+      {(row.hasInvoice || row.paymentLink || canManage) && <div className="flex flex-wrap items-center gap-2">
+        {row.hasInvoice && <a href={`/api/finance/${row.id}/invoice`} target="_blank" rel="noreferrer" className={IDESIGN_VIEW_BUTTON_CLASS} title={row.invoiceFileName ?? 'Download invoice'}><MorphIcon icon={Download} hoverIcon={FileDown} className="h-3 w-3" />Invoice</a>}
+        {row.paymentLink && <a href={row.paymentLink} target="_blank" rel="noreferrer noopener" className={`${IDESIGN_APPROVE_BUTTON_CLASS} gap-1.5`}><MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-3 w-3" />Pay now</a>}
+        {canManage && <button type="button" onClick={onEdit} className={`${IDESIGN_VIEW_BUTTON_CLASS} ml-auto`}><MorphIcon icon={Pencil} hoverIcon={PencilLine} className="h-3 w-3" />Edit</button>}
+      </div>}
+    </article>
   )
 }
 

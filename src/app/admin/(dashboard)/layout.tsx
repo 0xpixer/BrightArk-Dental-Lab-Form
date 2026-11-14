@@ -15,7 +15,7 @@ export default async function AdminDashboardLayout({
   if (!isDashboardRole(session.user.role)) redirect('/portal/overview')
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <AdminSidebar username={session.user.username} role={session.user.role} />
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">{children}</main>

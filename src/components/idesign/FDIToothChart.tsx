@@ -16,10 +16,11 @@ export function FDIToothChart({ title, helper, value, onChange, readOnly = false
   }
   const chip = (tooth: number) => <ToothChip key={tooth} tooth={tooth} active={selected.has(tooth)} locked={locked.has(tooth)} lockedReason={lockedReason} readOnly={readOnly} onClick={() => toggle(tooth)} />
 
-  return <fieldset className="border-t border-border py-5 first:border-t-0 first:pt-0">
+  return <fieldset className="min-w-0 border-t border-border py-5 first:border-t-0 first:pt-0">
     {title ? <legend className="mb-1 text-sm font-semibold text-text">{title}</legend> : <legend className="sr-only">FDI tooth selection</legend>}
     {helper && <p className="mb-3 text-xs text-text-muted">{helper}</p>}
-    <div className="overflow-x-auto pb-1">
+    <p className="mb-2 text-[11px] text-text-muted md:hidden">Swipe sideways to see all teeth →</p>
+    <div className="overflow-x-auto overscroll-x-contain pb-1">
       <div className="min-w-[610px] space-y-2" role="group" aria-label={`${title ?? 'FDI'} tooth selection`}>
         {ROWS.map((row, rowIndex) => <div key={row.label} className={`grid grid-cols-[20px_1fr_1px_1fr_20px] items-center gap-2 ${rowIndex === 2 ? 'border-t border-border pt-2' : ''}`}>
           <span className="text-center text-[10px] font-semibold text-text-muted">R</span>

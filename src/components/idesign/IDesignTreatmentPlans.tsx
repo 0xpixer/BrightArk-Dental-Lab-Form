@@ -6,8 +6,8 @@ import { MorphIcon } from '@/components/ui/MorphIcon'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
 
 /** Shared button styles for clear aligner plans: view/review actions are black, approve actions are orange. */
-export const IDESIGN_VIEW_BUTTON_CLASS = 'inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-card bg-text px-2.5 text-[11px] font-semibold text-white hover:bg-neutral-700'
-export const IDESIGN_APPROVE_BUTTON_CLASS = 'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-card bg-primary px-2.5 text-[11px] font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary'
+export const IDESIGN_VIEW_BUTTON_CLASS = 'inline-flex h-8 max-md:h-11 max-md:px-4 max-md:text-xs items-center justify-center gap-1.5 whitespace-nowrap rounded-card bg-text px-2.5 text-[11px] font-semibold text-white hover:bg-neutral-700'
+export const IDESIGN_APPROVE_BUTTON_CLASS = 'inline-flex h-8 max-md:h-11 max-md:px-4 max-md:text-xs items-center justify-center whitespace-nowrap rounded-card bg-primary px-2.5 text-[11px] font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary'
 const APPROVED_BADGE_CLASS = 'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-card bg-neutral-100 px-2.5 text-[11px] font-semibold text-text-muted'
 
 export interface IDesignPlanRow { id: number; versionNumber: number; summary: string | null; status: string; editableUrl: string | null; publishedAt: string; approvedAt: string | null; createdByName: string | null; approvedByName: string | null }

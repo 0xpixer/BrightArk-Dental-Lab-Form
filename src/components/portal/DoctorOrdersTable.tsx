@@ -80,12 +80,12 @@ export function DoctorOrdersTable({ initialStatus = 'all' }: { initialStatus?: s
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-text">Orders</h1>
           <p className="mt-1 text-sm text-text-muted">Orders and saved work for your clinic.</p>
         </div>
-        <Link href="/" className="rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15]">
+        <Link href="/" className="inline-flex min-h-11 shrink-0 items-center rounded-card bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#e06d15] md:min-h-0">
           New Order
         </Link>
       </div>
@@ -109,15 +109,45 @@ export function DoctorOrdersTable({ initialStatus = 'all' }: { initialStatus?: s
                     {' - '}Saved {new Date(draft.updatedAt).toLocaleString()}
                   </p>
                 </div>
-                <Link href={`/portal/drafts/${draft.id}`} className="text-sm font-medium text-text hover:underline">Continue</Link>
-                <button type="button" onClick={() => deleteDraft(draft.id)} className="text-sm text-text-muted hover:text-red-600">Delete</button>
+                <Link href={`/portal/drafts/${draft.id}`} className="inline-flex min-h-11 items-center text-sm font-medium text-text hover:underline md:min-h-0">Continue</Link>
+                <button type="button" onClick={() => deleteDraft(draft.id)} className="inline-flex min-h-11 items-center text-sm text-text-muted hover:text-red-600 md:min-h-0">Delete</button>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
+      <div className="overflow-hidden rounded-card border border-border bg-surface md:hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-bg px-4 py-2">
+          <h2 className="text-sm font-semibold text-text">Orders</h2>
+          <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filter orders by status" className="h-11 min-w-0 max-w-[60%] rounded border border-border bg-surface px-2 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10">
+            <option value="all">All statuses</option>
+            {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+        {filteredOrders.length === 0 ? <p className="px-4 py-8 text-center text-sm text-text-muted">No matching orders.</p> : <ul className="divide-y divide-border">
+          {filteredOrders.map((order) => (
+            <li key={order.id}>
+              <Link href={`/portal/orders/${order.id}`} className="block px-4 py-3 active:bg-bg">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text">{order.patientName}</p>
+                    <p className="mt-0.5 inline-flex items-center gap-2 text-xs text-text-muted">{order.orderNo}{order.hasUnreadMessage && <span className="h-2.5 w-2.5 rounded-full bg-red-500" title="New message"><span className="sr-only">New message</span></span>}</p>
+                  </div>
+                  <StatusBadge status={order.status} />
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-text-muted">
+                  <span className="truncate">{order.treatmentType ?? '—'}</span>
+                  <span className="shrink-0">{new Date(order.createdAt).toLocaleDateString()}</span>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-card border border-border bg-surface md:block">
         <table className="w-full">
           <thead className="border-b border-border bg-bg">
             <tr>

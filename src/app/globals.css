@@ -10,10 +10,17 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Never let stray content (e.g. sr-only spans inside scrolling tables) make the whole page scroll sideways. */
+    overflow-x: clip;
   }
 
   body {
     @apply bg-bg font-sans text-text antialiased;
+  }
+
+  /* Fieldsets default to min-width: min-content, which lets wide tooth charts push past the viewport on phones. */
+  fieldset {
+    min-width: 0;
   }
 
   ::selection {

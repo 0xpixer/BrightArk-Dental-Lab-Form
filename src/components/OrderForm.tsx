@@ -396,7 +396,7 @@ export default function OrderForm({ orderId, draftId, initialValues, initialFile
         </div>
       )}
 
-      <main className="mx-auto w-full max-w-form space-y-4 px-4 py-6 md:space-y-6 md:px-6 md:py-8">
+      <main className={`mx-auto w-full max-w-form space-y-4 py-6 md:space-y-6 md:px-6 md:py-8 ${embedded ? 'px-0 max-md:pt-1' : 'px-4'}`}>
         <ProgressBar activeStep={activeStep} />
 
         {submitError && (

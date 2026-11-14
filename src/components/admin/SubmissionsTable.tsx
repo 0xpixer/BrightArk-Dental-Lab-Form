@@ -181,51 +181,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
       ? STATUS_FILTER_OPTIONS.find((option) => option.value === statuses[0])?.label ?? '1 status'
       : `${statuses.length} statuses`
 
-  const SortHeader = ({ col, label }: { col: string; label: string }) => (
-    <th
-      className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted hover:text-text"
-      onClick={() => toggleSort(col)}
-    >
-      {label} {sortBy === col ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-    </th>
-  )
-
-  return (
-    <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold text-text">Submissions</h1>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={exportSubmissions} className="inline-flex items-center gap-2 rounded-card border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100">
-            <MorphIcon icon={FileSpreadsheet} hoverIcon={Sheet} className="h-4 w-4" /> Export Excel
-          </button>
-          <input
-            type="search"
-            placeholder="Search order, doctor, patient…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
-            className="rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10"
-          />
-        </div>
-      </div>
-
-      {actionError && (
-        <div role="alert" className="mb-4 rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {actionError}
-        </div>
-      )}
-
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1160px]">
-            <thead className="border-b border-border bg-bg">
-              <tr>
-                <SortHeader col="orderNo" label="Order ID" />
-                <SortHeader col="dentist" label="Doctor Name" />
-                <SortHeader col="patientName" label="Patient Name" />
-                <th className="relative px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
+  const statusFilter = (
                   <details className="group relative w-full min-w-36 normal-case">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-text outline-none focus:ring-2 focus:ring-text/10 [&::-webkit-details-marker]:hidden">
                       <span className="truncate">{statusFilterLabel}</span>
@@ -254,6 +210,84 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
                       })}
                     </div>
                   </details>
+  )
+
+  const SortHeader = ({ col, label }: { col: string; label: string }) => (
+    <th
+      className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase text-text-muted hover:text-text"
+      onClick={() => toggleSort(col)}
+    >
+      {label} {sortBy === col ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+    </th>
+  )
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold text-text">Submissions</h1>
+        <div className="flex w-full flex-wrap gap-2 md:w-auto">
+          <button type="button" onClick={exportSubmissions} className="inline-flex items-center gap-2 rounded-card border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100">
+            <MorphIcon icon={FileSpreadsheet} hoverIcon={Sheet} className="h-4 w-4" /> Export Excel
+          </button>
+          <input
+            type="search"
+            placeholder="Search order, doctor, patient…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="min-w-0 flex-1 rounded-card border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10 max-md:h-11 md:flex-none"
+          />
+        </div>
+      </div>
+
+      {actionError && (
+        <div role="alert" className="mb-4 rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {actionError}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-card border border-border bg-surface">
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-bg px-4 py-2 md:hidden">
+          <span className="text-xs font-semibold uppercase text-text-muted">Status</span>
+          <div className="w-48 text-xs">{statusFilter}</div>
+        </div>
+        <ul className="divide-y divide-border md:hidden">
+          {loading ? <li className="px-4 py-8 text-center text-sm text-text-muted">Loading…</li> : orders.length === 0 ? <li className="px-4 py-8 text-center text-sm text-text-muted">No submissions found</li> : orders.map((order) => (
+            <li key={order.id} className={`space-y-2 px-4 py-3 ${isOrderStatusOverdue(order.status, order.statusUpdatedAt) ? 'bg-pink-100' : ''}`}>
+              <div className="flex items-start justify-between gap-3">
+                <Link href={`/admin/submissions/${order.id}`} className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-text">{order.patientName}</p>
+                  <p className="mt-0.5 inline-flex items-center gap-2 text-xs text-text-muted">{order.orderNo}{order.hasUnreadMessage && <span className="h-2.5 w-2.5 rounded-full bg-red-500" title="New message"><span className="sr-only">New message</span></span>}</p>
+                </Link>
+                {canUpdateStatus ? (
+                  <select value={order.status} disabled={updatingOrderId === order.id} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className={`h-9 max-w-[45%] shrink-0 rounded-full border px-2.5 text-xs font-medium outline-none disabled:opacity-60 ${ORDER_STATUS_STYLES[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'}`} aria-label={`Update status for order ${order.orderNo}`}>
+                    {ORDER_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                ) : (
+                  <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_STYLES[order.status] ?? 'border-gray-200 bg-gray-100 text-gray-700'}`}>{ORDER_STATUS_LABELS[order.status] ?? order.status}</span>
+                )}
+              </div>
+              <p className="text-xs text-text-muted">{order.dentist} · Submitted {formatDate(order.createdAt)} · Updated {formatDate(order.statusUpdatedAt)}</p>
+              {order.notes && <p className="line-clamp-2 text-xs text-text">Note: {order.notes}</p>}
+              <div className="flex flex-wrap gap-2">
+                <Link href={`/admin/submissions/${order.id}`} className="inline-flex h-11 items-center gap-1.5 rounded-card bg-text px-4 text-xs font-semibold text-white hover:bg-neutral-700"><MorphIcon icon={Eye} hoverIcon={ScanEye} className="h-3.5 w-3.5" />View</Link>
+                <button type="button" onClick={() => downloadZip(order.id, order.orderNo)} className="inline-flex h-11 items-center gap-1.5 rounded-card border border-border px-3 text-xs font-medium text-text"><MorphIcon icon={Download} hoverIcon={CloudDownload} className="h-3.5 w-3.5" />ZIP</button>
+                <button type="button" onClick={() => setShareOrderId(order.id)} className="inline-flex h-11 items-center gap-1.5 rounded-card border border-border px-3 text-xs font-medium text-text"><MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-3.5 w-3.5" />Link</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[1160px]">
+            <thead className="border-b border-border bg-bg">
+              <tr>
+                <SortHeader col="orderNo" label="Order ID" />
+                <SortHeader col="dentist" label="Doctor Name" />
+                <SortHeader col="patientName" label="Patient Name" />
+                <th className="relative px-4 py-2 text-left text-xs font-semibold uppercase text-text-muted">
+                  {statusFilter}
                 </th>
                 <SortHeader col="statusUpdatedAt" label="Update Time" />
                 <SortHeader col="createdAt" label="Submitted" />
@@ -390,7 +424,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="inline-flex items-center gap-1 rounded border border-border px-3 py-1 text-xs disabled:opacity-40"
+            className="inline-flex min-h-11 items-center gap-1 rounded border border-border px-3 py-1 text-xs disabled:opacity-40 md:min-h-0"
           >
             <MorphIcon icon={ChevronLeft} hoverIcon={ChevronsLeft} className="h-4 w-4" />
             Previous
@@ -402,7 +436,7 @@ export function SubmissionsTable({ canUpdateStatus, canEditNotes, canDelete, ini
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="inline-flex items-center gap-1 rounded border border-border px-3 py-1 text-xs disabled:opacity-40"
+            className="inline-flex min-h-11 items-center gap-1 rounded border border-border px-3 py-1 text-xs disabled:opacity-40 md:min-h-0"
           >
             Next
             <MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4" />
