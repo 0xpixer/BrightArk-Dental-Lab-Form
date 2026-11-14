@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
@@ -22,6 +22,19 @@ function LoginForm() {
   const [loginFailed, setLoginFailed] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Already signed in (e.g. the home-screen app reopening on this page): skip the form.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/auth/session', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((session) => {
+        if (cancelled || !session?.user) return
+        router.replace(getSafeLoginCallback(searchParams.get('callbackUrl'), window.location.host))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
