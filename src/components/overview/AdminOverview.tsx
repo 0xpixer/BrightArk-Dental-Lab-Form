@@ -55,6 +55,9 @@ const ALIGNER_LIST = '/admin/idesign/orders'
 const LAB_LIST = '/admin/submissions'
 const FINANCE = '/admin/finance'
 
+// Follow-up queues scroll inside the panel so a long backlog does not push the rest of the page down.
+const FOLLOW_UP_SCROLL = '-mr-2 max-h-[440px] space-y-5 overflow-y-auto overscroll-contain pr-2 sm:max-h-[520px]'
+
 const CATEGORY_COLORS: Record<string, string> = { iAlign: '#171717', iScan: '#f97316', 'Dental Lab': '#06b6d4', Others: '#a3a3a3' }
 
 const ALIGNER_QUEUE_LABELS: Record<string, { title: string; hint: string; tone: 'primary' | 'neutral' }> = {
@@ -366,7 +369,7 @@ function AlignerTab({ data, loading, onEditTargets }: { data: AlignerPayload | n
       <div className={`grid gap-5 ${showTargets ? 'xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]' : ''}`}>
         <Panel title="Needs follow-up" subtitle={loading ? 'Loading…' : attention ? 'Oldest first in each group' : 'Nothing is stuck'} icon={Inbox} action={<CountBadge value={attention} tone="primary" />}>
           {loading ? <ListSkeleton rows={5} /> : attention === 0 ? <EmptyState icon={CircleCheck} title="All on track" body="Cases stuck in design or approval will appear here." /> : (
-            <div className="space-y-5">
+            <div className={FOLLOW_UP_SCROLL}>
               {queues.map((group) => {
                 const meta = ALIGNER_QUEUE_LABELS[group.key]
                 const warnAt = group.key === 'design' ? 3 : group.key === 'production' || group.key === 'unassigned' ? 7 : 5
@@ -456,7 +459,7 @@ function LabTab({ data, loading }: { data: LabPayload | null; loading: boolean }
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Panel title="Needs follow-up" subtitle={loading ? 'Loading…' : attention ? 'Oldest first in each group' : 'Nothing is stuck'} icon={Inbox} action={<CountBadge value={attention} tone="primary" />}>
           {loading ? <ListSkeleton rows={5} /> : attention === 0 ? <EmptyState icon={CircleCheck} title="All on track" body="Stale, overdue and re-do orders will appear here." /> : (
-            <div className="space-y-5">
+            <div className={FOLLOW_UP_SCROLL}>
               {lab!.newMessages.length > 0 && (
                 <AttentionGroup title="Unread messages from clinics" count={lab!.newMessages.length} tone="primary">
                   {lab!.newMessages.map((message) => <RowLink key={message.orderId} href={`${LAB_LIST}/${message.orderId}?messages=open`} title={message.patientName} subtitle={<>{message.orderNo} · {relativeDate(message.latestMessageAt)}</>} trailing={<MorphIcon icon={MessageCircle} className="h-4 w-4 text-red-500" />} />)}
