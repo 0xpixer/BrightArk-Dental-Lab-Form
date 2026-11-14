@@ -85,13 +85,13 @@ interface LabPayload extends BasePayload {
 
 // ---------- formatting helpers ----------
 
-function formatMoney({ currency, amount }: CurrencyAmount) {
+export function formatMoney({ currency, amount }: CurrencyAmount) {
   const digits = currency === 'IDR' ? 0 : 2
   const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: digits, minimumFractionDigits: 0 }).format(amount)
   return currency === '—' ? number : `${currency} ${number}`
 }
 
-function relativeDate(value: string) {
+export function relativeDate(value: string) {
   const days = Math.floor((Date.now() - Date.parse(value)) / 86_400_000)
   if (days <= 0) return 'Today'
   if (days === 1) return 'Yesterday'
@@ -219,7 +219,7 @@ export function PartnerOverview({ paths, userName }: { paths: PartnerOverviewPat
 
 // ---------- shared building blocks ----------
 
-function Panel({ title, subtitle, icon, action, children, className = '' }: { title: string; subtitle?: string; icon: IconNode; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Panel({ title, subtitle, icon, action, children, className = '' }: { title: string; subtitle?: string; icon: IconNode; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={`flex min-w-0 flex-col rounded-card border border-border bg-surface ${className}`}>
       <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4 sm:px-5">
@@ -237,17 +237,17 @@ function Panel({ title, subtitle, icon, action, children, className = '' }: { ti
   )
 }
 
-function CountBadge({ value, tone = 'neutral' }: { value: number; tone?: 'neutral' | 'alert' | 'primary' }) {
+export function CountBadge({ value, tone = 'neutral' }: { value: number; tone?: 'neutral' | 'alert' | 'primary' }) {
   if (!value) return null
   const style = tone === 'alert' ? 'bg-red-500 text-white' : tone === 'primary' ? 'bg-primary text-white' : 'bg-bg text-text'
   return <span className={`grid h-6 min-w-6 shrink-0 place-items-center rounded-full px-2 text-xs font-semibold tabular-nums ${style}`}>{value}</span>
 }
 
-function ViewAll({ href, label = 'View all' }: { href: string; label?: string }) {
+export function ViewAll({ href, label = 'View all' }: { href: string; label?: string }) {
   return <Link href={href} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-card px-2 text-xs font-semibold text-text-muted transition-colors hover:bg-bg hover:text-text">{label}<MorphIcon icon={ChevronRight} className="h-3.5 w-3.5" /></Link>
 }
 
-function KpiCard({ label, value, hint, icon, href, accent = false, loading }: { label: string; value: ReactNode; hint?: ReactNode; icon: IconNode; href: string; accent?: boolean; loading: boolean }) {
+export function KpiCard({ label, value, hint, icon, href, accent = false, loading }: { label: string; value: ReactNode; hint?: ReactNode; icon: IconNode; href: string; accent?: boolean; loading: boolean }) {
   return (
     <Link href={href} className={`group relative flex min-w-0 flex-col overflow-hidden rounded-card border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-text/10 ${accent ? 'border-[#f6b978] bg-[#fff7ed]' : 'border-border bg-surface hover:border-neutral-300'}`}>
       <div className="flex items-center justify-between gap-2">
@@ -260,7 +260,7 @@ function KpiCard({ label, value, hint, icon, href, accent = false, loading }: { 
   )
 }
 
-function EmptyState({ icon, title, body }: { icon: IconNode; title: string; body: string }) {
+export function EmptyState({ icon, title, body }: { icon: IconNode; title: string; body: string }) {
   return (
     <div className="grid place-items-center rounded-card border border-dashed border-border px-4 py-8 text-center">
       <div>
@@ -272,11 +272,11 @@ function EmptyState({ icon, title, body }: { icon: IconNode; title: string; body
   )
 }
 
-function ListSkeleton({ rows = 3 }: { rows?: number }) {
+export function ListSkeleton({ rows = 3 }: { rows?: number }) {
   return <div className="space-y-2">{Array.from({ length: rows }, (_, index) => <div key={index} className="h-14 animate-pulse rounded-card bg-bg" />)}</div>
 }
 
-function RowLink({ href, title, subtitle, trailing }: { href: string; title: string; subtitle: ReactNode; trailing?: ReactNode }) {
+export function RowLink({ href, title, subtitle, trailing }: { href: string; title: string; subtitle: ReactNode; trailing?: ReactNode }) {
   return (
     <Link href={href} className="grid min-h-[56px] grid-cols-[1fr_auto] items-center gap-3 rounded-card px-3 py-2.5 transition-colors hover:bg-bg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-text/10">
       <div className="min-w-0">
@@ -307,7 +307,7 @@ function FinanceBanner({ finance, href }: { finance: BasePayload['finance']; hre
   )
 }
 
-function TrendBars({ points, loading, unit }: { points: TrendPoint[]; loading: boolean; unit: string }) {
+export function TrendBars({ points, loading, unit }: { points: TrendPoint[]; loading: boolean; unit: string }) {
   const max = Math.max(1, ...points.map((point) => point.count))
   const last = points.at(-1)
   return (
@@ -341,7 +341,7 @@ function TrendBars({ points, loading, unit }: { points: TrendPoint[]; loading: b
 }
 
 /** Horizontal stacked bar with a tappable legend. Works at any width. */
-function StackedDistribution({ segments, total, loading, hrefFor }: { segments: Array<{ key: string; label: string; count: number; color: string }>; total: number; loading: boolean; hrefFor?: (key: string) => string }) {
+export function StackedDistribution({ segments, total, loading, hrefFor }: { segments: Array<{ key: string; label: string; count: number; color: string }>; total: number; loading: boolean; hrefFor?: (key: string) => string }) {
   return (
     <div>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-bg">
@@ -372,7 +372,7 @@ function StackedDistribution({ segments, total, loading, hrefFor }: { segments: 
 
 // ---------- Clear Aligners tab ----------
 
-function ProgressPill({ progress }: { progress: string }) {
+export function ProgressPill({ progress }: { progress: string }) {
   return <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${IDESIGN_PROGRESS_STYLES[progress] ?? 'border-border bg-bg text-text'}`}>{progress}</span>
 }
 
@@ -454,7 +454,7 @@ function AlignerTab({ data, loading, paths, reload }: { data: AlignerPayload | n
   )
 }
 
-function AttentionGroup({ title, count, tone = 'neutral', children }: { title: string; count: number; tone?: 'neutral' | 'primary'; children: ReactNode }) {
+export function AttentionGroup({ title, count, tone = 'neutral', children }: { title: string; count: number; tone?: 'neutral' | 'primary'; children: ReactNode }) {
   return (
     <div>
       <div className="mb-1.5 flex items-center gap-2 px-1">
@@ -507,7 +507,7 @@ function WearRow({ item, href }: { item: PartnerWearItem; href: string }) {
 
 // ---------- Dental Lab tab ----------
 
-function LabStatusPill({ status }: { status: string }) {
+export function LabStatusPill({ status }: { status: string }) {
   return <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${ORDER_STATUS_STYLES[status] ?? 'border-border bg-bg text-text'}`}>{ORDER_STATUS_LABELS[status] ?? status}</span>
 }
 

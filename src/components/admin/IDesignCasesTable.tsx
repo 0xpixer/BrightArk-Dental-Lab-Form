@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Link2, Plus, Save, Search, UserRoundCheck, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { usePathname } from 'next/navigation'
-import { IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
+import { IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
 import { IDesignNotifications } from '@/components/idesign/IDesignNotifications'
 import { WearSchedulePanel } from '@/components/idesign/IDesignCaseDetail'
 import { getIDesignPlanApprovalState } from '@/lib/idesign/approval'
@@ -43,6 +43,19 @@ export function IDesignCasesTable() {
   const detailBase = pathname.startsWith('/portal') ? '/portal/idesign/orders' : '/admin/idesign/orders'
   const [cases, setCases] = useState<CaseRow[]>([])
   const [search, setSearch] = useState('')
+  // Stage filter from overview links (?progress=Awaiting Approval). undefined until the URL is read.
+  const [progress, setProgress] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get('progress')
+    setProgress(value && (IDESIGN_PROGRESS_OPTIONS as readonly string[]).includes(value) ? value : null)
+  }, [])
+  const clearProgress = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.delete('progress')
+    window.history.replaceState(null, '', url)
+    setProgress(null)
+    setPage(1)
+  }
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -65,6 +78,7 @@ export function IDesignCasesTable() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' })
       if (search) params.set('search', search)
+      if (progress) params.set('progress', progress)
       const response = await fetch(`/api/idesign/cases?${params}`, { cache: 'no-store' })
       const payload = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(payload.error || 'Unable to load clear aligner orders')
@@ -80,9 +94,9 @@ export function IDesignCasesTable() {
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load clear aligner orders')
     } finally { setLoading(false) }
-  }, [page, search])
+  }, [page, search, progress])
 
-  useEffect(() => { const timer = setTimeout(load, search ? 250 : 0); return () => clearTimeout(timer) }, [load, search])
+  useEffect(() => { if (progress === undefined) return; const timer = setTimeout(load, search ? 250 : 0); return () => clearTimeout(timer) }, [load, search, progress])
 
   const assignOrder = async (doctorAccountId: number | null, salesAccountId: number | null) => {
     if (!assignmentCase) return
@@ -103,7 +117,7 @@ export function IDesignCasesTable() {
   }
 
   return <section className="space-y-4">
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div className="shrink-0"><h1 className="text-xl font-semibold text-text">iDesign | Clear Aligners</h1><p className="mt-1 text-sm text-text-muted">{loading ? 'Loading orders...' : `${total} clear aligner order${total === 1 ? '' : 's'}`}</p></div><div className="flex items-center gap-2"><label className="relative min-w-0 flex-1 sm:w-72 sm:flex-none"><span className="sr-only">Search clear aligner orders</span><span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Search patient or order number" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" /></label><IDesignNotifications />{canCreateCases && <Link href={newHref} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />New Order</Link>}</div></header>
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div className="shrink-0"><h1 className="text-xl font-semibold text-text">iDesign | Clear Aligners</h1><p className="mt-1 text-sm text-text-muted">{loading ? 'Loading orders...' : `${total} clear aligner order${total === 1 ? '' : 's'}`}</p>{progress && <button type="button" onClick={clearProgress} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full border border-text bg-text px-3 text-xs font-semibold text-white hover:bg-neutral-700">Stage: {progress}<MorphIcon icon={X} className="h-3.5 w-3.5" /><span className="sr-only">Clear stage filter</span></button>}</div><div className="flex items-center gap-2"><label className="relative min-w-0 flex-1 sm:w-72 sm:flex-none"><span className="sr-only">Search clear aligner orders</span><span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Search patient or order number" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" /></label><IDesignNotifications />{canCreateCases && <Link href={newHref} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />New Order</Link>}</div></header>
         {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <CasesTable cases={cases} loading={loading} detailBase={detailBase} canApprovePlans={canApprovePlans} canAssignOrders={canAssignOrders} canEditUpdateTime={canEditUpdateTime} canManageSchedule={canManageSchedule} expandedScheduleId={expandedScheduleId} setExpandedScheduleId={setExpandedScheduleId} expandedPlanId={expandedPlanId} setExpandedPlanId={setExpandedPlanId} setAssignmentCase={setAssignmentCase} reload={load} setError={setError} page={page} totalPages={totalPages} setPage={setPage} />
     {assignmentCase && <AssignmentDialog item={assignmentCase} accounts={assignableAccounts} saving={assigning} onCancel={() => setAssignmentCase(null)} onSave={assignOrder} />}

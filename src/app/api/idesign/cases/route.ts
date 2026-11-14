@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
   const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit')) || 20))
   const search = searchParams.get('search')?.trim()
+  const progress = searchParams.get('progress')?.trim()
   const conditions = []
   const accessCondition = await getIDesignCaseAccessCondition(Number(session!.user.id), session!.user.role)
   if (accessCondition) conditions.push(accessCondition)
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
     const pattern = `%${search}%`
     conditions.push(or(ilike(idesignCases.orderNo, pattern), ilike(idesignCases.patientName, pattern))!)
   }
+  if (progress) conditions.push(eq(idesignCases.latestProgress, progress))
   const where = conditions.length ? and(...conditions) : undefined
   const db = getDb()
   const canAssignOrders = canAssignIDesignOrders(session!.user.role)
