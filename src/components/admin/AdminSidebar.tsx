@@ -5,13 +5,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { Boxes, Box, ChevronDown, CircleDollarSign, ChevronUp, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
+import { Boxes, Box, CircleDollarSign, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
 import { ClearAlignerGlyph } from '@/components/ui/ClearAlignerGlyph'
 import { SidebarBannerCarousel } from '@/components/sidebar/SidebarBannerCarousel'
+import { SidebarModule } from '@/components/sidebar/SidebarModule'
 import { MobileDrawerBackdrop, MobileDrawerClose, MobileTopBar, sidebarAsideClass, useMobileDrawer } from '@/components/sidebar/MobileNav'
 
 interface AdminSidebarProps { username: string; role: string }
@@ -59,12 +60,19 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
       {MODULES.filter((module) => module.roles.includes(role)).flatMap((module) => {
         const open = openModule === module.id
         const ModuleIcon = module.icon
-        const moduleNav = <div key={module.id}>
-          <button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-start gap-3 rounded-card px-3 max-md:h-11 text-sm font-semibold transition-colors ${showLabels ? '' : 'md:justify-center md:px-2'} ${open ? 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}>
-            {module.id === 'idesign' ? <ClearAlignerGlyph className="h-[18px] w-[18px] shrink-0" /> : <MorphIcon icon={ModuleIcon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />}<span className={`min-w-0 flex-1 truncate text-left ${showLabels ? '' : 'md:hidden'}`}>{module.label}</span><span className={`inline-flex ${showLabels ? '' : 'md:hidden'}`}><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span>
-          </button>
-          {open && <div className={`mt-1 space-y-1 ml-5 border-l border-border pl-2 ${showLabels ? '' : 'md:ml-0 md:border-l-0 md:pl-0'}`}>{module.items.filter((item) => !item.roles || item.roles.includes(role)).map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}
-        </div>
+        const moduleNav = <SidebarModule
+          key={module.id}
+          id={module.id}
+          label={module.label}
+          icon={module.id === 'idesign' ? <ClearAlignerGlyph className="h-[18px] w-[18px] shrink-0" /> : <MorphIcon icon={ModuleIcon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />}
+          items={module.items.filter((item) => !item.roles || item.roles.includes(role))}
+          open={open}
+          onToggle={() => setOpenModule(open ? null : module.id)}
+          active={activeModule === module.id}
+          collapsed={collapsed}
+          isItemActive={(href) => isActive(pathname, href)}
+          pathname={pathname}
+        />
         // Finance sits directly below Dental Lab Orders.
         return module.id === 'dental' ? [moduleNav, <NavLink key="finance" href="/admin/finance" label="Finance" icon={Wallet} hoverIcon={CircleDollarSign} active={pathname.startsWith('/admin/finance')} showLabels={showLabels} />] : [moduleNav]
       })}
