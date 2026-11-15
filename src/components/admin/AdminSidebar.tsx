@@ -10,6 +10,7 @@ import { formatAdminRole } from '@/lib/admin/roles'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
+import { ClearAlignerGlyph } from '@/components/ui/ClearAlignerGlyph'
 import { SidebarBannerCarousel } from '@/components/sidebar/SidebarBannerCarousel'
 import { MobileDrawerBackdrop, MobileDrawerClose, MobileTopBar, sidebarAsideClass, useMobileDrawer } from '@/components/sidebar/MobileNav'
 
@@ -60,7 +61,7 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
         const ModuleIcon = module.icon
         const moduleNav = <div key={module.id}>
           <button type="button" onClick={() => setOpenModule(open ? null : module.id)} className={`flex h-10 w-full items-center justify-start gap-3 rounded-card px-3 max-md:h-11 text-sm font-semibold transition-colors ${showLabels ? '' : 'md:justify-center md:px-2'} ${open ? 'bg-primary text-white' : 'text-text-muted hover:bg-bg hover:text-text'}`} aria-expanded={open} title={module.label}>
-            <MorphIcon icon={ModuleIcon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" /><span className={`min-w-0 flex-1 truncate text-left ${showLabels ? '' : 'md:hidden'}`}>{module.label}</span><span className={`inline-flex ${showLabels ? '' : 'md:hidden'}`}><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span>
+            {module.id === 'idesign' ? <ClearAlignerGlyph className="h-[18px] w-[18px] shrink-0" /> : <MorphIcon icon={ModuleIcon} hoverIcon={module.hoverIcon} className="h-[18px] w-[18px]" />}<span className={`min-w-0 flex-1 truncate text-left ${showLabels ? '' : 'md:hidden'}`}>{module.label}</span><span className={`inline-flex ${showLabels ? '' : 'md:hidden'}`}><MorphIcon icon={open ? ChevronUp : ChevronDown} className="h-4 w-4" /></span>
           </button>
           {open && <div className={`mt-1 space-y-1 ml-5 border-l border-border pl-2 ${showLabels ? '' : 'md:ml-0 md:border-l-0 md:pl-0'}`}>{module.items.filter((item) => !item.roles || item.roles.includes(role)).map((item) => <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} showLabels={showLabels} child />)}</div>}
         </div>
