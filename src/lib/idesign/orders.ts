@@ -12,7 +12,10 @@ export const IDESIGN_PROGRESS_OPTIONS = [
   'Shipped',
   'Delivered',
   'Completed',
+  'Canceled',
 ] as const
+/** Progress values that end a case; they are not counted as active work. */
+export const IDESIGN_CLOSED_PROGRESS = ['Completed', 'Canceled'] as const
 export const IDESIGN_PAYMENT_STATUSES = ['Invoice not issue', 'Unpaid', 'Paid', 'Free'] as const
 export const IDESIGN_CURRENCIES = ['IDR', 'SGD', 'THB'] as const
 export const IDESIGN_SALES_COUNTRY: Record<string, (typeof IDESIGN_COUNTRIES)[number]> = {
@@ -33,6 +36,7 @@ export const IDESIGN_PROGRESS_STYLES: Record<string, string> = {
   Shipped: 'border-violet-200 bg-violet-100 text-violet-800',
   Delivered: 'border-teal-200 bg-teal-100 text-teal-800',
   Completed: 'border-green-200 bg-green-100 text-green-800',
+  Canceled: 'border-neutral-200 bg-neutral-100 text-neutral-500',
 }
 
 export const IDESIGN_PROGRESS_COLORS: Record<string, string> = {
@@ -45,6 +49,7 @@ export const IDESIGN_PROGRESS_COLORS: Record<string, string> = {
   Shipped: '#8b5cf6',
   Delivered: '#14b8a6',
   Completed: '#22c55e',
+  Canceled: '#d4d4d4',
 }
 
 const optionalText = z.string().trim().max(500).optional().nullable().transform((value) => value || null)

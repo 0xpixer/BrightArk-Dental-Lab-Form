@@ -1,7 +1,9 @@
-import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
+import { IDESIGN_CLOSED_PROGRESS as CLOSED_PROGRESS_LIST, IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { calculateAutomaticTreatmentProgress } from '@/lib/idesign/schedule'
 import { displayFinanceTotal, isFinanceOverdue } from '@/lib/finance/calc'
 import { isTerminalOrderStatus } from '@/lib/orderStatus'
+
+const CLOSED_PROGRESS = new Set<string>(CLOSED_PROGRESS_LIST)
 
 // Pure builders for the doctor / sales overview. No database imports, so they are unit tested.
 
@@ -113,7 +115,7 @@ export function buildAlignerOverview(cases: PartnerAlignerCaseInput[], courses: 
   return {
     totals: {
       all: cases.length,
-      active: cases.filter((row) => row.latestProgress !== 'Completed').length,
+      active: cases.filter((row) => !CLOSED_PROGRESS.has(row.latestProgress)).length,
       newThisMonth: cases.filter((row) => row.createdOn.startsWith(thisMonth)).length,
       completed: pipeline.Completed ?? 0,
       awaitingApproval: awaiting.length,
@@ -215,7 +217,7 @@ export function buildDoctorSummaries(doctors: DoctorSummaryInput[], cases: Partn
     return {
       id: doctor.id,
       name: doctor.name,
-      activeAligners: doctorCases.filter((row) => row.latestProgress !== 'Completed').length,
+      activeAligners: doctorCases.filter((row) => !CLOSED_PROGRESS.has(row.latestProgress)).length,
       awaitingApproval: doctorCases.filter((row) => row.latestProgress === 'Awaiting Approval').length,
       activeLabOrders: doctorOrders.filter((row) => !isTerminalOrderStatus(row.status)).length,
     }

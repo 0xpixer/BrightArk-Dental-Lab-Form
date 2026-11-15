@@ -18,3 +18,8 @@ test('treats later workflow statuses as approved without requiring a data update
     })
   }
 })
+
+test('a canceled case is not treated as approved or approvable', () => {
+  assert.deepEqual(getIDesignPlanApprovalState('Canceled', 'published'), { approved: false, readyForApproval: false })
+  assert.deepEqual(getIDesignPlanApprovalState('Canceled', 'approved'), { approved: true, readyForApproval: false })
+})

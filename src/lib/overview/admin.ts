@@ -1,7 +1,9 @@
-import { IDESIGN_CATEGORIES, IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
+import { IDESIGN_CLOSED_PROGRESS as CLOSED_PROGRESS_LIST, IDESIGN_CATEGORIES, IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { displayFinanceTotal, isFinanceOverdue } from '@/lib/finance/calc'
 import { isOrderStatusOverdue, isTerminalOrderStatus } from '@/lib/orderStatus'
 import { buildMonthlyTrend, monthKey, type CurrencyAmount } from './partner'
+
+const CLOSED_PROGRESS = new Set<string>(CLOSED_PROGRESS_LIST)
 
 // Pure builders for the admin / superadmin / designer overview. No database imports.
 
@@ -79,7 +81,7 @@ export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts
   const age = (row: AdminCaseInput) => daysSince(row.updatedAt, now)
   const pipeline = Object.fromEntries(IDESIGN_PROGRESS_OPTIONS.map((status) => [status, 0])) as Record<string, number>
   for (const row of cases) pipeline[row.latestProgress] = (pipeline[row.latestProgress] ?? 0) + 1
-  const open = cases.filter((row) => row.latestProgress !== 'Completed')
+  const open = cases.filter((row) => !CLOSED_PROGRESS.has(row.latestProgress))
 
   const queues = [
     queue('design', cases.filter((row) => row.latestProgress === 'Lab Designing' && age(row) >= ADMIN_QUEUE_THRESHOLDS.designDays), now),
@@ -102,7 +104,7 @@ export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts
     const own = cases.filter((row) => row.salesAccountId === account.id)
     const actual = own.filter(isNew).length
     const target = targets[account.id] ?? 0
-    return { id: account.id, name: account.name, newThisMonth: actual, active: own.filter((row) => row.latestProgress !== 'Completed').length, target, percent: target ? Math.round(actual / target * 100) : null }
+    return { id: account.id, name: account.name, newThisMonth: actual, active: own.filter((row) => !CLOSED_PROGRESS.has(row.latestProgress)).length, target, percent: target ? Math.round(actual / target * 100) : null }
   }).sort((left, right) => right.newThisMonth - left.newThisMonth || right.active - left.active || left.name.localeCompare(right.name))
 
   const doctorMap = new Map<string, { id: number | null; name: string; newThisMonth: number; active: number }>()
@@ -111,7 +113,7 @@ export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts
     const key = row.doctorAccountId ? `id:${row.doctorAccountId}` : `name:${name}`
     const entry = doctorMap.get(key) ?? { id: row.doctorAccountId, name, newThisMonth: 0, active: 0 }
     if (isNew(row)) entry.newThisMonth += 1
-    if (row.latestProgress !== 'Completed') entry.active += 1
+    if (!CLOSED_PROGRESS.has(row.latestProgress)) entry.active += 1
     doctorMap.set(key, entry)
   }
   const doctorRows = [...doctorMap.values()]
