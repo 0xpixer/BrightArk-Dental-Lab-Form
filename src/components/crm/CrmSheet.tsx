@@ -15,7 +15,13 @@ interface Activity { id: number; kind: string; body: string; createdAt: string; 
 
 const ACTIVITY_LABELS: Record<string, string> = { note: 'Note', call: 'Call', email: 'Email', meeting: 'Meeting', visit: 'Visit' }
 
-function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+const PANEL_CLASS = {
+  // Phones: bottom sheet for both. Desktop: the record opens as a right drawer, Add doctor as a centred dialog.
+  drawer: 'md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[520px] md:rounded-none',
+  dialog: 'md:inset-auto md:left-1/2 md:top-1/2 md:max-h-[88vh] md:w-[640px] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-card',
+}
+
+function Sheet({ title, onClose, children, variant = 'drawer' }: { title: string; onClose: () => void; children: React.ReactNode; variant?: keyof typeof PANEL_CLASS }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape' && !(event.target as HTMLElement)?.closest('input, select, textarea')) onClose() }
     document.addEventListener('keydown', onKey)
@@ -26,7 +32,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/30" />
-      <div className="absolute inset-x-0 bottom-0 flex max-h-[92vh] flex-col rounded-t-2xl bg-surface shadow-xl md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[520px] md:rounded-none">
+      <div className={`absolute inset-x-0 bottom-0 flex max-h-[92dvh] flex-col rounded-t-2xl bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl ${PANEL_CLASS[variant]}`}>
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border md:hidden" aria-hidden />
         {children}
       </div>
@@ -92,9 +98,9 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }
         </div>
         <section className="rounded-card border border-border bg-bg/60 p-3"><h3 className="mb-1 text-xs font-semibold uppercase text-text-muted">Orders</h3><OrdersSummary row={row} compact /></section>
         {row.fieldAccess.locked.length > 0 && row.assigned && <p className="text-xs text-text-muted">Name, email, clinic and address come from the doctor’s account. Phone, country and city edits update the account too.</p>}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {defs.map((def) => (
-            <div key={def.key} className={def.kind === 'textarea' ? 'sm:col-span-2' : ''}>
+            <div key={def.key} className={`min-w-0 ${def.kind === 'textarea' ? 'sm:col-span-2' : ''}`}>
               <p className="mb-1 text-xs font-medium text-text-muted">{def.label}</p>
               <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="field" onSave={(value) => onSave(def.key, value)} />
             </div>
@@ -165,7 +171,7 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
 
   const label = 'mb-1 block text-xs font-medium text-text-muted'
   return (
-    <Sheet title="Add doctor" onClose={onClose}>
+    <Sheet title="Add doctor" onClose={onClose} variant="dialog">
       <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="text-base font-semibold text-text">Add doctor</h2>
@@ -181,14 +187,14 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
           <label className="block"><span className={label}>Doctor name *</span><input required maxLength={200} value={draft.fullName} onChange={(event) => set('fullName')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="Dr. Jane Tan" /></label>
           <label className="block"><span className={label}>Email</span><input type="email" maxLength={254} value={draft.email} onChange={(event) => set('email')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="name@clinic.com" /></label>
           <EmailHints check={emailCheck} />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block"><span className={label}>Phone</span><input type="tel" maxLength={60} value={draft.phone} onChange={(event) => set('phone')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} /></label>
             <label className="block"><span className={label}>Clinic</span><input maxLength={200} value={draft.clinicName} onChange={(event) => set('clinicName')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} /></label>
             <label className="block"><span className={label}>Country</span><CountrySelect value={draft.country} onChange={set('country')} className={CRM_FIELD_INPUT_CLASS} /></label>
             <label className="block"><span className={label}>City</span><CityInput value={draft.city} country={draft.country} onChange={set('city')} listId="crm-new-city" className={CRM_FIELD_INPUT_CLASS} /></label>
           </div>
           <label className="block"><span className={label}>Address</span><input maxLength={500} value={draft.address} onChange={(event) => set('address')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} /></label>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block"><span className={label}>Specialty</span><input maxLength={120} value={draft.specialty} onChange={(event) => set('specialty')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="Orthodontist" /></label>
             <label className="block"><span className={label}>Status</span><select value={draft.status} onChange={(event) => set('status')(event.target.value)} className={CRM_FIELD_INPUT_CLASS}>{Object.entries(CRM_STATUS_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
             <label className="block"><span className={label}>Next follow-up</span><input type="date" value={draft.nextFollowUp} onChange={(event) => set('nextFollowUp')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} /></label>

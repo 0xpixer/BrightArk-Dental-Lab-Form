@@ -100,8 +100,8 @@ function displayValue(def: CrmFieldDef, row: CrmRow, owners: CrmOwnerOption[]): 
   const value = row[def.key as keyof CrmRow]
   switch (def.kind) {
     case 'status': return <StatusBadge status={row.status} />
-    case 'date': return <FollowUpBadge date={row.nextFollowUp} />
-    case 'tags': return <TagChips tags={row.tags} />
+    case 'date': return row.nextFollowUp ? <FollowUpBadge date={row.nextFollowUp} /> : null
+    case 'tags': return row.tags.length ? <TagChips tags={row.tags} /> : null
     case 'owner': return owners.find((owner) => owner.id === row.salesId)?.name ?? row.ownerName
     default: return typeof value === 'string' && value ? value : null
   }

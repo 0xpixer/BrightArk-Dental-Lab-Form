@@ -20,7 +20,7 @@ const FOLLOW_UP_OPTIONS = [
   { value: 'none', label: 'Not scheduled' },
 ]
 
-const SELECT_CLASS = 'h-11 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10 md:h-10'
+const SELECT_CLASS = 'h-11 w-full min-w-0 rounded-card border border-border bg-surface px-3 text-base text-text md:text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10 md:h-10'
 
 export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string }) {
   const [rows, setRows] = useState<CrmRow[]>([])
@@ -138,26 +138,26 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
       </header>
 
       <section className="rounded-card border border-border bg-surface p-3">
-        <div className={`grid gap-2 sm:grid-cols-2 ${viewer?.canChooseOwner ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
-          <label className="relative">
+        <div className={`grid grid-cols-2 gap-2 ${viewer?.canChooseOwner ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
+          <label className="relative col-span-2 xl:col-span-1">
             <span className="sr-only">Search doctors</span>
             <span className="pointer-events-none absolute left-3 top-3.5 md:top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span>
-            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, phone, clinic, tag" className={`${SELECT_CLASS} pl-9`} />
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search doctors" className={`${SELECT_CLASS} pl-9`} />
           </label>
           <select aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value)} className={SELECT_CLASS}>
-            <option value="">All statuses</option>
+            <option value="">Status</option>
             {options.statuses.map((value) => <option key={value} value={value}>{CRM_STATUS_LABELS[value as CrmStatus] ?? value}</option>)}
           </select>
           <select aria-label="Country" value={country} onChange={(event) => setCountry(event.target.value)} className={SELECT_CLASS}>
-            <option value="">All countries</option>
+            <option value="">Country</option>
             {options.countries.map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
           {viewer?.canChooseOwner && <select aria-label="Sales rep" value={salesId} onChange={(event) => setSalesId(event.target.value)} className={SELECT_CLASS}>
-            <option value="">All sales reps</option>
+            <option value="">Sales rep</option>
             {options.owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
           </select>}
-          <select aria-label="Follow-up" value={followUp} onChange={(event) => setFollowUp(event.target.value)} className={SELECT_CLASS}>
-            <option value="">All follow-ups</option>
+          <select aria-label="Follow-up" value={followUp} onChange={(event) => setFollowUp(event.target.value)} className={`${SELECT_CLASS} ${viewer?.canChooseOwner ? '' : 'col-span-2 xl:col-span-1'}`}>
+            <option value="">Follow-up</option>
             {FOLLOW_UP_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </div>

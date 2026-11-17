@@ -61,7 +61,7 @@ export const CRM_LEAD_FIELDS = new Set(['fullName', 'status', 'nextFollowUp', 's
 export const CRM_OWNER_FIELD: CrmFieldDef = { key: 'salesId', label: 'Sales rep', kind: 'owner', width: 'w-40' }
 
 export const CRM_INPUT_CLASS = 'h-8 w-full min-w-0 rounded-card border border-border bg-surface px-2 text-xs text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10'
-export const CRM_FIELD_INPUT_CLASS = 'h-11 w-full min-w-0 rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10 md:h-10'
+export const CRM_FIELD_INPUT_CLASS = 'h-11 w-full min-w-0 rounded-card border border-border bg-surface px-3 text-base text-text md:text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10 md:h-10'
 
 export function localToday() {
   return new Date().toLocaleDateString('en-CA')
