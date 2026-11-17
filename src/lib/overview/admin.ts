@@ -52,7 +52,12 @@ export interface AdminCaseInput {
   salesAccountId: number | null
   salesName: string | null
   category: string
+  /** Date the treatment plan was approved (YYYY-MM-DD), when known. */
+  approvedOn?: string | null
 }
+
+/** A paid finance row, for the "paid this month" volume chart. */
+export interface AdminPaymentInput { paidOn: string; category: string }
 
 export interface AdminQueueItem {
   id: number
@@ -75,7 +80,7 @@ function queue(key: string, rows: AdminCaseInput[], now: Date): AdminQueue {
 
 export interface SalesAccountInput { id: number; name: string }
 
-export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts: SalesAccountInput[], targets: Record<number, number>, now = new Date()) {
+export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts: SalesAccountInput[], targets: Record<number, number>, now = new Date(), payments: AdminPaymentInput[] = []) {
   const thisMonth = monthKey(now)
   const lastMonth = monthKey(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)))
   const age = (row: AdminCaseInput) => daysSince(row.updatedAt, now)
@@ -91,13 +96,20 @@ export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts
     queue('entering', cases.filter((row) => row.latestProgress === 'Entering Info' && age(row) >= ADMIN_QUEUE_THRESHOLDS.enteringInfoDays), now),
   ]
 
-  const categories = [...new Set<string>([...IDESIGN_CATEGORIES, ...cases.map((row) => row.category)])]
+  const categories = [...new Set<string>([...IDESIGN_CATEGORIES, ...cases.map((row) => row.category), ...payments.map((row) => row.category)])]
   const months = buildMonthlyTrend([], now)
-  const trend = months.map((point) => {
-    const monthCases = cases.filter((row) => row.createdOn.startsWith(point.key))
-    const byCategory = Object.fromEntries(categories.map((category) => [category, monthCases.filter((row) => row.category === category).length]))
-    return { key: point.key, label: point.label, count: monthCases.length, byCategory }
+  // One monthly series per volume view: cases created, plans approved, and payments received.
+  const series = (items: Array<{ date: string | null | undefined; category: string }>) => months.map((point) => {
+    const inMonth = items.filter((item) => item.date?.startsWith(point.key))
+    const byCategory = Object.fromEntries(categories.map((category) => [category, inMonth.filter((item) => item.category === category).length]))
+    return { key: point.key, label: point.label, count: inMonth.length, byCategory }
   })
+  const trend = series(cases.map((row) => ({ date: row.createdOn, category: row.category })))
+  const volume = {
+    created: trend,
+    approved: series(cases.map((row) => ({ date: row.approvedOn, category: row.category }))),
+    paid: series(payments.map((row) => ({ date: row.paidOn, category: row.category }))),
+  }
 
   const isNew = (row: AdminCaseInput) => row.createdOn.startsWith(thisMonth)
   const salesRows = salesAccounts.map((account) => {
@@ -136,6 +148,7 @@ export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts
     queues,
     categories,
     trend,
+    volume,
     targets: { totalTarget, actual: salesRows.reduce((sum, row) => sum + row.newThisMonth, 0), percent: totalTarget ? Math.round(salesRows.reduce((sum, row) => sum + row.newThisMonth, 0) / totalTarget * 100) : null },
     salesLeaderboard: salesRows,
     doctorLeaderboard: doctorRows,

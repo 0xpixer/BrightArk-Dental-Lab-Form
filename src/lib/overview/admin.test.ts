@@ -61,3 +61,13 @@ test('lab queues separate stale pending, overdue and re-do orders', () => {
   assert.deepEqual(Object.fromEntries(overview.queues.map((item) => [item.key, item.items.map((row) => row.id)])), { pending: [1], overdue: [3], redo: [4] })
   assert.equal(overview.salesLeaderboard[0].active, 4)
 })
+
+test('volume series count created, approved and paid per month', () => {
+  const overview = buildAdminAlignerOverview([
+    adminCase(1, 'Approved', 1, { createdOn: '2026-10-20', approvedOn: '2026-11-02' }),
+    adminCase(2, 'Lab Designing', 1, { createdOn: '2026-11-05' }),
+  ], [], {}, now, [{ paidOn: '2026-11-10', category: 'iAlign' }, { paidOn: '2026-09-01', category: 'iScan' }])
+  const last = (key: 'created' | 'approved' | 'paid') => overview.volume[key].at(-1)?.count
+  assert.deepEqual([last('created'), last('approved'), last('paid')], [1, 1, 1])
+  assert.equal(overview.volume.paid.find((point) => point.key === '2026-09')?.byCategory.iScan, 1)
+})

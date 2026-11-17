@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { desc, eq } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, appSettings, idesignCases, idesignOrders, orders, salesDoctorAssignments } from '@/lib/db/schema'
+import { adminUsers, appSettings, idesignCases, idesignOrders, idesignTreatmentPlans, orders, salesDoctorAssignments } from '@/lib/db/schema'
 import { isAdminRole, isDesignerRole, SALES_ROLES } from '@/lib/admin/roles'
 import { getFinanceOverdueDays } from '@/lib/finance/server'
 import { buildOverviewMetrics } from '@/lib/overviewMetrics'
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   }
 
   if (tab === 'aligners') {
-    const [caseRows, financeRows, targetRow, overdueDays] = await Promise.all([
+    const [caseRows, financeRows, targetRow, overdueDays, approvals] = await Promise.all([
       db.select({
         id: idesignCases.id,
         orderNo: idesignCases.orderNo,
@@ -89,10 +89,20 @@ export async function GET(request: Request) {
         doctorAccountId: idesignOrders.doctorAccountId,
         salesAccountId: idesignOrders.salesAccountId,
         sourceCountry: idesignOrders.country,
+        paymentDate: idesignOrders.paymentDate,
       }).from(idesignOrders),
       db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, SALES_TARGETS_KEY)).limit(1),
       getFinanceOverdueDays(),
+      db.select({ caseId: idesignTreatmentPlans.caseId, approvedAt: idesignTreatmentPlans.approvedAt }).from(idesignTreatmentPlans).where(eq(idesignTreatmentPlans.status, 'approved')),
     ])
+    // Earliest approval per case, for the "approved this month" volume chart.
+    const approvedOnByCase = new Map<number, string>()
+    for (const row of approvals) {
+      if (!row.approvedAt) continue
+      const day = row.approvedAt.toISOString().slice(0, 10)
+      const current = approvedOnByCase.get(row.caseId)
+      if (!current || day < current) approvedOnByCase.set(row.caseId, day)
+    }
 
     // A case belongs to its doctor's country; imported rows fall back to the spreadsheet country, then the sales account.
     const resolveCountry = (doctor: number | null, sales: number | null, source: string | null) =>
@@ -112,6 +122,7 @@ export async function GET(request: Request) {
         salesAccountId: row.salesAccountId,
         salesName: (row.salesAccountId ? accountById.get(row.salesAccountId)?.label : null) ?? row.sourceSalesName ?? null,
         category: row.category ?? 'iAlign',
+        approvedOn: approvedOnByCase.get(row.id) ?? null,
         country: resolveCountry(row.doctorAccountId, row.salesAccountId, row.sourceCountry),
       }
     })
@@ -128,17 +139,19 @@ export async function GET(request: Request) {
     const leaderboardSales = salesAccounts.filter((account) => (salesId ? account.id === salesId : (!country || account.country === country || salesWithCases.has(account.id))))
     const targets = parseSalesTargets(targetRow[0]?.value)
 
-    const finance = designer ? null : buildAdminFinance(financeRows.filter((row) =>
+    const scopedFinanceRows = financeRows.filter((row) =>
       row.category !== 'Dental Lab'
       && (!category || row.category === category)
       && (!country || resolveCountry(row.doctorAccountId, row.salesAccountId, row.sourceCountry) === country)
       && (!salesId || row.salesAccountId === salesId)
-      && (!doctorId || row.doctorAccountId === doctorId)), overdueDays, now.toISOString().slice(0, 10))
+      && (!doctorId || row.doctorAccountId === doctorId))
+    const finance = designer ? null : buildAdminFinance(scopedFinanceRows, overdueDays, now.toISOString().slice(0, 10))
+    const payments = scopedFinanceRows.flatMap((row) => row.paymentStatus === 'Paid' && row.paymentDate ? [{ paidOn: row.paymentDate, category: row.category }] : [])
 
     return NextResponse.json({
       ...base,
       options: { countries, sales: salesInCountry.map(({ id, name }) => ({ id, name })), doctors: doctorOptions, categories: [...new Set(allCases.map((row) => row.category))].sort() },
-      aligners: buildAdminAlignerOverview(cases, leaderboardSales, designer ? {} : targets, now),
+      aligners: buildAdminAlignerOverview(cases, leaderboardSales, designer ? {} : targets, now, payments),
       finance,
       allTargets: isAdminRole(role) ? salesAccounts.map((account) => ({ id: account.id, name: account.name, country: account.country, target: targets[account.id] ?? 0 })) : [],
     })

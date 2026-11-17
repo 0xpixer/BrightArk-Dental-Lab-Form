@@ -102,6 +102,7 @@ interface AlignerPayload extends BasePayload {
     queues: AdminQueue[]
     categories: string[]
     trend: Array<TrendPoint & { byCategory: Record<string, number> }>
+    volume: Record<VolumeView, Array<TrendPoint & { byCategory: Record<string, number> }>>
     targets: { totalTarget: number; actual: number; percent: number | null }
     salesLeaderboard: Array<Leader & { id: number; target: number; percent: number | null }>
     doctorLeaderboard: Leader[]
@@ -317,7 +318,39 @@ function Leaderboard({ title, subtitle, icon, rows, loading, empty }: { title: s
   )
 }
 
-function CategoryTrend({ points, categories, loading }: { points: AlignerPayload['aligners']['trend']; categories: string[]; loading: boolean }) {
+type VolumeView = 'created' | 'approved' | 'paid'
+
+const VOLUME_VIEWS: Array<{ key: VolumeView; label: string; subtitle: string; unit: string }> = [
+  { key: 'created', label: 'Created', subtitle: 'Cases created per month by category', unit: 'cases' },
+  { key: 'approved', label: 'Approved', subtitle: 'Treatment plans approved per month', unit: 'approvals' },
+  { key: 'paid', label: 'Paid', subtitle: 'Payments received per month (Finance)', unit: 'payments' },
+]
+
+function CaseVolume({ volume, categories, loading, showPaid }: { volume?: AlignerPayload['aligners']['volume']; categories: string[]; loading: boolean; showPaid: boolean }) {
+  const [view, setView] = useState<VolumeView>('created')
+  const views = VOLUME_VIEWS.filter((item) => showPaid || item.key !== 'paid')
+  const active = views.find((item) => item.key === view) ?? views[0]
+  const points = volume?.[active.key] ?? []
+  const thisMonth = points.at(-1)?.count ?? 0
+  return (
+    <Panel
+      title="Case volume"
+      subtitle={`${active.subtitle} · ${loading ? '—' : thisMonth} this month`}
+      icon={ChartColumn}
+      action={
+        <div className="grid shrink-0 rounded-card border border-border bg-bg p-0.5" style={{ gridTemplateColumns: `repeat(${views.length}, minmax(0, 1fr))` }} role="tablist" aria-label="Case volume view">
+          {views.map((item) => (
+            <button key={item.key} type="button" role="tab" aria-selected={active.key === item.key} onClick={() => setView(item.key)} className={`h-8 rounded px-2.5 text-[11px] font-semibold transition-colors sm:h-7 ${active.key === item.key ? 'bg-text text-white shadow-sm' : 'text-text-muted hover:text-text'}`}>{item.label}</button>
+          ))}
+        </div>
+      }
+    >
+      <CategoryTrend points={points} categories={categories} loading={loading} unit={active.unit} />
+    </Panel>
+  )
+}
+
+function CategoryTrend({ points, categories, loading, unit = 'cases' }: { points: AlignerPayload['aligners']['trend']; categories: string[]; loading: boolean; unit?: string }) {
   const max = Math.max(1, ...points.map((point) => point.count))
   const visible = categories.filter((category) => points.some((point) => point.byCategory[category]))
   return (
@@ -328,7 +361,7 @@ function CategoryTrend({ points, categories, loading }: { points: AlignerPayload
           {(loading ? Array.from({ length: 6 }, (_, index) => ({ key: String(index), label: '', count: 0, byCategory: {} as Record<string, number> })) : points).map((point) => (
             <div key={point.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
               <div className="flex w-full flex-1 items-end justify-center pt-5">
-                <div className={`relative flex w-full max-w-10 flex-col-reverse overflow-visible ${loading ? 'h-1/2 animate-pulse rounded-t-md bg-border' : ''}`} style={loading ? undefined : { height: point.count ? `${Math.max(6, point.count / max * 100)}%` : '3px' }} title={`${point.label}: ${point.count} cases`}>
+                <div className={`relative flex w-full max-w-10 flex-col-reverse overflow-visible ${loading ? 'h-1/2 animate-pulse rounded-t-md bg-border' : ''}`} style={loading ? undefined : { height: point.count ? `${Math.max(6, point.count / max * 100)}%` : '3px' }} title={`${point.label}: ${point.count} ${unit}`}>
                   {!loading && visible.map((category) => point.byCategory[category] ? <span key={category} className="w-full first:rounded-b-none last:rounded-t-md" style={{ height: `${point.byCategory[category] / point.count * 100}%`, backgroundColor: CATEGORY_COLORS[category] ?? '#737373' }} /> : null)}
                   {!loading && !point.count && <span className="h-full w-full rounded-t-md bg-text/20" />}
                   {!loading && <span className="absolute inset-x-0 -top-5 text-center text-[11px] font-semibold tabular-nums text-text">{point.count}</span>}
@@ -424,9 +457,7 @@ function AlignerTab({ data, loading, onEditTargets }: { data: AlignerPayload | n
         <Panel title="Case pipeline" subtitle={`${totals?.all ?? 0} cases by current stage · tap to open`} icon={Factory} action={<ViewAll href={ALIGNER_LIST} />}>
           <StackedDistribution segments={pipelineSegments} total={totals?.all ?? 0} loading={loading} hrefFor={(key) => `${ALIGNER_LIST}?progress=${encodeURIComponent(key)}`} />
         </Panel>
-        <Panel title="Case volume" subtitle="New cases per month by category" icon={ChartColumn}>
-          <CategoryTrend points={aligners?.trend ?? []} categories={aligners?.categories ?? []} loading={loading} />
-        </Panel>
+        <CaseVolume volume={aligners?.volume} categories={aligners?.categories ?? []} loading={loading} showPaid={Boolean(data?.canSeeFinance)} />
       </div>
 
       {data?.canSeeFinance !== false && <FinanceSnapshot finance={data?.finance ?? null} loading={loading} title="Aligner payments" />}
