@@ -5,8 +5,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { Boxes, Box, CircleDollarSign, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
+import { BookUser, Boxes, Box, CircleDollarSign, Contact, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
+import { canViewCrm } from '@/lib/crm/crm'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { ClearAlignerActiveIcon, ClearAlignerIcon, ToothIcon, ToothPolishedIcon } from '@/components/ui/dentalIcons'
@@ -73,8 +74,13 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
           isItemActive={(href) => isActive(pathname, href)}
           pathname={pathname}
         />
-        // Finance sits directly below Dental Lab Orders.
-        return module.id === 'dental' ? [moduleNav, <NavLink key="finance" href="/admin/finance" label="Finance" icon={Wallet} hoverIcon={CircleDollarSign} active={pathname.startsWith('/admin/finance')} showLabels={showLabels} />] : [moduleNav]
+        // Finance, then the Doctor CRM (Superadmin, Sales Directors and Sales only), sit directly below Dental Lab Orders.
+        if (module.id !== 'dental') return [moduleNav]
+        return [
+          moduleNav,
+          <NavLink key="finance" href="/admin/finance" label="Finance" icon={Wallet} hoverIcon={CircleDollarSign} active={pathname.startsWith('/admin/finance')} showLabels={showLabels} />,
+          ...(canViewCrm(role) ? [<NavLink key="crm" href="/admin/crm" label="Doctor CRM" icon={Contact} hoverIcon={BookUser} active={pathname.startsWith('/admin/crm')} showLabels={showLabels} />] : []),
+        ]
       })}
       <div className="pt-2"><p className={`px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted ${showLabels ? '' : 'md:hidden'}`}>Account</p>{!showLabels && <div className="mx-2 mb-2 hidden border-t border-border md:block" />}
         <NavLink href="/admin/profile" label="My Profile" icon={UserCircle} hoverIcon={UserRoundCog} active={pathname.startsWith('/admin/profile')} showLabels={showLabels} />

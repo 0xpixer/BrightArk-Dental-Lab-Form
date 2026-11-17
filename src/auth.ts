@@ -8,6 +8,7 @@ import { checkLoginRateLimit, clearLoginRateLimit } from '@/lib/admin/rateLimit'
 import { authConfig } from './auth.config'
 import { createCurrentAccountJwtCallback } from '@/lib/admin/currentAccountSession'
 import { completeRegistrationQuery } from '@/lib/signup/store'
+import { onDoctorRegistered } from '@/lib/crm/hooks'
 import { secretHash, verificationSchema } from '@/lib/signup/security'
 
 declare module 'next-auth' {
@@ -73,6 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ))
           const account = created.rows[0] as { id: number; username: string; full_name: string; role: string } | undefined
           if (!account) return null
+          await onDoctorRegistered(Number(account.id))
           return {
             id: String(account.id),
             username: account.username,

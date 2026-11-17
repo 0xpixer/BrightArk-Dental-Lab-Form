@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db/client'
 import { readSignupJson, requestIp, secretHash, signupConfig, SignupError, verificationSchema } from '@/lib/signup/security'
 import { completeRegistrationQuery, limitSignup, verificationAttemptQuery } from '@/lib/signup/store'
+import { onDoctorRegistered } from '@/lib/crm/hooks'
 
 export const runtime = 'nodejs'
 
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
     if (!attempt.rows.length) throw new SignupError('This link has expired or has already been used. Request a new link.')
     const created = await db.execute(completeRegistrationQuery(registrationId, secretHash(config.secret, registrationId, token)))
     if (!created.rows.length) throw new SignupError('This link is invalid or has already been used. Try signing in if you already verified.')
+    await onDoctorRegistered(Number((created.rows[0] as { id: number }).id))
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (error) {
     if (error instanceof SignupError) return NextResponse.json({ error: error.message }, {

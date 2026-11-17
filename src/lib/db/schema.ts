@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   primaryKey,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const adminUsers = pgTable('admin_users', {
   id: serial('id').primaryKey(),
@@ -382,6 +383,50 @@ export const sidebarBanners = pgTable('sidebar_banners', {
   positionIdx: index('sidebar_banners_position_idx').on(table.position),
 }))
 
+/**
+ * Mini CRM: one row per (sales rep, doctor). Rows either come from a registered doctor
+ * assigned to the rep (source 'registered') or were added by the rep (source 'sales').
+ * A sales-added row is linked to the doctor's account by email once the doctor registers.
+ */
+export const crmDoctors = pgTable('crm_doctors', {
+  id: serial('id').primaryKey(),
+  salesId: integer('sales_id').references(() => adminUsers.id, { onDelete: 'cascade' }).notNull(),
+  doctorAccountId: integer('doctor_account_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  fullName: text('full_name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  clinicName: text('clinic_name'),
+  country: text('country'),
+  city: text('city'),
+  address: text('address'),
+  specialty: text('specialty'),
+  status: text('status').default('lead').notNull(),
+  source: text('source').default('sales').notNull(),
+  nextFollowUp: date('next_follow_up', { mode: 'string' }),
+  notes: text('notes'),
+  tags: jsonb('tags').$type<string[]>().default([]).notNull(),
+  createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  salesIdx: index('crm_doctors_sales_idx').on(table.salesId),
+  accountIdx: index('crm_doctors_account_idx').on(table.doctorAccountId),
+  followUpIdx: index('crm_doctors_follow_up_idx').on(table.nextFollowUp),
+  salesAccountUnique: uniqueIndex('crm_doctors_sales_account_unique').on(table.salesId, table.doctorAccountId),
+  salesEmailUnique: uniqueIndex('crm_doctors_sales_email_unique').on(table.salesId, sql`lower(${table.email})`),
+}))
+
+export const crmActivities = pgTable('crm_activities', {
+  id: serial('id').primaryKey(),
+  crmDoctorId: integer('crm_doctor_id').references(() => crmDoctors.id, { onDelete: 'cascade' }).notNull(),
+  authorId: integer('author_id').references(() => adminUsers.id, { onDelete: 'set null' }),
+  kind: text('kind').default('note').notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+}, (table) => ({
+  doctorIdx: index('crm_activities_doctor_idx').on(table.crmDoctorId, table.createdAt),
+}))
+
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type IDesignOrder = typeof idesignOrders.$inferSelect
@@ -405,3 +450,5 @@ export type SharedLink = typeof sharedLinks.$inferSelect
 export type LarkNotification = typeof larkNotifications.$inferSelect
 export type SidebarBanner = typeof sidebarBanners.$inferSelect
 export type AppSetting = typeof appSettings.$inferSelect
+export type CrmDoctor = typeof crmDoctors.$inferSelect
+export type CrmActivity = typeof crmActivities.$inferSelect

@@ -6,6 +6,7 @@ import { adminUsers, idesignOrders, salesDirectorAssignments, salesDoctorAssignm
 import { requireAdmin } from '@/lib/admin/session'
 import { isAccountRole, isSalesRole } from '@/lib/admin/roles'
 import { canViewAccount, normalizeActorName } from '@/lib/admin/accountIdentity'
+import { onSalesAssignmentsChanged } from '@/lib/crm/hooks'
 
 export async function PATCH(
   request: Request,
@@ -203,6 +204,8 @@ export async function PATCH(
         doctorId,
         assignedBy: currentUserId,
       }))).onConflictDoNothing()
+      // Newly served doctors land in this rep's CRM (linking any sales-added record by email).
+      await onSalesAssignmentsChanged([id])
     }
   }
   if (nextRole !== 'doctor') {
