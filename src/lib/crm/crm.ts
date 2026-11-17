@@ -55,7 +55,7 @@ export function canChooseCrmOwner(access: CrmAccess) {
 }
 
 export const CRM_TEXT_FIELDS = ['fullName', 'email', 'phone', 'clinicName', 'country', 'city', 'address', 'specialty', 'notes'] as const
-export const CRM_FIELDS = [...CRM_TEXT_FIELDS, 'status', 'nextFollowUp', 'tags', 'salesId'] as const
+export const CRM_FIELDS = [...CRM_TEXT_FIELDS, 'status', 'nextFollowUp', 'tags', 'salesId', 'avatarUrl'] as const
 export type CrmField = (typeof CRM_FIELDS)[number]
 
 /** Account-owned fields: shown from the doctor's account and locked in the CRM. */
@@ -115,6 +115,26 @@ const optionalDate = z.union([z.string(), z.null()]).optional().transform((value
   return text
 })
 
+/** Doctor photos must be our own Vercel Blob uploads under crm-avatars/. */
+export function isAllowedCrmAvatarUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && url.hostname.endsWith('.blob.vercel-storage.com') && url.pathname.startsWith('/crm-avatars/')
+  } catch {
+    return false
+  }
+}
+
+const avatarUrl = z.union([z.string(), z.null()]).optional().transform((value, context) => {
+  const url = (value ?? '').trim()
+  if (!url) return null
+  if (url.length > 2000 || !isAllowedCrmAvatarUrl(url)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'Upload the photo again' })
+    return z.NEVER
+  }
+  return url
+})
+
 const tags = z.union([z.array(z.string()), z.string(), z.null()]).optional().transform((value) => {
   const list = Array.isArray(value) ? value : (value ?? '').split(',')
   return [...new Set(list.map((tag) => tag.trim()).filter(Boolean).map((tag) => tag.slice(0, 40)))].slice(0, 20)
@@ -134,6 +154,7 @@ export const crmFieldSchemas = {
   nextFollowUp: optionalDate,
   tags,
   salesId: z.coerce.number().int().positive(),
+  avatarUrl,
 } satisfies Record<CrmField, z.ZodTypeAny>
 
 export const crmCreateSchema = z.object({

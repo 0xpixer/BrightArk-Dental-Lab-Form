@@ -1,0 +1,1 @@
+ALTER TABLE "crm_doctors" ADD COLUMN "avatar_url" text;

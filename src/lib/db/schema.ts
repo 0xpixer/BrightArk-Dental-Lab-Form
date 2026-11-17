@@ -400,6 +400,7 @@ export const crmDoctors = pgTable('crm_doctors', {
   city: text('city'),
   address: text('address'),
   specialty: text('specialty'),
+  avatarUrl: text('avatar_url'),
   status: text('status').default('lead').notNull(),
   source: text('source').default('sales').notNull(),
   nextFollowUp: date('next_follow_up', { mode: 'string' }),

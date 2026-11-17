@@ -44,6 +44,7 @@ const selection = {
   city: effective(crmDoctors.city, account.city),
   address: effective(crmDoctors.address, account.address),
   specialty: crmDoctors.specialty,
+  avatarUrl: crmDoctors.avatarUrl,
   status: crmDoctors.status,
   source: crmDoctors.source,
   nextFollowUp: crmDoctors.nextFollowUp,

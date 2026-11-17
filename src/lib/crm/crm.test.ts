@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   buildCrmAccess, canAccessCrmOwner, canChooseCrmOwner, canViewCrm, crmCreateSchema, crmFieldAccess,
-  crmPatchSchema, followUpState, lockedFieldsInPatch, normalizeCrmEmail, sumByCurrency,
+  crmPatchSchema, followUpState, isAllowedCrmAvatarUrl, lockedFieldsInPatch, normalizeCrmEmail, sumByCurrency,
 } from './crm'
 
 test('only Superadmin, Sales Directors and Sales can see the CRM', () => {
@@ -68,4 +68,18 @@ test('follow-up state', () => {
   assert.equal(followUpState('2026-11-16', '2026-11-17'), 'overdue')
   assert.equal(followUpState('2026-11-17', '2026-11-17'), 'today')
   assert.equal(followUpState('2026-11-18', '2026-11-17'), 'upcoming')
+})
+
+test('doctor photos only accept our own crm-avatars blob uploads', () => {
+  const good = 'https://abc123.public.blob.vercel-storage.com/crm-avatars/dr-x-AbC.webp'
+  assert.equal(isAllowedCrmAvatarUrl(good), true)
+  for (const bad of ['http://abc.public.blob.vercel-storage.com/crm-avatars/x.webp', 'https://evil.com/crm-avatars/x.webp',
+    'https://abc.public.blob.vercel-storage.com/finance-invoices/x.pdf', 'javascript:alert(1)', 'not a url']) {
+    assert.equal(isAllowedCrmAvatarUrl(bad), false, bad)
+  }
+  assert.deepEqual(crmPatchSchema.parse({ avatarUrl: good }), { avatarUrl: good })
+  assert.deepEqual(crmPatchSchema.parse({ avatarUrl: null }), { avatarUrl: null })
+  assert.equal(crmPatchSchema.safeParse({ avatarUrl: 'https://evil.com/x.png' }).success, false)
+  // Photos stay CRM-owned, so they are editable even on account-linked records.
+  assert.deepEqual(lockedFieldsInPatch({ avatarUrl: good }, crmFieldAccess({ doctorAccountId: 5, assigned: true })), [])
 })

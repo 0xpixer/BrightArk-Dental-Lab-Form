@@ -8,6 +8,7 @@ import { Toast } from '@/components/admin/Toast'
 import { CRM_STATUS_LABELS, type CrmStatus } from '@/lib/crm/crm'
 import { CrmApiBase, EditableValue, FollowUpBadge, OrdersSummary, SourceBadge, StatusBadge } from './CrmCells'
 import { CrmCreateSheet, CrmEditSheet } from './CrmSheet'
+import { AvatarPicker, DoctorAvatar } from './DoctorAvatar'
 import {
   CRM_FIELD_DEFS, CRM_LEAD_FIELDS, CRM_OWNER_FIELD, localToday, lockReason,
   type CrmOptions, type CrmRow, type CrmValue, type CrmViewer,
@@ -119,7 +120,12 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
   const restDefs = defs.filter((def) => !CRM_LEAD_FIELDS.has(def.key))
   const cell = (row: CrmRow, def: (typeof defs)[number], sticky: boolean) => (
     <td key={def.key} className={`px-1 py-1.5 ${def.width} ${sticky ? 'sticky left-0 z-10 bg-surface font-medium group-hover:bg-[#fafafa]' : ''}`}>
-      <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} />
+      {def.key === 'fullName'
+        ? <div className="flex items-start gap-1.5 pl-1">
+          <AvatarPicker compact name={row.fullName} url={row.avatarUrl} onChange={(url) => saveField(row.id, 'avatarUrl', url)} onError={setToast} />
+          <div className="min-w-0 flex-1"><EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={false} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} /></div>
+        </div>
+        : <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} />}
     </td>
   )
   const openRow = rows.find((row) => row.id === openId) ?? null
@@ -173,8 +179,9 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
             ? <p className="px-4 py-12 text-center text-sm text-text-muted">{loading ? 'Loading doctors…' : filtersActive ? 'No matching doctors' : 'No doctors yet. Add your first doctor.'}</p>
             : rows.map((row) => (
               <button key={row.id} type="button" onClick={() => setOpenId(row.id)} className="block w-full px-4 py-3 text-left active:bg-bg">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                <div className="flex items-start gap-3">
+                  <DoctorAvatar name={row.fullName} url={row.avatarUrl} />
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-text">{row.fullName}</p>
                     <p className="truncate text-xs text-text-muted">{[row.clinicName, row.city, row.country].filter(Boolean).join(' · ') || row.email || 'No details yet'}</p>
                   </div>

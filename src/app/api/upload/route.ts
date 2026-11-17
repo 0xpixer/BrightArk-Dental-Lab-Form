@@ -45,6 +45,16 @@ export async function POST(request: Request): Promise<NextResponse> {
             addRandomSuffix: true,
           }
         }
+        if (pathname.startsWith('crm-avatars/')) {
+          if (!['superadmin', 'sales_director', 'sales'].includes(session.user.role)) {
+            throw new Error('Only sales can upload doctor photos.')
+          }
+          return {
+            allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+            maximumSizeInBytes: 5 * 1024 * 1024,
+            addRandomSuffix: true,
+          }
+        }
         if (pathname.split('/').includes('messages')) {
           return {
             allowedContentTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],

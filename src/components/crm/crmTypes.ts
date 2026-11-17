@@ -17,6 +17,7 @@ export interface CrmRow {
   city: string | null
   address: string | null
   specialty: string | null
+  avatarUrl: string | null
   status: string
   source: string
   nextFollowUp: string | null

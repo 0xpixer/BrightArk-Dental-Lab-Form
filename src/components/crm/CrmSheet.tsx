@@ -5,6 +5,7 @@ import { Mail, MailOpen, MessageSquarePlus, Phone, PhoneCall, Plus, CirclePlus, 
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 import { CRM_ACTIVITY_KINDS, CRM_STATUS_LABELS } from '@/lib/crm/crm'
+import { AvatarPicker, DoctorAvatar } from './DoctorAvatar'
 import { CrmApiBase, EditableValue, EmailHints, OrdersSummary, SourceBadge, useEmailCheck } from './CrmCells'
 import {
   CRM_FIELD_DEFS, CRM_FIELD_INPUT_CLASS, CRM_OWNER_FIELD, lockReason,
@@ -54,6 +55,7 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }
   const [body, setBody] = useState('')
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState('')
+  const [photoError, setPhotoError] = useState('')
   const defs = viewer.canChooseOwner ? [...CRM_FIELD_DEFS, CRM_OWNER_FIELD] : CRM_FIELD_DEFS
   const canDelete = !(row.doctorAccountId && row.assigned)
 
@@ -85,13 +87,18 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }
   return (
     <Sheet title={row.fullName} onClose={onClose}>
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <DoctorAvatar name={row.fullName} url={row.avatarUrl} />
+          <div className="min-w-0">
           <h2 className="truncate text-base font-semibold text-text">{row.fullName}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted"><SourceBadge row={row} /><span>Sales rep: {row.ownerName}</span></div>
+          </div>
         </div>
         <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-card text-text-muted hover:bg-bg md:h-9 md:w-9" aria-label="Close"><MorphIcon icon={X} className="h-4 w-4" /></button>
       </header>
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+        <AvatarPicker name={row.fullName} url={row.avatarUrl} onChange={(url) => { setPhotoError(''); onSave('avatarUrl', url) }} onError={setPhotoError} />
+        {photoError && <p role="alert" className="-mt-3 text-xs text-red-700">{photoError}</p>}
         <div className="flex flex-wrap gap-2">
           {row.phone && <a href={`tel:${row.phone.replace(/[^\d+]/g, '')}`} className="inline-flex h-11 items-center gap-2 rounded-card bg-text px-4 text-xs font-semibold text-white hover:bg-neutral-700 md:h-9"><MorphIcon icon={Phone} hoverIcon={PhoneCall} className="h-3.5 w-3.5" />Call</a>}
           {row.email && <a href={`mailto:${row.email}`} className="inline-flex h-11 items-center gap-2 rounded-card bg-text px-4 text-xs font-semibold text-white hover:bg-neutral-700 md:h-9"><MorphIcon icon={Mail} hoverIcon={MailOpen} className="h-3.5 w-3.5" />Email</a>}
@@ -137,7 +144,7 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }
 
 interface CreateDraft {
   fullName: string; email: string; phone: string; clinicName: string; country: string; city: string
-  address: string; specialty: string; status: string; nextFollowUp: string; tags: string; notes: string; salesId: string
+  address: string; specialty: string; status: string; nextFollowUp: string; tags: string; notes: string; salesId: string; avatarUrl: string
 }
 
 export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCreate }: {
@@ -149,7 +156,7 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
 }) {
   const [draft, setDraft] = useState<CreateDraft>({
     fullName: '', email: '', phone: '', clinicName: '', country: '', city: '', address: '', specialty: '',
-    status: 'lead', nextFollowUp: '', tags: '', notes: '',
+    status: 'lead', nextFollowUp: '', tags: '', notes: '', avatarUrl: '',
     salesId: String(defaultSalesId ?? (viewer.role === 'superadmin' ? '' : viewer.userId)),
   })
   const [saving, setSaving] = useState(false)
@@ -184,6 +191,7 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
               <option value="">Choose a sales rep</option>
               {options.owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
             </select></label>}
+          <AvatarPicker name={draft.fullName || 'New doctor'} url={draft.avatarUrl || null} onChange={(url) => set('avatarUrl')(url ?? '')} onError={setError} />
           <label className="block"><span className={label}>Doctor name *</span><input required maxLength={200} value={draft.fullName} onChange={(event) => set('fullName')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="Dr. Jane Tan" /></label>
           <label className="block"><span className={label}>Email</span><input type="email" maxLength={254} value={draft.email} onChange={(event) => set('email')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="name@clinic.com" /></label>
           <EmailHints check={emailCheck} />
