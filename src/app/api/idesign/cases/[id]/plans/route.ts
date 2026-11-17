@@ -107,7 +107,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     await db.update(idesignCases).set({ planReviewStatus: 'approved', latestProgress: 'Approved', updatedAt: now }).where(eq(idesignCases.id, caseId))
     if (caseRow.importedOrderId) await db.update(idesignOrders).set({ latestProgress: 'Approved', sourceUpdatedOn: now.toISOString().slice(0, 10), updatedAt: now }).where(eq(idesignOrders.id, caseRow.importedOrderId))
     await recordIDesignActivity({ caseId, eventType: 'plan_approved', detail: `V${selectedPlan.versionNumber} approved`, ...sessionActor(session!) })
-    await notifyIDesignCase(caseRow, { type: 'plan_approved', title: 'Treatment plan approved', body: `${caseRow.patientName}'s treatment plan V${selectedPlan.versionNumber} was approved.`, dedupeKey: `plan-approved-${selectedPlan.id}`, audience: 'lab' })
+    // Clear aligner emails go to superadmins here and to Treatment Plan Designers (queued below), never to Lab Admins.
+    await notifyIDesignCase(caseRow, { type: 'plan_approved', title: 'Treatment plan approved', body: `${caseRow.patientName}'s treatment plan V${selectedPlan.versionNumber} was approved.`, dedupeKey: `plan-approved-${selectedPlan.id}`, audience: 'superadmin' })
     queueAlignerLarkNotification('approved', caseRow, request, { planVersion: selectedPlan.versionNumber })
     queueDesignerAlignerNotification('approved', caseRow, { planId: selectedPlan.id, planVersion: selectedPlan.versionNumber })
   } else {
@@ -116,7 +117,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     await getDb().update(idesignTreatmentPlans).set({ status: 'review_completed', updatedAt: now }).where(eq(idesignTreatmentPlans.id, latestPlan.id))
     await getDb().update(idesignCases).set({ planReviewStatus: 'review_completed', updatedAt: now }).where(eq(idesignCases.id, caseId))
     await recordIDesignActivity({ caseId, eventType: 'review_completed', detail: `Review completed for V${latestPlan.versionNumber}`, ...sessionActor(session!) })
-    await notifyIDesignCase(caseRow, { type: 'review_completed', title: 'Treatment plan review completed', body: `${caseRow.patientName}'s treatment plan review is ready for lab follow-up.`, dedupeKey: `review-completed-${latestPlan.id}`, audience: 'lab' })
+    await notifyIDesignCase(caseRow, { type: 'review_completed', title: 'Treatment plan review completed', body: `${caseRow.patientName}'s treatment plan review is ready for design follow-up.`, dedupeKey: `review-completed-${latestPlan.id}`, audience: 'designers_and_superadmin' })
   }
   return NextResponse.json({ success: true })
 }

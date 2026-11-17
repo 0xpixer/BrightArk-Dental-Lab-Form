@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { larkNotifications, orderActivities, orders, sharedLinks } from '@/lib/db/schema'
@@ -8,6 +9,7 @@ import { ORDER_STATUS_VALUES } from '@/lib/orderStatus'
 import { normalizeOrderNote } from '@/lib/orderActivity'
 import { getOrderActivityActorName } from '@/lib/orderActivityActor'
 import { getAccessibleDashboardOrder } from '@/lib/sales/access'
+import { sendLabStatusEmails } from '@/lib/labOrderEmails'
 
 export async function GET(
   _request: Request,
@@ -130,6 +132,9 @@ export async function PATCH(
   if (!updated) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
+
+  // Tell the doctor, their clinic staff and their sales about the new status.
+  if (statusChanged) waitUntil(sendLabStatusEmails(id, body.status).catch((error) => { console.error('Lab status email failed:', error) }))
 
   return NextResponse.json({ success: true, order: session!.user.role === 'admin' ? redactOrderForLabAdmin(updated) : updated })
 }

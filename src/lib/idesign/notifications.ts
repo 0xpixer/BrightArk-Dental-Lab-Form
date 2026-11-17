@@ -2,8 +2,10 @@ import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 import { DESIGNER_ROLES } from '@/lib/admin/roles'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignNotifications } from '@/lib/db/schema'
+import { appLink, sendTransactionalEmail } from '@/lib/email'
 
-export type IDesignNotificationAudience = 'clinical' | 'lab' | 'clinical_and_sales' | 'designers'
+// Clear aligner notifications never go to Lab Admins: they handle Dental Lab orders only.
+export type IDesignNotificationAudience = 'clinical' | 'clinical_and_sales' | 'designers' | 'superadmin' | 'designers_and_superadmin'
 
 type CaseOwner = Pick<typeof idesignCases.$inferSelect, 'id' | 'orderNo' | 'patientName' | 'doctorAccountId' | 'salesAccountId'>
 
@@ -48,8 +50,8 @@ async function recipientAccounts(caseRow: CaseOwner, audience: IDesignNotificati
     if (clinicalIds.length) conditions.push(inArray(adminUsers.id, clinicalIds))
     if (caseRow.doctorAccountId) conditions.push(and(eq(adminUsers.role, 'clinic_staff'), eq(adminUsers.linkedDoctorId, caseRow.doctorAccountId)))
   }
-  if (audience === 'lab') conditions.push(or(eq(adminUsers.role, 'admin'), eq(adminUsers.role, 'superadmin'))!)
-  if (audience === 'designers') conditions.push(inArray(adminUsers.role, [...DESIGNER_ROLES]))
+  if (audience === 'designers' || audience === 'designers_and_superadmin') conditions.push(inArray(adminUsers.role, [...DESIGNER_ROLES]))
+  if (audience === 'superadmin' || audience === 'designers_and_superadmin') conditions.push(eq(adminUsers.role, 'superadmin'))
   if (audience === 'clinical_and_sales' && caseRow.salesAccountId) conditions.push(eq(adminUsers.id, caseRow.salesAccountId))
   if (conditions.length === 0) return []
 
@@ -62,25 +64,11 @@ async function recipientAccounts(caseRow: CaseOwner, audience: IDesignNotificati
 }
 
 async function sendIDesignEmail(email: string, subject: string, message: string, caseId: number, role: string) {
-  const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.EMAIL_FROM
-  if (!apiKey || !from) return false
-  const appUrl = process.env.APP_URL?.replace(/\/$/, '')
   const detailPath = role === 'doctor' || role === 'clinic_staff'
     ? `/portal/idesign/orders/${caseId}`
     : `/admin/idesign/orders/${caseId}`
-  const link = appUrl ? `\n\nOpen case: ${appUrl}${detailPath}` : ''
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [email], subject, text: `${message}${link}` }),
-      signal: AbortSignal.timeout(10000),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
+  const link = appLink(detailPath)
+  return sendTransactionalEmail({ to: email, subject, text: `${message}${link ? `\n\nOpen case: ${link}` : ''}` })
 }
 
 export async function markIDesignNotificationRead(notificationId: number, userId: number) {

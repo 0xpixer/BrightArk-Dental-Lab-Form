@@ -11,6 +11,7 @@ import { getOrderOwnerId } from '@/lib/portal/access'
 import { getOrderActivityActorName } from '@/lib/orderActivityActor'
 import { isDoctorAssignedToSales } from '@/lib/sales/access'
 import { notifyLarkOfOrder } from '@/lib/lark'
+import { sendLabNewOrderEmails } from '@/lib/labOrderEmails'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -128,6 +129,9 @@ export async function POST(request: Request) {
         await db.insert(larkNotifications).values({ orderId }).onConflictDoNothing()
       },
     }))
+
+    // Lab Admins and superadmins get an email for every new Dental Lab order.
+    waitUntil(sendLabNewOrderEmails({ ...inserted, submittedBy: ownerId }).catch((error) => { console.error('Lab new order email failed:', error) }))
 
     return NextResponse.json(
       { success: true, orderNo: inserted.orderNo },
