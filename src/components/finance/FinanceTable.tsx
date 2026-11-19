@@ -457,9 +457,9 @@ function MonthCards({ summary, loading, status, onStatus }: { summary: FinanceMo
   if (!summary) return null
   const monthName = new Date(`${summary.month}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
   const cards = [
-    { key: 'total', label: 'Due this month', hint: 'Paid + unpaid', amounts: summary.total, count: summary.counts.total, filter: null, accent: 'bg-text' },
-    { key: 'paid', label: 'Paid this month', hint: 'Show paid', amounts: summary.paid, count: summary.counts.paid, filter: 'Paid', accent: 'bg-green-500' },
-    { key: 'unpaid', label: 'Unpaid this month', hint: 'Show unpaid', amounts: summary.unpaid, count: summary.counts.unpaid, filter: 'Unpaid', accent: 'bg-primary' },
+    { key: 'total', label: 'Due this month', hint: 'Invoiced this month', basis: 'by invoice date', amounts: summary.total, count: summary.counts.total, filter: null, accent: 'bg-text' },
+    { key: 'paid', label: 'Paid this month', hint: 'Show paid', basis: 'by payment date', amounts: summary.paid, count: summary.counts.paid, filter: 'Paid', accent: 'bg-green-500' },
+    { key: 'unpaid', label: 'Unpaid this month', hint: 'Show unpaid', basis: 'by invoice date', amounts: summary.unpaid, count: summary.counts.unpaid, filter: 'Unpaid', accent: 'bg-primary' },
   ] as const
   return <section aria-label={`${monthName} invoices`} className="grid gap-3 sm:grid-cols-3">
     {cards.map((card) => {
@@ -470,7 +470,7 @@ function MonthCards({ summary, loading, status, onStatus }: { summary: FinanceMo
           <span className="shrink-0 whitespace-nowrap text-xs text-text-muted">{card.count} invoice{card.count === 1 ? '' : 's'}</span>
         </span>
         <span className="mt-2 block text-2xl font-semibold tabular-nums text-text">{card.amounts.length ? formatMonthMoney(card.amounts[0]) : '0'}</span>
-        <span className="mt-1 block min-h-4 text-xs tabular-nums text-text-muted">{card.amounts.length > 1 ? card.amounts.slice(1).map(formatMonthMoney).join(' · ') : `${monthName} · by invoice date`}</span>
+        <span className="mt-1 block min-h-4 text-xs tabular-nums text-text-muted">{card.amounts.length > 1 ? card.amounts.slice(1).map(formatMonthMoney).join(' · ') : `${monthName} · ${card.basis}`}</span>
       </>
       const className = `block w-full rounded-card border bg-surface p-4 text-left transition-colors ${active ? 'border-text ring-2 ring-text/10' : 'border-border'}`
       return card.filter === null

@@ -104,16 +104,17 @@ function sumMoney(rows: { currency: string | null; amount: number | null }[]): F
 }
 
 /**
- * This month's bills: rows invoiced in the month, split into Paid and Unpaid (total = paid + unpaid).
+ * This month's money. "Due" is everything invoiced in the month (Paid or Unpaid); "Unpaid" is the part of it
+ * still open. "Paid" is money received in the month, by payment date, whichever month it was invoiced in.
  * Free and not-yet-invoiced rows owe nothing, so they are left out. Amounts are summed per currency.
  */
 export function buildFinanceMonthSummary(
-  rows: { paymentStatus: string; invoiceDate: string | null; originalPrice: string | null; discount: string | null; totalAmount: string | null; currency: string | null }[],
+  rows: { paymentStatus: string; invoiceDate: string | null; paymentDate: string | null; originalPrice: string | null; discount: string | null; totalAmount: string | null; currency: string | null }[],
   month: string,
 ): FinanceMonthSummary {
   const billed = rows.filter((row) => row.invoiceDate?.startsWith(month) && (row.paymentStatus === 'Paid' || row.paymentStatus === 'Unpaid'))
-  const money = (list: typeof billed) => sumMoney(list.map((row) => ({ currency: row.currency, amount: displayFinanceTotal(row) })))
-  const paid = billed.filter((row) => row.paymentStatus === 'Paid')
+  const money = (list: typeof rows) => sumMoney(list.map((row) => ({ currency: row.currency, amount: displayFinanceTotal(row) })))
+  const paid = rows.filter((row) => row.paymentStatus === 'Paid' && row.paymentDate?.startsWith(month))
   const unpaid = billed.filter((row) => row.paymentStatus === 'Unpaid')
   return { month, total: money(billed), paid: money(paid), unpaid: money(unpaid), counts: { total: billed.length, paid: paid.length, unpaid: unpaid.length } }
 }

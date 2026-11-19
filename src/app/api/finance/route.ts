@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { and, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or, sql, type AnyColumn, type SQL } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
@@ -41,7 +41,10 @@ export async function GET(request: Request) {
   conditions.push(tab === 'dental' ? eq(idesignOrders.category, 'Dental Lab') : sql`${idesignOrders.category} <> 'Dental Lab'`)
   // Month cards cover the whole tab in the viewer's scope; the search and filters below don't change them.
   const month = today.slice(0, 7)
-  const monthWhere = and(...conditions, sql`${idesignOrders.invoiceDate} >= ${`${month}-01`}::date`, sql`${idesignOrders.invoiceDate} < (${`${month}-01`}::date + interval '1 month')`)
+  const monthStart = `${month}-01`
+  const inMonth = (column: AnyColumn) => sql`(${column} >= ${monthStart}::date and ${column} < (${monthStart}::date + interval '1 month'))`
+  // Invoiced this month (Due, Unpaid) or paid this month (Paid, by payment date).
+  const monthWhere = and(...conditions, or(inMonth(idesignOrders.invoiceDate), inMonth(idesignOrders.paymentDate)))
   if (category) conditions.push(eq(idesignOrders.category, category))
   if (status) conditions.push(eq(idesignOrders.paymentStatus, status))
   if (overdueOnly) conditions.push(financeOverdueCondition(overdueDays, today))
