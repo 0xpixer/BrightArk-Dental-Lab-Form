@@ -6,22 +6,26 @@ export const FINANCE_PAYMENT_STATUSES = IDESIGN_PAYMENT_STATUSES
 export const FINANCE_CURRENCIES = IDESIGN_CURRENCIES
 export const DENTAL_LAB_CATEGORY = 'Dental Lab'
 export const ALIGNER_CATEGORY = 'iAlign'
-export const FINANCE_TABS = ['aligners', 'dental', 'devices'] as const
+/** Tabs that each hold a set of categories. */
+export const FINANCE_CATEGORY_TABS = ['aligners', 'dental', 'devices'] as const
+export type FinanceCategoryTab = (typeof FINANCE_CATEGORY_TABS)[number]
+/** Page tabs, in display order: Overview shows every category together. */
+export const FINANCE_TABS = ['overview', ...FINANCE_CATEGORY_TABS] as const
 export type FinanceTab = (typeof FINANCE_TABS)[number]
 
 /** Clear Aligners is iAlign, Dental Lab is Dental Lab, and Devices & Service holds every other category. */
-export function financeTabForCategory(category: string): FinanceTab {
+export function financeTabForCategory(category: string): FinanceCategoryTab {
   if (category === ALIGNER_CATEGORY) return 'aligners'
   if (category === DENTAL_LAB_CATEGORY) return 'dental'
   return 'devices'
 }
 
 export function financeTabCategories(tab: FinanceTab): string[] {
-  return FINANCE_CATEGORIES.filter((category) => financeTabForCategory(category) === tab)
+  return tab === 'overview' ? [...FINANCE_CATEGORIES] : FINANCE_CATEGORIES.filter((category) => financeTabForCategory(category) === tab)
 }
 
 export function parseFinanceTab(value: string | null | undefined): FinanceTab {
-  return value === 'dental' || value === 'devices' ? value : 'aligners'
+  return value === 'overview' || value === 'dental' || value === 'devices' ? value : 'aligners'
 }
 
 /** The Finance page URL for a tab; Clear Aligners is the default and needs no parameter. */

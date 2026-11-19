@@ -56,6 +56,8 @@ test('Finance tabs: Clear Aligners, Dental Lab, and Devices & Service for everyt
   assert.equal(financeTabForCategory('Some new category'), 'devices')
   assert.equal(parseFinanceTab('dental'), 'dental')
   assert.equal(parseFinanceTab('devices'), 'devices')
+  assert.equal(parseFinanceTab('overview'), 'overview')
+  assert.deepEqual(financeTabCategories('overview'), ['iAlign', 'iScan', 'Dental Lab', 'Others'])
   assert.equal(parseFinanceTab(null), 'aligners')
   assert.equal(parseFinanceTab('anything'), 'aligners')
 })
@@ -63,6 +65,7 @@ test('Finance tabs: Clear Aligners, Dental Lab, and Devices & Service for everyt
 test('Finance tab links only carry a tab parameter for the non-default tabs', () => {
   assert.equal(financeTabHref('/admin/finance', 'aligners'), '/admin/finance')
   assert.equal(financeTabHref('/admin/finance', 'devices'), '/admin/finance?tab=devices')
+  assert.equal(financeTabHref('/admin/finance', 'overview'), '/admin/finance?tab=overview')
   assert.equal(financeTabHref('/portal/finance', 'dental', true), '/portal/finance?tab=dental&overdue=1')
   assert.equal(financeTabHref('/admin/finance', undefined, true), '/admin/finance?overdue=1')
 })

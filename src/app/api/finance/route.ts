@@ -39,9 +39,9 @@ export async function GET(request: Request) {
   const conditions: SQL[] = []
   if (scope) conditions.push(scope)
   // Devices & Service also takes any category outside the known list, so no row falls between tabs.
-  conditions.push(tab === 'devices'
-    ? notInArray(idesignOrders.category, [...financeTabCategories('aligners'), ...financeTabCategories('dental')])
-    : inArray(idesignOrders.category, tabCategories))
+  // Overview has no category condition: it is every tab's rows together.
+  if (tab === 'devices') conditions.push(notInArray(idesignOrders.category, [...financeTabCategories('aligners'), ...financeTabCategories('dental')]))
+  else if (tab !== 'overview') conditions.push(inArray(idesignOrders.category, tabCategories))
   // Month cards cover the whole tab in the viewer's scope; the search and filters below don't change them.
   const month = today.slice(0, 7)
   const monthStart = `${month}-01`

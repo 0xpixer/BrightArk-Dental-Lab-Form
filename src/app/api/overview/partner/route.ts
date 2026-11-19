@@ -6,7 +6,7 @@ import { adminUsers, idesignCaseActivities, idesignCases, idesignOrders, idesign
 import { isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { dateInTimezone } from '@/lib/idesign/schedule'
-import { financeTabForCategory, FINANCE_TABS } from '@/lib/finance/calc'
+import { financeTabForCategory, FINANCE_CATEGORY_TABS } from '@/lib/finance/calc'
 import { getFinanceOverdueDays, getFinanceScope } from '@/lib/finance/server'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { getSalesDoctors, getSalesOrderAccessCondition } from '@/lib/sales/access'
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     category: idesignOrders.category,
   }).from(idesignOrders).where(and(eq(idesignOrders.paymentStatus, 'Unpaid'), ...financeConditions))
   // Finance is split into tabs by category; links open the first tab with overdue rows, else the first with unpaid rows.
-  const tabSummaries = FINANCE_TABS.map((financeTab) => ({ tab: financeTab, summary: buildFinanceSummary(financeRows.filter((row) => financeTabForCategory(row.category) === financeTab), overdueDays, today) }))
+  const tabSummaries = FINANCE_CATEGORY_TABS.map((financeTab) => ({ tab: financeTab, summary: buildFinanceSummary(financeRows.filter((row) => financeTabForCategory(row.category) === financeTab), overdueDays, today) }))
   const financeTab = (tabSummaries.find((entry) => entry.summary.overdueCount > 0) ?? tabSummaries.find((entry) => entry.summary.unpaidCount > 0))?.tab ?? 'aligners'
   const finance = { ...buildFinanceSummary(financeRows, overdueDays, today), overdueDays, tab: financeTab }
 

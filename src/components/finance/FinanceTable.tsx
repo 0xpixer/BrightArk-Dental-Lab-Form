@@ -66,8 +66,8 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 type Area = 'admin' | 'portal'
-const TAB_LABELS: Record<FinanceTab, string> = { aligners: 'Clear Aligners', dental: 'Dental Lab', devices: 'Devices & Service' }
-const ADD_LABELS: Record<FinanceTab, string> = { aligners: 'Add aligner record', dental: 'Add Dental Lab record', devices: 'Add device or service record' }
+const TAB_LABELS: Record<FinanceTab, string> = { overview: 'Overview', aligners: 'Clear Aligners', dental: 'Dental Lab', devices: 'Devices & Service' }
+const ADD_LABELS: Record<FinanceTab, string> = { overview: 'Add record', aligners: 'Add aligner record', dental: 'Add Dental Lab record', devices: 'Add device or service record' }
 
 export function FinanceTable({ area }: { area: Area }) {
   const showDoctor = area === 'admin'
@@ -254,8 +254,8 @@ export function FinanceTable({ area }: { area: Area }) {
         {canManage && <button type="button" onClick={startCreate} disabled={editingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />{ADD_LABELS[tab]}</button>}
       </header>
 
-      <div role="tablist" aria-label="Finance categories" className="flex gap-1 border-b border-border">
-        {FINANCE_TABS.map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => changeTab(value)} className={`-mb-px h-10 whitespace-nowrap border-b-2 px-2.5 text-[13px] font-semibold transition-colors sm:px-4 sm:text-sm ${tab === value ? 'border-primary text-text' : 'border-transparent text-text-muted hover:text-text'}`}>{TAB_LABELS[value]}</button>)}
+      <div role="tablist" aria-label="Finance categories" className="flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_#e5e5e5] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {FINANCE_TABS.map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => changeTab(value)} className={`h-10 shrink-0 whitespace-nowrap border-b-2 px-2.5 text-[13px] font-semibold transition-colors sm:px-4 sm:text-sm ${tab === value ? 'border-primary text-text' : 'border-transparent text-text-muted hover:text-text'}`}>{TAB_LABELS[value]}</button>)}
       </div>
 
       <MonthCards summary={summary} loading={loading && !summary} status={status} onStatus={(value) => updateFilter(setStatus, value)} />
