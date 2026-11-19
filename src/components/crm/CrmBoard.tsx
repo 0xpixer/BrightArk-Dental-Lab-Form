@@ -137,7 +137,7 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
     <section className="space-y-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text">Doctor CRM</h1>
+          <h1 className="text-xl font-semibold text-text">Sales CRM</h1>
           <p className="mt-1 text-sm text-text-muted">{loading && rows.length === 0 ? 'Loading doctors…' : <>{`${rows.length}${truncated ? '+' : ''} doctors${dueCount ? ` · ${dueCount} follow-up${dueCount === 1 ? '' : 's'} due` : ''}`}<span className="hidden md:inline"> · click any cell to edit</span><span className="md:hidden"> · tap a doctor to edit</span></>}</p>
         </div>
         <button type="button" onClick={() => setCreating(true)} disabled={!viewer} className="inline-flex h-11 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40 md:h-10"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />Add doctor</button>

@@ -74,12 +74,12 @@ export function AdminSidebar({ username, role }: AdminSidebarProps) {
           isItemActive={(href) => isActive(pathname, href)}
           pathname={pathname}
         />
-        // Finance, then the Doctor CRM (Superadmin, Sales Directors and Sales only), sit directly below Dental Lab Orders.
+        // Finance, then the Sales CRM (Superadmin, Sales Directors and Sales only), sit directly below Dental Lab Orders.
         if (module.id !== 'dental') return [moduleNav]
         return [
           moduleNav,
           <NavLink key="finance" href="/admin/finance" label="Finance" icon={Wallet} hoverIcon={CircleDollarSign} active={pathname.startsWith('/admin/finance')} showLabels={showLabels} />,
-          ...(canViewCrm(role) ? [<NavLink key="crm" href="/admin/crm" label="Doctor CRM" icon={Contact} hoverIcon={BookUser} active={pathname.startsWith('/admin/crm')} showLabels={showLabels} />] : []),
+          ...(canViewCrm(role) ? [<NavLink key="crm" href="/admin/crm" label="Sales CRM" icon={Contact} hoverIcon={BookUser} active={pathname.startsWith('/admin/crm')} showLabels={showLabels} />] : []),
         ]
       })}
       <div className="pt-2"><p className={`px-3 pb-1 text-[10px] font-semibold uppercase text-text-muted ${showLabels ? '' : 'md:hidden'}`}>Account</p>{!showLabels && <div className="mx-2 mb-2 hidden border-t border-border md:block" />}
