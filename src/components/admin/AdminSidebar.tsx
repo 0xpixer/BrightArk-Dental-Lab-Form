@@ -22,7 +22,7 @@ interface NavItem { href: string; label: string; icon: IconNode; hoverIcon: Icon
 interface NavModule { id: string; label: string; icon: IconNode; hoverIcon: IconNode; roles: string[]; items: NavItem[] }
 
 const MODULES: NavModule[] = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'admin', 'sales', 'sales_director', 'treatment_designer'], items: [
+  { id: 'idesign', label: 'Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'admin', 'sales', 'sales_director', 'treatment_designer'], items: [
     { href: '/admin/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus, roles: ['superadmin', 'admin', 'sales', 'sales_director'] },
   ] },

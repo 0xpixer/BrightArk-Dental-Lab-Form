@@ -15,7 +15,7 @@ import { SidebarModule } from '@/components/sidebar/SidebarModule'
 import { MobileDrawerBackdrop, MobileDrawerClose, MobileTopBar, sidebarAsideClass, useMobileDrawer } from '@/components/sidebar/MobileNav'
 
 const MODULES: Array<{ id: string; label: string; icon: IconNode; hoverIcon: IconNode; items: Array<{ href: string; label: string; icon: IconNode; hoverIcon: IconNode; external?: boolean }> }> = [
-  { id: 'idesign', label: 'iDesign | Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, items: [
+  { id: 'idesign', label: 'Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, items: [
     { href: '/portal/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/portal/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus },
   ] },

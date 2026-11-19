@@ -23,7 +23,7 @@ function useIsDesktop() {
 }
 
 /**
- * A sidebar module (e.g. "iDesign | Clear Aligners") with its child links.
+ * A sidebar module (e.g. "Clear Aligners") with its child links.
  * Expanded sidebar and mobile drawer: children open inline below the module.
  * Collapsed desktop rail: children appear in a labelled flyout menu beside the icon,
  * so a child link is never mistaken for a top-level item.
