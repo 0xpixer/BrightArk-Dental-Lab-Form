@@ -3,6 +3,7 @@ import { and, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
+import { buildFinanceMonthSummary } from '@/lib/finance/calc'
 import { canManageFinance, canViewFinance, financeRowSchema, financeRowValues, financeTabCategories, FINANCE_PAYMENT_STATUSES, isAllowedInvoiceUrl, parseFinanceTab } from '@/lib/finance/finance'
 import {
   financeBaseQuery,
@@ -38,6 +39,9 @@ export async function GET(request: Request) {
   const conditions: SQL[] = []
   if (scope) conditions.push(scope)
   conditions.push(tab === 'dental' ? eq(idesignOrders.category, 'Dental Lab') : sql`${idesignOrders.category} <> 'Dental Lab'`)
+  // Month cards cover the whole tab in the viewer's scope; the search and filters below don't change them.
+  const month = today.slice(0, 7)
+  const monthWhere = and(...conditions, sql`${idesignOrders.invoiceDate} >= ${`${month}-01`}::date`, sql`${idesignOrders.invoiceDate} < (${`${month}-01`}::date + interval '1 month')`)
   if (category) conditions.push(eq(idesignOrders.category, category))
   if (status) conditions.push(eq(idesignOrders.paymentStatus, status))
   if (overdueOnly) conditions.push(financeOverdueCondition(overdueDays, today))
@@ -55,10 +59,11 @@ export async function GET(request: Request) {
   const where = conditions.length ? and(...conditions) : undefined
 
   const db = getDb()
-  const [rows, totals, doctors] = await Promise.all([
+  const [rows, totals, doctors, monthRows] = await Promise.all([
     financeBaseQuery().where(where).orderBy(desc(idesignOrders.sourceCreatedOn), desc(idesignOrders.id)).limit(limit).offset((page - 1) * limit),
     db.select({ count: count() }).from(idesignOrders).leftJoin(idesignCases, eq(idesignCases.importedOrderId, idesignOrders.id)).where(where),
     canManage ? getActiveDoctors() : Promise.resolve([]),
+    financeBaseQuery().where(monthWhere),
   ])
   const total = totals[0]?.count ?? 0
 
@@ -68,6 +73,7 @@ export async function GET(request: Request) {
     overdueDays,
     canManage,
     tab,
+    summary: buildFinanceMonthSummary(monthRows.map((row) => ({ ...row, currency: row.originalCurrency })), month),
     options: {
       categories: tabCategories,
       paymentStatuses: FINANCE_PAYMENT_STATUSES,

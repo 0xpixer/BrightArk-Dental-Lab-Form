@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Dow
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { categoryLabel } from '@/lib/idesign/orders'
 import { IDESIGN_APPROVE_BUTTON_CLASS, IDESIGN_VIEW_BUTTON_CLASS } from '@/components/idesign/IDesignTreatmentPlans'
-import { computeFinanceTotal, FINANCE_CURRENCIES, financeOrderHref, parseFinanceAmount, parseFinanceTab, resolveFinanceDueDate, type FinanceTab } from '@/lib/finance/calc'
+import { computeFinanceTotal, FINANCE_CURRENCIES, type FinanceMonthSummary, type FinanceMoney, financeOrderHref, parseFinanceAmount, parseFinanceTab, resolveFinanceDueDate, type FinanceTab } from '@/lib/finance/calc'
 
 interface FinanceRow {
   id: number
@@ -87,6 +87,7 @@ export function FinanceTable({ area }: { area: Area }) {
   // The overview's overdue banner links here with ?overdue=1.
   useEffect(() => { if (new URLSearchParams(window.location.search).get('overdue') === '1') setOverdueOnly(true) }, [])
   const [canManage, setCanManage] = useState(false)
+  const [summary, setSummary] = useState<FinanceMonthSummary | null>(null)
   const [overdueDays, setOverdueDays] = useState(30)
   const [overdueInput, setOverdueInput] = useState('30')
   const [savingSettings, setSavingSettings] = useState(false)
@@ -116,6 +117,7 @@ export function FinanceTable({ area }: { area: Area }) {
       setOverdueDays(payload.overdueDays)
       setOverdueInput(String(payload.overdueDays))
       setOptions(payload.options)
+      setSummary(payload.summary ?? null)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Could not load finance records')
     } finally {
@@ -254,6 +256,8 @@ export function FinanceTable({ area }: { area: Area }) {
       <div role="tablist" aria-label="Finance categories" className="flex gap-1 border-b border-border">
         {(['aligners', 'dental'] as const).map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => changeTab(value)} className={`-mb-px h-10 border-b-2 px-4 text-sm font-semibold transition-colors ${tab === value ? 'border-primary text-text' : 'border-transparent text-text-muted hover:text-text'}`}>{TAB_LABELS[value]}</button>)}
       </div>
+
+      <MonthCards summary={summary} loading={loading && !summary} status={status} onStatus={(value) => updateFilter(setStatus, value)} />
 
       <section className="rounded-card border border-border bg-surface p-3">
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -440,6 +444,40 @@ function EditRow({ draft, setDraft, isNew, options, overdueDays, saving, uploadi
 
 function DateField({ label, value, onChange }: { label: string; value: string; onChange: (event: { target: { value: string } }) => void }) {
   return <label className="flex items-center gap-1"><span className="w-14 shrink-0 text-[10px] font-medium uppercase text-text-muted">{label}</span><input type="date" aria-label={label} value={value} onChange={onChange} className={INPUT_CLASS} /></label>
+}
+
+function formatMonthMoney({ currency, amount }: FinanceMoney) {
+  const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: currency === 'IDR' ? 0 : 2 }).format(amount)
+  return currency === '—' ? number : `${currency} ${number}`
+}
+
+/** This month's invoiced total, paid and unpaid. Paid and Unpaid double as status filters. */
+function MonthCards({ summary, loading, status, onStatus }: { summary: FinanceMonthSummary | null; loading: boolean; status: string; onStatus: (value: string) => void }) {
+  if (loading) return <div className="grid gap-3 sm:grid-cols-3">{[0, 1, 2].map((key) => <div key={key} className="h-[104px] animate-pulse rounded-card border border-border bg-surface" />)}</div>
+  if (!summary) return null
+  const monthName = new Date(`${summary.month}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+  const cards = [
+    { key: 'total', label: 'Due this month', hint: 'Paid + unpaid', amounts: summary.total, count: summary.counts.total, filter: null, accent: 'bg-text' },
+    { key: 'paid', label: 'Paid this month', hint: 'Show paid', amounts: summary.paid, count: summary.counts.paid, filter: 'Paid', accent: 'bg-green-500' },
+    { key: 'unpaid', label: 'Unpaid this month', hint: 'Show unpaid', amounts: summary.unpaid, count: summary.counts.unpaid, filter: 'Unpaid', accent: 'bg-primary' },
+  ] as const
+  return <section aria-label={`${monthName} invoices`} className="grid gap-3 sm:grid-cols-3">
+    {cards.map((card) => {
+      const active = card.filter !== null && status === card.filter
+      const body = <>
+        <span className="flex items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wide text-text-muted"><span className={`h-2 w-2 shrink-0 rounded-full ${card.accent}`} /><span className="truncate">{card.label}</span></span>
+          <span className="shrink-0 whitespace-nowrap text-xs text-text-muted">{card.count} invoice{card.count === 1 ? '' : 's'}</span>
+        </span>
+        <span className="mt-2 block text-2xl font-semibold tabular-nums text-text">{card.amounts.length ? formatMonthMoney(card.amounts[0]) : '0'}</span>
+        <span className="mt-1 block min-h-4 text-xs tabular-nums text-text-muted">{card.amounts.length > 1 ? card.amounts.slice(1).map(formatMonthMoney).join(' · ') : `${monthName} · by invoice date`}</span>
+      </>
+      const className = `block w-full rounded-card border bg-surface p-4 text-left transition-colors ${active ? 'border-text ring-2 ring-text/10' : 'border-border'}`
+      return card.filter === null
+        ? <div key={card.key} className={className}>{body}</div>
+        : <button key={card.key} type="button" aria-pressed={active} title={active ? 'Show all statuses' : card.hint} onClick={() => onStatus(active ? '' : card.filter!)} className={`${className} hover:border-neutral-400`}>{body}</button>
+    })}
+  </section>
 }
 
 function FilterSelect({ label, value, options, format = (option) => option, onChange }: { label: string; value: string; options: string[]; format?: (option: string) => string; onChange: (value: string) => void }) {

@@ -81,3 +81,39 @@ export function isFinanceOverdue(
   const due = resolveFinanceDueDate(row, overdueDays)
   return Boolean(due && today > due)
 }
+
+export interface FinanceMoney { currency: string; amount: number }
+
+export interface FinanceMonthSummary {
+  /** YYYY-MM */
+  month: string
+  total: FinanceMoney[]
+  paid: FinanceMoney[]
+  unpaid: FinanceMoney[]
+  counts: { total: number; paid: number; unpaid: number }
+}
+
+function sumMoney(rows: { currency: string | null; amount: number | null }[]): FinanceMoney[] {
+  const totals = new Map<string, number>()
+  for (const row of rows) {
+    if (row.amount === null || !Number.isFinite(row.amount)) continue
+    const currency = row.currency || '—'
+    totals.set(currency, Math.round(((totals.get(currency) ?? 0) + row.amount) * 100) / 100)
+  }
+  return [...totals].map(([currency, amount]) => ({ currency, amount })).sort((a, b) => b.amount - a.amount)
+}
+
+/**
+ * This month's bills: rows invoiced in the month, split into Paid and Unpaid (total = paid + unpaid).
+ * Free and not-yet-invoiced rows owe nothing, so they are left out. Amounts are summed per currency.
+ */
+export function buildFinanceMonthSummary(
+  rows: { paymentStatus: string; invoiceDate: string | null; originalPrice: string | null; discount: string | null; totalAmount: string | null; currency: string | null }[],
+  month: string,
+): FinanceMonthSummary {
+  const billed = rows.filter((row) => row.invoiceDate?.startsWith(month) && (row.paymentStatus === 'Paid' || row.paymentStatus === 'Unpaid'))
+  const money = (list: typeof billed) => sumMoney(list.map((row) => ({ currency: row.currency, amount: displayFinanceTotal(row) })))
+  const paid = billed.filter((row) => row.paymentStatus === 'Paid')
+  const unpaid = billed.filter((row) => row.paymentStatus === 'Unpaid')
+  return { month, total: money(billed), paid: money(paid), unpaid: money(unpaid), counts: { total: billed.length, paid: paid.length, unpaid: unpaid.length } }
+}
