@@ -24,6 +24,8 @@ export const adminUsers = pgTable('admin_users', {
   address: text('address'),
   country: text('country'),
   city: text('city'),
+  /** Free-text sales rep the doctor named at sign-up; a hint for admins, never an assignment. */
+  salesReferral: text('sales_referral'),
   linkedDoctorId: integer('linked_doctor_id'),
   passwordHash: text('password_hash').notNull(),
   role: text('role').notNull(),
@@ -45,6 +47,7 @@ export const pendingRegistrations = pgTable('pending_registrations', {
   phone: text('phone'),
   country: text('country'),
   city: text('city'),
+  salesReferral: text('sales_referral'),
   codeHash: text('code_hash').notNull(),
   attempts: integer('attempts').default(0).notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),

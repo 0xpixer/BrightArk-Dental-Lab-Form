@@ -267,6 +267,13 @@
       "when": 1795069080441,
       "tag": "0037_finance_order_links",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1795080467834,
+      "tag": "0038_sales_referral",
+      "breakpoints": true
     }
   ]
 }

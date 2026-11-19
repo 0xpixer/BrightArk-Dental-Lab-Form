@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignOrders } from '@/lib/db/schema'
+import { adoptOrderSales } from '@/lib/relationships/server'
 import { importedOrderRecordsOnly, syncImportedIDesignCases } from '@/lib/idesign/importedCases'
 
 export async function POST(request: Request) {
@@ -41,8 +42,11 @@ export async function POST(request: Request) {
   const assignment = account.role !== 'doctor'
     ? { salesAccountId: account.id, assignmentUpdatedBy: Number(session!.user.id), assignmentUpdatedAt: new Date() }
     : { doctorAccountId: account.id, assignmentUpdatedBy: Number(session!.user.id), assignmentUpdatedAt: new Date() }
-  const updated = await db.update(idesignOrders).set(assignment).where(and(...conditions)).returning({ id: idesignOrders.id })
+  const updated = await db.update(idesignOrders).set(assignment).where(and(...conditions)).returning({ id: idesignOrders.id, doctorAccountId: idesignOrders.doctorAccountId, salesAccountId: idesignOrders.salesAccountId })
   await syncImportedIDesignCases(updated.map((order) => order.id))
+  // Doctors without a sales rep adopt the rep their orders were filed under.
+  const pairs = new Map(updated.filter((order) => order.doctorAccountId && order.salesAccountId).map((order) => [order.doctorAccountId!, order.salesAccountId!]))
+  for (const [doctorId, salesId] of pairs) await adoptOrderSales(doctorId, salesId, Number(session!.user.id))
   return NextResponse.json({ success: true, assigned: updated.length, assignmentRole: account.role })
 }
 

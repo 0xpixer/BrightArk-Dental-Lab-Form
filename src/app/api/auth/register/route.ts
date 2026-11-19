@@ -27,9 +27,9 @@ export async function POST(request: Request) {
     if (existing) throw new SignupError('An account with this email already exists. Please sign in.', 409)
     await cleanupSignupData()
     const { id, token, tokenHash } = createVerificationLink(config.secret)
-    const { password, ...profile } = values
+    const { password, salesReferral, ...profile } = values
     await db.insert(pendingRegistrations).values({
-      ...profile, id, codeHash: tokenHash, passwordHash: await bcrypt.hash(password, 12),
+      ...profile, salesReferral: salesReferral || null, id, codeHash: tokenHash, passwordHash: await bcrypt.hash(password, 12),
       expiresAt: new Date(Date.now() + REGISTRATION_LINK_TTL_MS),
     })
     const verificationUrl = `${config.appUrl}/register/verify?registrationId=${id}&token=${token}`

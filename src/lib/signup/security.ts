@@ -13,6 +13,7 @@ export const registrationSchema = z.object({
   city: z.string().trim().min(1).max(120),
   address: z.string().trim().max(1000).default(''),
   phone: z.string().trim().max(50).default(''),
+  salesReferral: z.string().trim().max(150).default(''),
   turnstileToken: z.string().min(1).max(2048),
 })
 

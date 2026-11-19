@@ -8,7 +8,7 @@ import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 export function DoctorRegistration({ compact = false }: {
   compact?: boolean
 }) {
-  const [form, setForm] = useState({ fullName: '', clinicName: '', country: '', city: '', email: '', phone: '', address: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ fullName: '', clinicName: '', country: '', city: '', email: '', phone: '', address: '', salesReferral: '', password: '', confirmPassword: '' })
   const [emailSent, setEmailSent] = useState(false)
   const [token, setToken] = useState('')
   const [challenge, setChallenge] = useState(0)
@@ -67,6 +67,7 @@ export function DoctorRegistration({ compact = false }: {
         <Field label="Phone" value={form.phone} onChange={(value) => update('phone', value)} maxLength={50} autoComplete="tel" />
         <Field label="Address" value={form.address} onChange={(value) => update('address', value)} maxLength={1000} autoComplete="street-address" />
       </>}
+      <Field label="BrightArk sales representative (optional)" value={form.salesReferral} onChange={(value) => update('salesReferral', value)} maxLength={150} autoComplete="off" placeholder="e.g. the rep who introduced you" />
       <Field label="Password" type="password" value={form.password} onChange={(value) => update('password', value)} required minLength={8} maxLength={72} autoComplete="new-password" />
       <Field label="Confirm password" type="password" value={form.confirmPassword} onChange={(value) => update('confirmPassword', value)} required minLength={8} maxLength={72} autoComplete="new-password" />
     </> : <>

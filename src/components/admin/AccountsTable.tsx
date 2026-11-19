@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BadgeCheck, ChevronDown, ChevronsDown, CirclePlus, Key, KeyRound, Plus, Save } from 'lucide'
+import { BadgeCheck, CirclePlus, Key, KeyRound, Plus, Save } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
 import { Toast } from './Toast'
@@ -38,8 +38,6 @@ async function readResponseJson(response: Response): Promise<Record<string, any>
 export function AccountsTable({ currentUserId, currentUserRole }: { currentUserId: number; currentUserRole: string }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [doctors, setDoctors] = useState<{ id: number; name: string }[]>([])
-  const [salesAccounts, setSalesAccounts] = useState<{ id: number; name: string; isActive: boolean }[]>([])
-  const [assignedSalesDrafts, setAssignedSalesDrafts] = useState<Record<number, number[]>>({})
   const [loading, setLoading] = useState(true)
   const [resetModal, setResetModal] = useState<{ id: number; username: string } | null>(null)
   const [newPassword, setNewPassword] = useState('')
@@ -49,7 +47,6 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
   const [pendingAccountId, setPendingAccountId] = useState<number | null>(null)
   const [actorNameDrafts, setActorNameDrafts] = useState<Record<number, string>>({})
   const [locationDrafts, setLocationDrafts] = useState<Record<number, { country: string; city: string }>>({})
-  const [servedDoctorDrafts, setServedDoctorDrafts] = useState<Record<number, number[]>>({})
   const canManageAccounts = currentUserRole === 'superadmin'
 
   const fetchAccounts = useCallback(async () => {
@@ -63,7 +60,6 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
     } else {
       setAccounts(data.accounts ?? [])
       setDoctors(data.doctors ?? [])
-      setSalesAccounts(data.salesAccounts ?? [])
     }
     setLoading(false)
   }, [])
@@ -166,60 +162,6 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
     fetchAccounts()
   }
 
-  const updateServedDoctors = async (account: Account) => {
-    const servedDoctorIds = servedDoctorDrafts[account.id] ?? account.servedDoctorIds
-    setPendingAccountId(account.id)
-    setError(null)
-    const res = await fetch(`/api/admin/accounts/${account.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ servedDoctorIds }),
-    })
-    const data = await readResponseJson(res)
-    setPendingAccountId(null)
-    if (!res.ok) {
-      setError(data.error ?? 'Failed to update served doctors')
-      return
-    }
-    const persistedIds = Array.isArray(data.account?.servedDoctorIds)
-      ? data.account.servedDoctorIds.map(Number)
-      : servedDoctorIds
-    setAccounts((current) => current.map((candidate) => candidate.id === account.id
-      ? { ...candidate, servedDoctorIds: persistedIds }
-      : candidate))
-    setServedDoctorDrafts((current) => {
-      const next = { ...current }
-      delete next[account.id]
-      return next
-    })
-    setToast('Served doctors updated')
-    await fetchAccounts()
-  }
-
-  const updateAssignedSales = async (account: Account) => {
-    const assignedSalesIds = assignedSalesDrafts[account.id] ?? account.assignedSalesIds
-    setPendingAccountId(account.id)
-    setError(null)
-    const res = await fetch(`/api/admin/accounts/${account.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ assignedSalesIds }),
-    })
-    const data = await readResponseJson(res)
-    setPendingAccountId(null)
-    if (!res.ok) {
-      setError(data.error ?? 'Failed to update assigned sales')
-      return
-    }
-    setAssignedSalesDrafts((current) => {
-      const next = { ...current }
-      delete next[account.id]
-      return next
-    })
-    setToast('Assigned sales updated')
-    await fetchAccounts()
-  }
-
   const resetPassword = async () => {
     if (!resetModal || !newPassword) return
     setError(null)
@@ -237,6 +179,10 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
       setError(data.error ?? 'Failed to reset password')
     }
   }
+
+  const salesNamesFor = (doctorId: number) => accounts
+    .filter((account) => isSalesRole(account.role) && account.servedDoctorIds.includes(doctorId))
+    .map((account) => account.fullName ?? account.username).join(', ')
 
   const formatRelative = (d: string | null) => {
     if (!d) return 'Never'
@@ -380,49 +326,17 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {!canManageAccounts ? (
-                      <span className="text-text-muted">
-                        {acc.role === 'clinic_staff'
-                          ? doctors.find((doctor) => doctor.id === acc.linkedDoctorId)?.name ?? 'No linked doctor'
-                          : isSalesRole(acc.role)
-                            ? `${acc.servedDoctorIds.length} served doctor${acc.servedDoctorIds.length === 1 ? '' : 's'}${acc.role === 'sales_director' ? ` · ${acc.assignedSalesIds.length} sales` : ''}`
-                            : '—'}
-                      </span>
-                    ) : acc.role === 'clinic_staff' ? (
+                    {acc.role === 'clinic_staff' && canManageAccounts ? (
                       <select value={acc.linkedDoctorId ?? ''} disabled={pendingAccountId === acc.id} onChange={(e) => updateLinkedDoctor(acc.id, e.target.value)} className="max-w-40 rounded border border-border bg-surface px-2 py-1 text-xs">
                         <option value="">Select doctor</option>
                         {doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}
                       </select>
+                    ) : acc.role === 'clinic_staff' ? (
+                      <span className="text-text-muted">{doctors.find((doctor) => doctor.id === acc.linkedDoctorId)?.name ?? 'No linked doctor'}</span>
+                    ) : acc.role === 'doctor' ? (
+                      <RelationshipLink label={salesNamesFor(acc.id) || 'No sales rep'} muted={!salesNamesFor(acc.id)} />
                     ) : isSalesRole(acc.role) ? (
-                      <div className="space-y-1">
-                        <ScopeChecklist
-                          label="served doctor"
-                          options={doctors}
-                          selectedIds={servedDoctorDrafts[acc.id] ?? acc.servedDoctorIds}
-                          dirty={servedDoctorDrafts[acc.id] !== undefined}
-                          disabled={pendingAccountId === acc.id}
-                          onToggle={(optionId, selected) => setServedDoctorDrafts((current) => {
-                            const values = current[acc.id] ?? acc.servedDoctorIds
-                            return { ...current, [acc.id]: selected ? values.filter((id) => id !== optionId) : [...values, optionId] }
-                          })}
-                          onSave={() => updateServedDoctors(acc)}
-                        />
-                        {acc.role === 'sales_director' && (
-                          <ScopeChecklist
-                            label="sales"
-                            pluralSuffix=""
-                            options={salesAccounts.map((sales) => ({ id: sales.id, name: sales.isActive ? sales.name : `${sales.name} (inactive)` }))}
-                            selectedIds={assignedSalesDrafts[acc.id] ?? acc.assignedSalesIds}
-                            dirty={assignedSalesDrafts[acc.id] !== undefined}
-                            disabled={pendingAccountId === acc.id}
-                            onToggle={(optionId, selected) => setAssignedSalesDrafts((current) => {
-                              const values = current[acc.id] ?? acc.assignedSalesIds
-                              return { ...current, [acc.id]: selected ? values.filter((id) => id !== optionId) : [...values, optionId] }
-                            })}
-                            onSave={() => updateAssignedSales(acc)}
-                          />
-                        )}
-                      </div>
+                      <RelationshipLink label={`${acc.servedDoctorIds.length} doctor${acc.servedDoctorIds.length === 1 ? '' : 's'}${acc.role === 'sales_director' ? ` · ${acc.assignedSalesIds.length} sales` : ''}`} />
                     ) : <span className="text-text-muted">—</span>}
                   </td>
                   <td className="px-4 py-3">
@@ -523,33 +437,9 @@ export function AccountsTable({ currentUserId, currentUserRole }: { currentUserI
   )
 }
 
-function ScopeChecklist({ label, pluralSuffix = 's', options, selectedIds, dirty, disabled, onToggle, onSave }: {
-  label: string
-  pluralSuffix?: string
-  options: { id: number; name: string }[]
-  selectedIds: number[]
-  dirty: boolean
-  disabled: boolean
-  onToggle: (id: number, selected: boolean) => void
-  onSave: () => void
-}) {
-  return (
-    <details className="group min-w-44">
-      <summary className="flex cursor-pointer list-none items-center justify-between rounded border border-border bg-surface px-2 py-1 text-xs [&::-webkit-details-marker]:hidden">
-        <span>{selectedIds.length} {label}{selectedIds.length === 1 ? '' : pluralSuffix}</span>
-        <MorphIcon icon={ChevronDown} hoverIcon={ChevronsDown} className="h-3.5 w-3.5 text-text-muted" />
-      </summary>
-      <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded border border-border bg-surface p-2">
-        {options.length === 0 && <p className="px-1 py-1 text-xs text-text-muted">No accounts available</p>}
-        {options.map((option) => {
-          const selected = selectedIds.includes(option.id)
-          return <label key={option.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs hover:bg-bg">
-            <input type="checkbox" checked={selected} onChange={() => onToggle(option.id, selected)} className="h-3.5 w-3.5 accent-text" />
-            <span className="truncate">{option.name}</span>
-          </label>
-        })}
-        <button type="button" disabled={disabled || !dirty} onClick={onSave} className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded bg-text px-2 py-1.5 text-xs font-medium text-white disabled:opacity-30"><MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-3 w-3" /> Save scope</button>
-      </div>
-    </details>
-  )
+/** Who serves whom is managed on the Relationships tab; the table only shows it. */
+function RelationshipLink({ label, muted = false }: { label: string; muted?: boolean }) {
+  return <Link href="/admin/accounts?tab=relationships" className={`inline-flex max-w-full items-center gap-1 truncate rounded px-1 py-0.5 text-xs underline-offset-2 hover:underline ${muted ? 'text-primary' : 'text-text'}`} title="Manage in Relationships">
+    <span className="truncate">{label}</span><span aria-hidden="true">→</span>
+  </Link>
 }

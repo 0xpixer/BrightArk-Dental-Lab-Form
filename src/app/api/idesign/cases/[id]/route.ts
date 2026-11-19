@@ -19,6 +19,7 @@ import { canApproveIDesignPlans, canAssignIDesignOrders, canDeleteIDesignOrders,
 import { IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign/orders'
 import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
+import { adoptOrderSales, getDoctorSalesId } from '@/lib/relationships/server'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)))
@@ -206,7 +207,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       detail: `Order access updated — Doctor: ${doctorName}; Sales: ${salesName}`,
       ...sessionActor(session!),
     })
-    return NextResponse.json({ success: true })
+    // The doctor account is the source of truth: a doctor without a sales rep adopts this order's rep;
+    // when the doctor already has another rep, the client offers to make this one their default.
+    await adoptOrderSales(parsed.data.doctorAccountId, parsed.data.salesAccountId, Number(session!.user.id))
+    const doctorSalesId = await getDoctorSalesId(parsed.data.doctorAccountId)
+    const salesConflict = doctor && sales && doctorSalesId && doctorSalesId !== sales.id
+      ? { doctorId: doctor.id, doctorName, salesId: sales.id, salesName, currentSalesId: doctorSalesId }
+      : null
+    return NextResponse.json({ success: true, salesConflict })
   }
 
   if ('action' in parsed.data && parsed.data.action === 'update_case_information') {

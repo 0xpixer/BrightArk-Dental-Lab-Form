@@ -35,7 +35,11 @@ interface AssignableAccount {
   id: number
   name: string
   role: 'doctor' | 'sales' | 'sales_director'
+  /** A doctor's sales rep, which new access settings default to. */
+  salesId?: number | null
 }
+
+interface SalesConflict { doctorId: number; doctorName: string; salesId: number; salesName: string; currentSalesId: number }
 
 export function IDesignCasesTable() {
   const pathname = usePathname()
@@ -61,6 +65,8 @@ export function IDesignCasesTable() {
   const [totalPages, setTotalPages] = useState(1)
   const [canApprovePlans, setCanApprovePlans] = useState(false)
   const [canAssignOrders, setCanAssignOrders] = useState(false)
+  const [canManageRelationships, setCanManageRelationships] = useState(false)
+  const [salesConflict, setSalesConflict] = useState<SalesConflict | null>(null)
   const [canCreateCases, setCanCreateCases] = useState(false)
   const [assignableAccounts, setAssignableAccounts] = useState<AssignableAccount[]>([])
   const [canEditUpdateTime, setCanEditUpdateTime] = useState(false)
@@ -87,6 +93,7 @@ export function IDesignCasesTable() {
       setTotalPages(payload.pagination.totalPages)
       setCanApprovePlans(Boolean(payload.permissions?.canApprovePlans))
       setCanAssignOrders(Boolean(payload.permissions?.canAssignOrders))
+      setCanManageRelationships(Boolean(payload.permissions?.canManageRelationships))
       setCanCreateCases(Boolean(payload.permissions?.canCreateCases))
       setAssignableAccounts(payload.options?.assignableAccounts ?? [])
       setCanEditUpdateTime(Boolean(payload.permissions?.canEditUpdateTime))
@@ -111,8 +118,23 @@ export function IDesignCasesTable() {
     if (!response.ok) setError(payload.error || 'Unable to update order access')
     else {
       setAssignmentCase(null)
+      if (payload.salesConflict && canManageRelationships) setSalesConflict(payload.salesConflict)
       await load()
     }
+    setAssigning(false)
+  }
+
+  // The doctor's sales rep decides who sees their orders; offer to make this order's rep the default.
+  const makeDefaultSales = async (conflict: SalesConflict) => {
+    setAssigning(true)
+    setError(null)
+    const response = await fetch('/api/admin/relationships/doctors', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doctorIds: [conflict.doctorId], salesId: conflict.salesId, moveOrders: true }),
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) setError(payload.error || 'Unable to change the doctor\'s sales rep')
+    else { setSalesConflict(null); await load() }
     setAssigning(false)
   }
 
@@ -120,6 +142,7 @@ export function IDesignCasesTable() {
     <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div className="shrink-0"><h1 className="text-xl font-semibold text-text">iDesign | Clear Aligners</h1><p className="mt-1 text-sm text-text-muted">{loading ? 'Loading orders...' : `${total} clear aligner order${total === 1 ? '' : 's'}`}</p>{progress && <button type="button" onClick={clearProgress} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full border border-text bg-text px-3 text-xs font-semibold text-white hover:bg-neutral-700">Stage: {progress}<MorphIcon icon={X} className="h-3.5 w-3.5" /><span className="sr-only">Clear stage filter</span></button>}</div><div className="flex items-center gap-2"><label className="relative min-w-0 flex-1 sm:w-72 sm:flex-none"><span className="sr-only">Search clear aligner orders</span><span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Search patient or order number" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" /></label><IDesignNotifications />{canCreateCases && <Link href={newHref} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />New Order</Link>}</div></header>
         {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <CasesTable cases={cases} loading={loading} detailBase={detailBase} canApprovePlans={canApprovePlans} canAssignOrders={canAssignOrders} canEditUpdateTime={canEditUpdateTime} canManageSchedule={canManageSchedule} expandedScheduleId={expandedScheduleId} setExpandedScheduleId={setExpandedScheduleId} expandedPlanId={expandedPlanId} setExpandedPlanId={setExpandedPlanId} setAssignmentCase={setAssignmentCase} reload={load} setError={setError} page={page} totalPages={totalPages} setPage={setPage} />
+    {salesConflict && <SalesConflictDialog conflict={salesConflict} currentSalesName={assignableAccounts.find((account) => account.id === salesConflict.currentSalesId)?.name ?? 'another sales rep'} saving={assigning} onKeep={() => setSalesConflict(null)} onConfirm={() => void makeDefaultSales(salesConflict)} />}
     {assignmentCase && <AssignmentDialog item={assignmentCase} accounts={assignableAccounts} saving={assigning} onCancel={() => setAssignmentCase(null)} onSave={assignOrder} />}
   </section>
 }
@@ -202,15 +225,32 @@ function AssignmentDialog({ item, accounts, saving, onCancel, onSave }: { item: 
   const doctors = accounts.filter((account) => account.role === 'doctor')
   const salespeople = accounts.filter((account) => account.role === 'sales' || account.role === 'sales_director')
   const selectedId = (value: string) => value ? Number(value) : null
+  const selectedDoctor = doctors.find((account) => String(account.id) === doctorAccountId)
 
   return <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/45 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onCancel() }}>
     <div role="dialog" aria-modal="true" aria-labelledby="assign-order-title" className="w-full max-w-lg rounded-card border border-border bg-surface">
       <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4"><div><h2 id="assign-order-title" className="text-base font-semibold text-text">Manage order access</h2><p className="mt-1 text-sm text-text-muted">{item.patientName} · {item.orderNo}</p></div><button type="button" title="Close" disabled={saving} onClick={onCancel} className="grid h-8 w-8 shrink-0 place-items-center rounded text-text-muted hover:bg-bg hover:text-text disabled:opacity-40"><MorphIcon icon={X} className="h-4 w-4" /></button></header>
       <div className="space-y-4 p-5">
-        <label><span className="mb-1.5 block text-xs font-semibold text-text">Doctor account</span><select value={doctorAccountId} onChange={(event) => setDoctorAccountId(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Unassigned</option>{doctors.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select><span className="mt-1.5 block text-xs text-text-muted">The selected doctor and their linked Clinic Staff can view this order.</span></label>
-        <label><span className="mb-1.5 block text-xs font-semibold text-text">Sales account</span><select value={salesAccountId} onChange={(event) => setSalesAccountId(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Unassigned</option>{salespeople.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select><span className="mt-1.5 block text-xs text-text-muted">The selected Sales account can view this order in their dashboard.</span></label>
+        <label><span className="mb-1.5 block text-xs font-semibold text-text">Doctor account</span><select value={doctorAccountId} onChange={(event) => { const next = event.target.value; setDoctorAccountId(next); const doctorSales = doctors.find((account) => String(account.id) === next)?.salesId; if (doctorSales) setSalesAccountId(String(doctorSales)) }} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Unassigned</option>{doctors.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select><span className="mt-1.5 block text-xs text-text-muted">The selected doctor and their linked Clinic Staff can view this order.</span></label>
+        <label><span className="mb-1.5 block text-xs font-semibold text-text">Sales account</span><select value={salesAccountId} onChange={(event) => setSalesAccountId(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">Unassigned</option>{salespeople.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select><span className="mt-1.5 block text-xs text-text-muted">{selectedDoctor?.salesId ? `Defaults to ${selectedDoctor.name}'s sales rep. ` : ''}The selected Sales account can view this order in their dashboard.</span></label>
       </div>
       <footer className="flex justify-end gap-2 border-t border-border px-5 py-4"><button type="button" disabled={saving} onClick={onCancel} className="h-9 rounded border border-border px-3 text-sm font-semibold text-text hover:bg-bg disabled:opacity-40">Cancel</button><button type="button" disabled={saving} onClick={() => void onSave(selectedId(doctorAccountId), selectedId(salesAccountId))} className="inline-flex h-9 items-center gap-2 rounded bg-text px-3 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"><MorphIcon icon={Save} hoverIcon={BadgeCheck} className="h-4 w-4" />{saving ? 'Saving...' : 'Save access'}</button></footer>
+    </div>
+  </div>
+}
+
+function SalesConflictDialog({ conflict, currentSalesName, saving, onKeep, onConfirm }: { conflict: SalesConflict; currentSalesName: string; saving: boolean; onKeep: () => void; onConfirm: () => void }) {
+  return <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/45 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onKeep() }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="sales-conflict-title" className="w-full max-w-md rounded-card border border-border bg-surface">
+      <header className="border-b border-border px-5 py-4"><h2 id="sales-conflict-title" className="text-base font-semibold text-text">Change {conflict.doctorName}&apos;s sales rep too?</h2></header>
+      <div className="space-y-2 p-5 text-sm text-text">
+        <p>This order is now with <span className="font-semibold">{conflict.salesName}</span>, but {conflict.doctorName}&apos;s sales rep is <span className="font-semibold">{currentSalesName}</span>.</p>
+        <p className="text-text-muted">Making {conflict.salesName} the doctor&apos;s sales rep moves all of the doctor&apos;s orders and their CRM record to {conflict.salesName}. New orders will follow.</p>
+      </div>
+      <footer className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end">
+        <button type="button" disabled={saving} onClick={onKeep} className="h-9 rounded border border-border px-3 text-sm font-semibold text-text hover:bg-bg disabled:opacity-40">Only this order</button>
+        <button type="button" disabled={saving} onClick={onConfirm} className="h-9 rounded bg-text px-3 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50">{saving ? 'Saving...' : `Make ${conflict.salesName} the doctor's rep`}</button>
+      </footer>
     </div>
   </div>
 }

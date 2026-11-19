@@ -11,6 +11,7 @@ import { getOrderOwnerId } from '@/lib/portal/access'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
 import { queueAlignerLarkNotification } from '@/lib/idesign/larkAligner'
 import { queueDesignerAlignerNotification } from '@/lib/idesign/designerNotifications'
+import { getDoctorSalesIds, getDoctorSalesId } from '@/lib/relationships/server'
 import { persistIDesignSubmission, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
 
 export async function GET(request: Request) {
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
         .orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
       : Promise.resolve([]),
   ])
+  const doctorSales = await getDoctorSalesIds(assignableAccounts.filter((account) => account.role === 'doctor').map((account) => account.id))
   const accountIds = [...new Set(rows.flatMap((row) => [row.doctorAccountId, row.salesAccountId]).filter((id): id is number => Boolean(id)))]
   const accounts = accountIds.length
     ? await db.select({ id: adminUsers.id, name: adminUsers.fullName, username: adminUsers.username }).from(adminUsers).where(inArray(adminUsers.id, accountIds))
@@ -110,12 +112,13 @@ export async function GET(request: Request) {
     permissions: {
       canApprovePlans: canApproveIDesignPlans(session!.user.role),
       canAssignOrders,
+      canManageRelationships: session!.user.role === 'superadmin',
       canCreateCases: canCreateIDesignCases(session!.user.role),
       canEditUpdateTime: session!.user.role === 'superadmin' || session!.user.role === 'admin',
       canManageSchedule: canManageIDesignSchedule(session!.user.role),
     },
     options: {
-      assignableAccounts: assignableAccounts.map((account) => ({ id: account.id, name: account.name || account.username, role: account.role })),
+      assignableAccounts: assignableAccounts.map((account) => ({ id: account.id, name: account.name || account.username, role: account.role, salesId: doctorSales.get(account.id) ?? null })),
     },
   })
 }
@@ -137,6 +140,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'This account is not linked to a doctor profile' }, { status: 403 })
   }
 
+  // Orders follow the doctor account: a doctor's own order is filed under their sales rep.
+  const salesAccountId = isSalesRole(role) ? userId : await getDoctorSalesId(doctorAccountId)
   const db = getDb()
   try {
     const created = await persistIDesignSubmission({
@@ -148,7 +153,7 @@ export async function POST(request: Request) {
           latestProgress: IDESIGN_SUBMITTED_PROGRESS,
           createdBy: userId,
           doctorAccountId,
-          salesAccountId: isSalesRole(role) ? userId : null,
+          salesAccountId,
         }).returning()
         return caseRow
       },
