@@ -291,7 +291,8 @@ export function FinanceTable({ area }: { area: Area }) {
               ? <p className="px-4 py-12 text-center text-sm text-text-muted">No matching records</p>
               : rows.map((row) => <FinanceCard key={row.id} row={row} area={area} doctorColumn={doctorColumn} canManage={canManage} onEdit={() => startEdit(row)} />)}
         </div>}
-        <div className={`overflow-x-auto ${editingId === null ? 'hidden md:block' : ''}`}>
+        {/* relative: keeps the table's sr-only labels inside this scroller, or they widen the page and scroll it sideways. */}
+        <div className={`relative overflow-x-auto ${editingId === null ? 'hidden md:block' : ''}`}>
           <table className={`w-full ${canManage ? 'min-w-[1680px]' : 'min-w-[1240px]'}`}>
             <thead className="border-b border-border bg-bg text-left text-xs font-semibold uppercase text-text-muted">
               <tr>
