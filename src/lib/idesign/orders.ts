@@ -2,6 +2,11 @@ import { z } from 'zod'
 
 export const IDESIGN_COUNTRIES = ['Indonesia', 'Singapore', 'Thailand'] as const
 export const IDESIGN_CATEGORIES = ['iAlign', 'iScan', 'Dental Lab', 'Others'] as const
+
+/** Display name of a stored category; 'iAlign' stays the stored value (imports and filters use it). */
+export function categoryLabel(category: string | null | undefined) {
+  return category === 'iAlign' ? 'Clear Aligners' : category ?? ''
+}
 export const IDESIGN_PROGRESS_OPTIONS = [
   'Entering Info',
   'Lab Designing',

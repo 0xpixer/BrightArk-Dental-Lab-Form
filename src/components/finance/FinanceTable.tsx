@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { upload } from '@vercel/blob/client'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Download, ExternalLink, FileDown, FileText, Link2, Pencil, PencilLine, Plus, Save, Search, Trash2, Upload, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { categoryLabel } from '@/lib/idesign/orders'
 import { IDESIGN_APPROVE_BUTTON_CLASS, IDESIGN_VIEW_BUTTON_CLASS } from '@/components/idesign/IDesignTreatmentPlans'
 import { computeFinanceTotal, FINANCE_CURRENCIES, financeOrderHref, parseFinanceAmount, parseFinanceTab, resolveFinanceDueDate, type FinanceTab } from '@/lib/finance/calc'
 
@@ -261,7 +262,7 @@ export function FinanceTable({ area }: { area: Area }) {
             <span className="pointer-events-none absolute left-3 top-3"><MorphIcon icon={Search} className="h-4 w-4 text-text-muted" /></span>
             <input type="search" value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder="Search patient, order, invoice or product" className="h-10 w-full rounded-card border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-text focus:ring-2 focus:ring-text/10" />
           </label>
-          <FilterSelect label="Categories" value={category} options={options.categories} onChange={(value) => updateFilter(setCategory, value)} />
+          <FilterSelect label="Categories" value={category} options={options.categories} format={categoryLabel} onChange={(value) => updateFilter(setCategory, value)} />
           <FilterSelect label="Payment statuses" value={status} options={options.paymentStatuses} onChange={(value) => updateFilter(setStatus, value)} />
           <label className="flex h-11 items-center gap-2 rounded-card border border-border bg-surface px-3 text-sm text-text md:h-10"><input type="checkbox" checked={overdueOnly} onChange={(event) => updateFilter(setOverdueOnly, event.target.checked)} className="h-4 w-4 accent-[#f97316]" />Overdue only</label>
         </div>
@@ -333,7 +334,7 @@ function ViewRow({ row, area, doctorColumn, canManage, editDisabled, onEdit }: {
     <tr className="border-b border-border align-top last:border-0 hover:bg-bg/60">
       <td className="px-3 py-3"><p className="text-sm font-medium text-text">{row.patientName}</p></td>
       <td className="px-3 py-3 text-sm text-text"><OrderLink row={row} area={area} /></td>
-      <td className="px-3 py-3 text-sm text-text">{row.category}</td>
+      <td className="px-3 py-3 text-sm text-text">{categoryLabel(row.category)}</td>
       <td className="max-w-56 px-3 py-3"><p className="truncate text-sm text-text" title={row.purchasedProducts ?? ''}>{row.purchasedProducts || <Muted>—</Muted>}</p></td>
       <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-text">{formatMoney(parseFinanceAmount(row.originalPrice), row.currency)}</td>
       <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-text">{row.discount || <Muted>0%</Muted>}</td>
@@ -364,7 +365,7 @@ function FinanceCard({ row, area, doctorColumn, canManage, onEdit }: { row: Fina
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-text">{row.patientName}</p>
-          <p className="mt-0.5 truncate text-xs text-text-muted"><OrderLink row={row} area={area} />{row.category ? ` · ${row.category}` : ''}</p>
+          <p className="mt-0.5 truncate text-xs text-text-muted"><OrderLink row={row} area={area} />{row.category ? ` · ${categoryLabel(row.category)}` : ''}</p>
         </div>
         <p className="shrink-0 text-right text-base font-semibold text-text">{formatMoney(row.totalAmount, row.currency)}</p>
       </div>
@@ -413,7 +414,7 @@ function EditRow({ draft, setDraft, isNew, options, overdueDays, saving, uploadi
     <tr className="border-b border-border bg-orange-50/40 align-top">
       <td className="px-3 py-3"><input aria-label="Patient name" value={draft.patientName} onChange={set('patientName')} className={`${INPUT_CLASS} min-w-28`} placeholder="Patient" /></td>
       <td className="px-3 py-3"><input aria-label="Order number" value={draft.orderNo} onChange={set('orderNo')} className={`${INPUT_CLASS} min-w-28`} placeholder="Order No." /></td>
-      <td className="px-3 py-3"><select aria-label="Category" value={draft.category} onChange={set('category')} className={`${INPUT_CLASS} min-w-28`}>{withCurrent(options.categories, draft.category).map((option) => <option key={option} value={option}>{option}</option>)}</select></td>
+      <td className="px-3 py-3"><select aria-label="Category" value={draft.category} onChange={set('category')} className={`${INPUT_CLASS} min-w-28`}>{withCurrent(options.categories, draft.category).map((option) => <option key={option} value={option}>{categoryLabel(option)}</option>)}</select></td>
       <td className="px-3 py-3"><input aria-label="Purchased products" value={draft.purchasedProducts} onChange={set('purchasedProducts')} className={`${INPUT_CLASS} min-w-36`} placeholder="Products" /></td>
       <td className="px-3 py-3"><div className="flex min-w-36 gap-1"><select aria-label="Currency" value={draft.originalCurrency} onChange={set('originalCurrency')} className={`${INPUT_CLASS} w-16 shrink-0`}><option value="">—</option>{FINANCE_CURRENCIES.map((option) => <option key={option} value={option}>{option}</option>)}</select><input aria-label="Original price" inputMode="decimal" value={draft.originalPrice} onChange={set('originalPrice')} className={`${INPUT_CLASS} text-right`} placeholder="0" /></div></td>
       <td className="px-3 py-3"><div className="relative min-w-20"><input aria-label="Discount percent" inputMode="decimal" value={draft.discount} onChange={set('discount')} className={`${INPUT_CLASS} pr-6 text-right`} placeholder="0" /><span className="pointer-events-none absolute right-2 top-2 text-xs text-text-muted">%</span></div></td>
@@ -441,8 +442,8 @@ function DateField({ label, value, onChange }: { label: string; value: string; o
   return <label className="flex items-center gap-1"><span className="w-14 shrink-0 text-[10px] font-medium uppercase text-text-muted">{label}</span><input type="date" aria-label={label} value={value} onChange={onChange} className={INPUT_CLASS} /></label>
 }
 
-function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
-  return <label><span className="sr-only">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">All {label.toLowerCase()}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+function FilterSelect({ label, value, options, format = (option) => option, onChange }: { label: string; value: string; options: string[]; format?: (option: string) => string; onChange: (value: string) => void }) {
+  return <label><span className="sr-only">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">All {label.toLowerCase()}</option>{options.map((option) => <option key={option} value={option}>{format(option)}</option>)}</select></label>
 }
 
 function OrderLink({ row, area }: { row: FinanceRow; area: Area }) {
