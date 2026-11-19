@@ -28,6 +28,7 @@ import {
   Wallet,
 } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
+import { financeTabHref, type FinanceTab } from '@/lib/finance/calc'
 import { IDesignPlanReviewPanel } from '@/components/idesign/IDesignTreatmentPlans'
 import { IDESIGN_PROGRESS_COLORS, IDESIGN_PROGRESS_OPTIONS, IDESIGN_PROGRESS_STYLES } from '@/lib/idesign/orders'
 import { ORDER_STATUS_CHART_COLORS, ORDER_STATUS_LABELS, ORDER_STATUS_OPTIONS, ORDER_STATUS_STYLES } from '@/lib/orderStatus'
@@ -50,7 +51,7 @@ interface BasePayload {
   doctorName: string | null
   doctors: Array<{ id: number; name: string }>
   selectedDoctorId: number | null
-  finance: { unpaidCount: number; overdueCount: number; unpaid: CurrencyAmount[]; overdue: CurrencyAmount[]; overdueDays: number; tab?: 'aligners' | 'dental' }
+  finance: { unpaidCount: number; overdueCount: number; unpaid: CurrencyAmount[]; overdue: CurrencyAmount[]; overdueDays: number; tab?: FinanceTab }
   doctorSummaries: DoctorSummary[]
   generatedAt: string
 }
@@ -288,13 +289,7 @@ export function RowLink({ href, title, subtitle, trailing }: { href: string; tit
   )
 }
 
-function financeHref(base: string, tab: 'aligners' | 'dental' | undefined, overdueOnly = false) {
-  const params = new URLSearchParams()
-  if (tab === 'dental') params.set('tab', 'dental')
-  if (overdueOnly) params.set('overdue', '1')
-  const query = params.toString()
-  return query ? `${base}?${query}` : base
-}
+const financeHref = financeTabHref
 
 function FinanceBanner({ finance, href }: { finance: BasePayload['finance']; href: string }) {
   if (finance.unpaidCount === 0) return null

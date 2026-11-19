@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { buildCaseFinanceRow, buildDentalOrderFinanceRow } from './autoCreate'
-import { financeOrderHref, financeTabCategories, parseFinanceTab } from './calc'
+import { financeOrderHref, financeTabCategories, financeTabForCategory, financeTabHref, parseFinanceTab } from './calc'
 import { importedOrderRecordsOnly } from '@/lib/idesign/importedCases'
 
 const doctor = { id: 7, fullName: 'Dr. Budi', username: 'budi', country: 'Indonesia' }
@@ -49,12 +49,22 @@ test('a new Dental Lab order pre-fills a linked Dental Lab Finance row with its 
   assert.equal(row.sourceCreatedOn, '2026-11-19')
 })
 
-test('Finance tabs split Dental Lab from every other category', () => {
+test('Finance tabs: Clear Aligners, Dental Lab, and Devices & Service for everything else', () => {
+  assert.deepEqual(financeTabCategories('aligners'), ['iAlign'])
   assert.deepEqual(financeTabCategories('dental'), ['Dental Lab'])
-  assert.deepEqual(financeTabCategories('aligners'), ['iAlign', 'iScan', 'Others'])
+  assert.deepEqual(financeTabCategories('devices'), ['iScan', 'Others'])
+  assert.equal(financeTabForCategory('Some new category'), 'devices')
   assert.equal(parseFinanceTab('dental'), 'dental')
+  assert.equal(parseFinanceTab('devices'), 'devices')
   assert.equal(parseFinanceTab(null), 'aligners')
   assert.equal(parseFinanceTab('anything'), 'aligners')
+})
+
+test('Finance tab links only carry a tab parameter for the non-default tabs', () => {
+  assert.equal(financeTabHref('/admin/finance', 'aligners'), '/admin/finance')
+  assert.equal(financeTabHref('/admin/finance', 'devices'), '/admin/finance?tab=devices')
+  assert.equal(financeTabHref('/portal/finance', 'dental', true), '/portal/finance?tab=dental&overdue=1')
+  assert.equal(financeTabHref('/admin/finance', undefined, true), '/admin/finance?overdue=1')
 })
 
 test('Finance rows link to their order in the admin dashboard and the doctor portal', () => {

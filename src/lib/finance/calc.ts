@@ -5,16 +5,32 @@ export const FINANCE_CATEGORIES = IDESIGN_CATEGORIES
 export const FINANCE_PAYMENT_STATUSES = IDESIGN_PAYMENT_STATUSES
 export const FINANCE_CURRENCIES = IDESIGN_CURRENCIES
 export const DENTAL_LAB_CATEGORY = 'Dental Lab'
-export const FINANCE_TABS = ['aligners', 'dental'] as const
+export const ALIGNER_CATEGORY = 'iAlign'
+export const FINANCE_TABS = ['aligners', 'dental', 'devices'] as const
 export type FinanceTab = (typeof FINANCE_TABS)[number]
 
-/** "Clear Aligners" holds every category except Dental Lab. */
+/** Clear Aligners is iAlign, Dental Lab is Dental Lab, and Devices & Service holds every other category. */
+export function financeTabForCategory(category: string): FinanceTab {
+  if (category === ALIGNER_CATEGORY) return 'aligners'
+  if (category === DENTAL_LAB_CATEGORY) return 'dental'
+  return 'devices'
+}
+
 export function financeTabCategories(tab: FinanceTab): string[] {
-  return tab === 'dental' ? [DENTAL_LAB_CATEGORY] : FINANCE_CATEGORIES.filter((category) => category !== DENTAL_LAB_CATEGORY)
+  return FINANCE_CATEGORIES.filter((category) => financeTabForCategory(category) === tab)
 }
 
 export function parseFinanceTab(value: string | null | undefined): FinanceTab {
-  return value === 'dental' ? 'dental' : 'aligners'
+  return value === 'dental' || value === 'devices' ? value : 'aligners'
+}
+
+/** The Finance page URL for a tab; Clear Aligners is the default and needs no parameter. */
+export function financeTabHref(base: string, tab: FinanceTab | undefined, overdueOnly = false) {
+  const params = new URLSearchParams()
+  if (tab && tab !== 'aligners') params.set('tab', tab)
+  if (overdueOnly) params.set('overdue', '1')
+  const query = params.toString()
+  return query ? `${base}?${query}` : base
 }
 
 /** Where a Finance row's "Open order" link goes, for the admin dashboard or the doctor portal. */

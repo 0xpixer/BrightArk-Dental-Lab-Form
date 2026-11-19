@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Dow
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { categoryLabel } from '@/lib/idesign/orders'
 import { IDESIGN_APPROVE_BUTTON_CLASS, IDESIGN_VIEW_BUTTON_CLASS } from '@/components/idesign/IDesignTreatmentPlans'
-import { computeFinanceTotal, FINANCE_CURRENCIES, type FinanceMonthSummary, type FinanceMoney, financeOrderHref, parseFinanceAmount, parseFinanceTab, resolveFinanceDueDate, type FinanceTab } from '@/lib/finance/calc'
+import { computeFinanceTotal, FINANCE_CURRENCIES, type FinanceMonthSummary, type FinanceMoney, financeOrderHref, financeTabCategories, FINANCE_TABS, parseFinanceAmount, parseFinanceTab, resolveFinanceDueDate, type FinanceTab } from '@/lib/finance/calc'
 
 interface FinanceRow {
   id: number
@@ -66,7 +66,8 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 type Area = 'admin' | 'portal'
-const TAB_LABELS: Record<FinanceTab, string> = { aligners: 'Clear Aligners', dental: 'Dental Lab' }
+const TAB_LABELS: Record<FinanceTab, string> = { aligners: 'Clear Aligners', dental: 'Dental Lab', devices: 'Devices & Service' }
+const ADD_LABELS: Record<FinanceTab, string> = { aligners: 'Add aligner record', dental: 'Add Dental Lab record', devices: 'Add device or service record' }
 
 export function FinanceTable({ area }: { area: Area }) {
   const showDoctor = area === 'admin'
@@ -137,7 +138,7 @@ export function FinanceTable({ area }: { area: Area }) {
     setCategory('')
     setPage(1)
     const url = new URL(window.location.href)
-    if (value === 'dental') url.searchParams.set('tab', 'dental')
+    if (value !== 'aligners') url.searchParams.set('tab', value)
     else url.searchParams.delete('tab')
     window.history.replaceState(null, '', url)
   }
@@ -176,7 +177,7 @@ export function FinanceTable({ area }: { area: Area }) {
     setError('')
     setEditingId(NEW_ROW_ID)
     setDraft({
-      patientName: '', orderNo: '', category: tab === 'dental' ? 'Dental Lab' : 'iAlign', purchasedProducts: '', originalCurrency: '', originalPrice: '', discount: '',
+      patientName: '', orderNo: '', category: financeTabCategories(tab)[0], purchasedProducts: '', originalCurrency: '', originalPrice: '', discount: '',
       paymentStatus: 'Invoice not issue', invoiceNo: '', invoiceDate: '', dueDate: '', paymentDate: '', invoiceFileUrl: '', invoiceFileName: '', paymentLink: '', doctorAccountId: '',
     })
   }
@@ -250,11 +251,11 @@ export function FinanceTable({ area }: { area: Area }) {
           <h1 className="text-xl font-semibold text-text">Finance</h1>
           <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} records · invoices are overdue ${overdueDays} days after the invoice date unless a due date is set`}</p>
         </div>
-        {canManage && <button type="button" onClick={startCreate} disabled={editingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />{tab === 'dental' ? 'Add Dental Lab record' : 'Add aligner record'}</button>}
+        {canManage && <button type="button" onClick={startCreate} disabled={editingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />{ADD_LABELS[tab]}</button>}
       </header>
 
       <div role="tablist" aria-label="Finance categories" className="flex gap-1 border-b border-border">
-        {(['aligners', 'dental'] as const).map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => changeTab(value)} className={`-mb-px h-10 border-b-2 px-4 text-sm font-semibold transition-colors ${tab === value ? 'border-primary text-text' : 'border-transparent text-text-muted hover:text-text'}`}>{TAB_LABELS[value]}</button>)}
+        {FINANCE_TABS.map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => changeTab(value)} className={`-mb-px h-10 whitespace-nowrap border-b-2 px-2.5 text-[13px] font-semibold transition-colors sm:px-4 sm:text-sm ${tab === value ? 'border-primary text-text' : 'border-transparent text-text-muted hover:text-text'}`}>{TAB_LABELS[value]}</button>)}
       </div>
 
       <MonthCards summary={summary} loading={loading && !summary} status={status} onStatus={(value) => updateFilter(setStatus, value)} />

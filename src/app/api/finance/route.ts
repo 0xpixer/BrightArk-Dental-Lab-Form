@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { and, count, desc, eq, ilike, or, sql, type AnyColumn, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray, notInArray, or, sql, type AnyColumn, type SQL } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
@@ -38,7 +38,10 @@ export async function GET(request: Request) {
   const [scope, overdueDays] = await Promise.all([getFinanceScope(userId, role), getFinanceOverdueDays()])
   const conditions: SQL[] = []
   if (scope) conditions.push(scope)
-  conditions.push(tab === 'dental' ? eq(idesignOrders.category, 'Dental Lab') : sql`${idesignOrders.category} <> 'Dental Lab'`)
+  // Devices & Service also takes any category outside the known list, so no row falls between tabs.
+  conditions.push(tab === 'devices'
+    ? notInArray(idesignOrders.category, [...financeTabCategories('aligners'), ...financeTabCategories('dental')])
+    : inArray(idesignOrders.category, tabCategories))
   // Month cards cover the whole tab in the viewer's scope; the search and filters below don't change them.
   const month = today.slice(0, 7)
   const monthStart = `${month}-01`

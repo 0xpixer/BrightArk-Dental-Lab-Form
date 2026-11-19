@@ -32,6 +32,7 @@ import { IDESIGN_PROGRESS_COLORS, IDESIGN_PROGRESS_OPTIONS } from '@/lib/idesign
 import { ORDER_STATUS_CHART_COLORS, ORDER_STATUS_OPTIONS } from '@/lib/orderStatus'
 import type { CurrencyAmount, TrendPoint } from '@/lib/overview/partner'
 import type { AdminLabQueueItem, AdminQueue, AdminQueueItem } from '@/lib/overview/admin'
+import { financeTabHref } from '@/lib/finance/calc'
 import {
   AttentionGroup,
   CountBadge,
@@ -268,8 +269,8 @@ function Age({ days, warnAt }: { days: number; warnAt: number }) {
 
 function FinanceSnapshot({ finance, loading, title, tab }: { finance: FinancePayload | null; loading: boolean; title: string; tab: 'aligners' | 'dental' }) {
   if (!finance && !loading) return null
-  const base = tab === 'dental' ? `${FINANCE}?tab=dental` : FINANCE
-  const overdueHref = tab === 'dental' ? `${FINANCE}?tab=dental&overdue=1` : `${FINANCE}?overdue=1`
+  const base = financeTabHref(FINANCE, tab)
+  const overdueHref = financeTabHref(FINANCE, tab, true)
   const tiles: Array<{ label: string; count?: number; amounts?: CurrencyAmount[]; tone?: 'alert' }> = [
     { label: 'Invoiced', count: finance?.counts.invoiced, amounts: finance?.invoiced },
     { label: 'Paid', count: finance?.counts.paid, amounts: finance?.paid },

@@ -6,6 +6,7 @@ import { adminUsers, idesignCaseActivities, idesignCases, idesignOrders, idesign
 import { isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { dateInTimezone } from '@/lib/idesign/schedule'
+import { financeTabForCategory, FINANCE_TABS } from '@/lib/finance/calc'
 import { getFinanceOverdueDays, getFinanceScope } from '@/lib/finance/server'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { getSalesDoctors, getSalesOrderAccessCondition } from '@/lib/sales/access'
@@ -70,13 +71,9 @@ export async function GET(request: Request) {
     currency: idesignOrders.originalCurrency,
     category: idesignOrders.category,
   }).from(idesignOrders).where(and(eq(idesignOrders.paymentStatus, 'Unpaid'), ...financeConditions))
-  // Finance is split into Clear Aligners and Dental Lab tabs; links open the tab that holds the overdue (else unpaid) rows.
-  const alignerSummary = buildFinanceSummary(financeRows.filter((row) => row.category !== 'Dental Lab'), overdueDays, today)
-  const dentalSummary = buildFinanceSummary(financeRows.filter((row) => row.category === 'Dental Lab'), overdueDays, today)
-  const financeTab = (alignerSummary.overdueCount === 0 && dentalSummary.overdueCount > 0)
-    || (alignerSummary.overdueCount === 0 && dentalSummary.overdueCount === 0 && alignerSummary.unpaidCount === 0 && dentalSummary.unpaidCount > 0)
-    ? 'dental' as const
-    : 'aligners' as const
+  // Finance is split into tabs by category; links open the first tab with overdue rows, else the first with unpaid rows.
+  const tabSummaries = FINANCE_TABS.map((financeTab) => ({ tab: financeTab, summary: buildFinanceSummary(financeRows.filter((row) => financeTabForCategory(row.category) === financeTab), overdueDays, today) }))
+  const financeTab = (tabSummaries.find((entry) => entry.summary.overdueCount > 0) ?? tabSummaries.find((entry) => entry.summary.unpaidCount > 0))?.tab ?? 'aligners'
   const finance = { ...buildFinanceSummary(financeRows, overdueDays, today), overdueDays, tab: financeTab }
 
   const base = {

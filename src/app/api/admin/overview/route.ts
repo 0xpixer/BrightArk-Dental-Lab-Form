@@ -4,6 +4,7 @@ import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, appSettings, idesignCases, idesignOrders, idesignTreatmentPlans, orders, salesDoctorAssignments } from '@/lib/db/schema'
 import { isAdminRole, isDesignerRole, SALES_ROLES } from '@/lib/admin/roles'
+import { financeTabForCategory } from '@/lib/finance/calc'
 import { getFinanceOverdueDays } from '@/lib/finance/server'
 import { buildOverviewMetrics } from '@/lib/overviewMetrics'
 import { latestOrderMessageAt, unreadLatestOrderMessageCondition } from '@/lib/orderUnread'
@@ -145,7 +146,8 @@ export async function GET(request: Request) {
       && (!country || resolveCountry(row.doctorAccountId, row.salesAccountId, row.sourceCountry) === country)
       && (!salesId || row.salesAccountId === salesId)
       && (!doctorId || row.doctorAccountId === doctorId))
-    const finance = designer ? null : buildAdminFinance(scopedFinanceRows, overdueDays, now.toISOString().slice(0, 10))
+    // The Aligner payments panel matches the Finance page's Clear Aligners tab (iAlign only); the case volume chart still uses every category.
+    const finance = designer ? null : buildAdminFinance(scopedFinanceRows.filter((row) => financeTabForCategory(row.category) === 'aligners'), overdueDays, now.toISOString().slice(0, 10))
     const payments = scopedFinanceRows.flatMap((row) => row.paymentStatus === 'Paid' && row.paymentDate ? [{ paidOn: row.paymentDate, category: row.category }] : [])
 
     return NextResponse.json({
