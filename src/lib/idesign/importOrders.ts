@@ -173,13 +173,17 @@ export function parseIDesignImportSheet(rows: unknown[][]): { rows: ParsedImport
   const seenKeys = new Map<string, number>()
   const presentFields = [...columns.keys()]
 
+  // A column holding a real date after the 12th is a true date column; any other column is day-first text.
+  const trueDateColumns = new Set([...columns].filter(([field, columnIndex]) => DATE_FIELDS.has(field)
+    && compactRows.slice(1).some((row) => row[columnIndex] instanceof Date && (row[columnIndex] as Date).getUTCDate() > 12)).map(([field]) => field))
+
   compactRows.slice(1).forEach((row, dataIndex) => {
     const rowNumber = dataIndex + 2
     const raw: Record<string, unknown> = {}
     for (const [field, columnIndex] of columns) {
       const value = row[columnIndex]
       raw[field] = DATE_FIELDS.has(field)
-        ? parseDateCell(value, field === 'sourceUpdatedOn')
+        ? parseDateCell(value, !trueDateColumns.has(field))
         : PERCENT_FIELDS.has(field)
           ? parsePercentCell(value)
           : cellTextOrNull(value)
@@ -235,7 +239,10 @@ export function buildIDesignImportPreview(parsedRows: ParsedImportRow[], existin
   let conflictRows = parseIssues.filter((issue) => issue.type === 'conflict').length
 
   for (const row of parsedRows) {
-    const fallbackMatches = byFallback.get(fallbackMatchKey(row.data)!) ?? []
+    // Rows imported before day-first Creation Time parsing were stored with day and month swapped.
+    const fallbackMatches = byFallback.get(fallbackMatchKey(row.data)!)
+      ?? byFallback.get(fallbackMatchKey({ ...row.data, sourceCreatedOn: swapDayMonth(row.data.sourceCreatedOn) }) ?? '')
+      ?? []
     let existing: IDesignOrder | undefined
 
     if (fallbackMatches.length > 1) {
@@ -394,13 +401,17 @@ function canonicalPaymentStatus(value: unknown) {
   return canonicalValue(text, IDESIGN_PAYMENT_STATUSES) ?? text
 }
 
-function parseDateCell(value: unknown, dayFirstExcelDate = false) {
+/**
+ * Text columns hold day-first dates (DD/MM/YYYY). Excel decodes the ambiguous ones (day <= 12)
+ * month-first into real dates, so in those columns they come back with day and month swapped.
+ */
+function parseDateCell(value: unknown, dayFirstColumn: boolean) {
   if (value === null || value === undefined || value === '') return null
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     const year = value.getUTCFullYear()
     const month = value.getUTCMonth() + 1
     const day = value.getUTCDate()
-    if (dayFirstExcelDate && day <= 12) return validDate(year, day, month)
+    if (dayFirstColumn && day <= 12) return validDate(year, day, month)
     return validDate(year, month, day)
   }
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -434,6 +445,11 @@ function comparableFieldValue(field: ImportField, value: unknown) {
 
 function isIncomingOlder(incoming: string | null | undefined, existing: string | null | undefined) {
   return Boolean(incoming && existing && incoming < existing)
+}
+
+function swapDayMonth(value: string | null | undefined) {
+  const parts = value?.split('-')
+  return parts?.length === 3 ? `${parts[0]}-${parts[2]}-${parts[1]}` : value ?? null
 }
 
 function isDayMonthSwap(incoming: string | null | undefined, existing: string | null | undefined) {

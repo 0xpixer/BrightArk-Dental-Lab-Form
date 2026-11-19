@@ -84,14 +84,29 @@ test('converts numeric Excel percentages into percentage text', () => {
   assert.equal(result.rows[0].data.salesCommissionRate, '5%')
 })
 
-test('recovers day-first Update Time values decoded as ambiguous Excel dates', () => {
+test('recovers day-first dates decoded as ambiguous Excel dates in text date columns', () => {
   const result = parseIDesignImportSheet([header, sourceRow({
     3: new Date('2026-04-11T00:00:00.000Z'),
-    4: new Date('2026-02-11T00:00:00.000Z'),
-  })])
+    4: new Date('2026-01-11T00:00:00.000Z'),
+    17: new Date('2026-03-08T00:00:00.000Z'),
+    21: new Date('2026-07-01T00:00:00.000Z'),
+  }), sourceRow({ 2: 'Patient Two', 21: new Date('2026-10-21T00:00:00.000Z') })])
   assert.deepEqual(result.issues, [])
   assert.equal(result.rows[0].data.sourceUpdatedOn, '2026-11-04')
-  assert.equal(result.rows[0].data.sourceCreatedOn, '2026-02-11')
+  assert.equal(result.rows[0].data.sourceCreatedOn, '2026-11-01')
+  assert.equal(result.rows[0].data.invoiceDate, '2026-08-03')
+  // Delivered Date holds a real date after the 12th, so the column is a true date column and is kept as decoded.
+  assert.equal(result.rows[0].data.deliveredDate, '2026-07-01')
+  assert.equal(result.rows[1].data.deliveredDate, '2026-10-21')
+})
+
+test('matches a record stored with a swapped Creation Time and corrects it', () => {
+  const parsed = parseIDesignImportSheet([header, sourceRow({ 4: new Date('2026-01-11T00:00:00.000Z') })])
+  const preview = buildIDesignImportPreview(parsed.rows, [existingOrder({ sourceCreatedOn: '2026-01-11', sourceUpdatedOn: '2026-11-02' })], parsed.issues)
+  assert.equal(preview.summary.newRows, 0)
+  assert.equal(preview.summary.updatedRows, 1)
+  assert.equal(preview.changes[0].existingId, 7)
+  assert.ok(preview.changes[0].changes.some((change) => change.field === 'sourceCreatedOn' && change.from === '2026-01-11' && change.to === '2026-11-01'))
 })
 
 test('matches by patient, doctor, creation time and category and reports only source-owned field changes', () => {
