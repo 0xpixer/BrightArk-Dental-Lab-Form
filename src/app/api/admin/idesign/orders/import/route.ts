@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignOrders } from '@/lib/db/schema'
+import { importedOrderRecordsOnly } from '@/lib/idesign/importedCases'
 import { syncImportedIDesignCases } from '@/lib/idesign/importedCases'
 import {
   buildIDesignImportPreview,
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
 
   const parsed = parseIDesignImportSheet(sheetRows)
   const db = getDb()
-  const existingRows = await db.select().from(idesignOrders)
+  // Finance rows auto-created for new orders are never matched or overwritten by a spreadsheet import.
+  const existingRows = await db.select().from(idesignOrders).where(importedOrderRecordsOnly)
   const preview = buildIDesignImportPreview(parsed.rows, existingRows, parsed.issues)
   if (action === 'preview') return NextResponse.json(publicPreview(preview))
   if (!preview.canApply) {

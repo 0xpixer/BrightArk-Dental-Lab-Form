@@ -2,6 +2,7 @@ import { and, asc, eq, ilike, inArray, isNull, or, sql, type SQL } from 'drizzle
 import { alias, type AnyPgColumn } from 'drizzle-orm/pg-core'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, crmDoctors, idesignOrders, orders } from '@/lib/db/schema'
+import { importedOrderRecordsOnly } from '@/lib/idesign/importedCases'
 import { getSalesScopeIds } from '@/lib/sales/access'
 import { requireSession } from '@/lib/admin/session'
 import { IDESIGN_CLOSED_PROGRESS } from '@/lib/idesign/orders'
@@ -133,11 +134,12 @@ export async function getCrmDoctorStats(doctorIds: number[]): Promise<Map<number
       active: sql<number>`count(*) FILTER (WHERE ${orders.status} NOT IN (${sql.join(ORDER_TERMINAL_STATUSES.map((status) => sql`${status}`), sql`, `)}))`.mapWith(Number),
       last: sql<string | null>`to_char(max(${orders.createdAt}) AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
     }).from(orders).where(inArray(orders.submittedBy, idsToLoad)).groupBy(orders.submittedBy),
+    // Auto-created Finance rows mirror orders already counted elsewhere, so only imported records count here.
     db.select({
       doctorId: idesignOrders.doctorAccountId,
       active: sql<number>`count(*) FILTER (WHERE ${idesignOrders.latestProgress} NOT IN (${sql.join(IDESIGN_CLOSED_PROGRESS.map((status) => sql`${status}`), sql`, `)}))`.mapWith(Number),
       last: sql<string | null>`to_char(max(coalesce(${idesignOrders.sourceCreatedOn}, (${idesignOrders.createdAt} AT TIME ZONE 'UTC')::date)), 'YYYY-MM-DD')`,
-    }).from(idesignOrders).where(inArray(idesignOrders.doctorAccountId, idsToLoad)).groupBy(idesignOrders.doctorAccountId),
+    }).from(idesignOrders).where(and(inArray(idesignOrders.doctorAccountId, idsToLoad), importedOrderRecordsOnly)).groupBy(idesignOrders.doctorAccountId),
     db.select({
       doctorId: idesignOrders.doctorAccountId,
       originalPrice: idesignOrders.originalPrice,

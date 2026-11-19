@@ -266,8 +266,10 @@ function Age({ days, warnAt }: { days: number; warnAt: number }) {
   return <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${days >= warnAt * 2 ? 'bg-red-50 text-red-700' : days >= warnAt ? 'bg-[#fff7ed] text-primary' : 'bg-bg text-text-muted'}`}>{days}d</span>
 }
 
-function FinanceSnapshot({ finance, loading, title }: { finance: FinancePayload | null; loading: boolean; title: string }) {
+function FinanceSnapshot({ finance, loading, title, tab }: { finance: FinancePayload | null; loading: boolean; title: string; tab: 'aligners' | 'dental' }) {
   if (!finance && !loading) return null
+  const base = tab === 'dental' ? `${FINANCE}?tab=dental` : FINANCE
+  const overdueHref = tab === 'dental' ? `${FINANCE}?tab=dental&overdue=1` : `${FINANCE}?overdue=1`
   const tiles: Array<{ label: string; count?: number; amounts?: CurrencyAmount[]; tone?: 'alert' }> = [
     { label: 'Invoiced', count: finance?.counts.invoiced, amounts: finance?.invoiced },
     { label: 'Paid', count: finance?.counts.paid, amounts: finance?.paid },
@@ -275,12 +277,12 @@ function FinanceSnapshot({ finance, loading, title }: { finance: FinancePayload 
     { label: `Overdue (${finance?.overdueDays ?? 30}+ days)`, count: finance?.counts.overdue, amounts: finance?.overdue, tone: 'alert' },
   ]
   return (
-    <Panel title={title} subtitle={finance ? `${finance.counts.notInvoiced} not yet invoiced` : 'Loading…'} icon={Wallet} action={<ViewAll href={FINANCE} label="Finance" />}>
+    <Panel title={title} subtitle={finance ? `${finance.counts.notInvoiced} not yet invoiced` : 'Loading…'} icon={Wallet} action={<ViewAll href={base} label="Finance" />}>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((tile) => {
           const alert = tile.tone === 'alert' && Boolean(tile.count)
           return (
-            <Link key={tile.label} href={tile.tone === 'alert' ? `${FINANCE}?overdue=1` : FINANCE} className={`min-w-0 rounded-card border p-3 transition-colors hover:bg-bg ${alert ? 'border-red-200 bg-red-50' : 'border-border'}`}>
+            <Link key={tile.label} href={tile.tone === 'alert' ? overdueHref : base} className={`min-w-0 rounded-card border p-3 transition-colors hover:bg-bg ${alert ? 'border-red-200 bg-red-50' : 'border-border'}`}>
               <p className={`truncate text-[11px] font-medium ${alert ? 'text-red-700' : 'text-text-muted'}`}>{tile.label}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-text">{loading ? '—' : tile.count ?? 0}</p>
               <div className="mt-1 space-y-0.5">
@@ -460,7 +462,7 @@ function AlignerTab({ data, loading, onEditTargets }: { data: AlignerPayload | n
         <CaseVolume volume={aligners?.volume} categories={aligners?.categories ?? []} loading={loading} showPaid={Boolean(data?.canSeeFinance)} />
       </div>
 
-      {data?.canSeeFinance !== false && <FinanceSnapshot finance={data?.finance ?? null} loading={loading} title="Aligner payments" />}
+      {data?.canSeeFinance !== false && <FinanceSnapshot finance={data?.finance ?? null} loading={loading} title="Aligner payments" tab="aligners" />}
 
       <Leaderboard title="Top doctors" subtitle="New cases this month, then active cases" icon={Stethoscope} rows={aligners?.doctorLeaderboard ?? []} loading={loading} empty="Doctors with cases will be ranked here." />
     </div>
@@ -532,7 +534,7 @@ function LabTab({ data, loading }: { data: LabPayload | null; loading: boolean }
         </Panel>
       </div>
 
-      <FinanceSnapshot finance={data?.finance ?? null} loading={loading} title="Dental lab payments" />
+      <FinanceSnapshot finance={data?.finance ?? null} loading={loading} title="Dental lab payments" tab="dental" />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Leaderboard title="Top doctors" subtitle="New orders this month, then active orders" icon={Stethoscope} rows={lab?.doctorLeaderboard ?? []} loading={loading} empty="Doctors with orders will be ranked here." />

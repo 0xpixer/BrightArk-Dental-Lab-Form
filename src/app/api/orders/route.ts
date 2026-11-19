@@ -12,6 +12,7 @@ import { getOrderActivityActorName } from '@/lib/orderActivityActor'
 import { isDoctorAssignedToSales } from '@/lib/sales/access'
 import { notifyLarkOfOrder } from '@/lib/lark'
 import { sendLabNewOrderEmails } from '@/lib/labOrderEmails'
+import { createFinanceRowForDentalOrder } from '@/lib/finance/autoCreate'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -121,6 +122,12 @@ export async function POST(request: Request) {
       actorRole: session!.user.role,
       actorName,
     })
+
+    // A Finance row is pre-filled for every new Dental Lab order; a failure here must not lose the order.
+    await createFinanceRowForDentalOrder({ ...inserted, submittedBy: ownerId }, {
+      submittingSalesId: isSalesRole(session!.user.role) ? actorId : null,
+      createdBy: actorId,
+    }).catch((financeError) => { console.error('Unable to create the Finance record for Dental Lab order', inserted.id, financeError) })
 
     waitUntil(notifyLarkOfOrder(inserted, {
       webhookUrl: process.env.LARK_WEBHOOK_URL,

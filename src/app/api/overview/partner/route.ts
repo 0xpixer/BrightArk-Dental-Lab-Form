@@ -68,8 +68,16 @@ export async function GET(request: Request) {
     discount: idesignOrders.discount,
     totalAmount: idesignOrders.totalAmount,
     currency: idesignOrders.originalCurrency,
+    category: idesignOrders.category,
   }).from(idesignOrders).where(and(eq(idesignOrders.paymentStatus, 'Unpaid'), ...financeConditions))
-  const finance = { ...buildFinanceSummary(financeRows, overdueDays, today), overdueDays }
+  // Finance is split into Clear Aligners and Dental Lab tabs; links open the tab that holds the overdue (else unpaid) rows.
+  const alignerSummary = buildFinanceSummary(financeRows.filter((row) => row.category !== 'Dental Lab'), overdueDays, today)
+  const dentalSummary = buildFinanceSummary(financeRows.filter((row) => row.category === 'Dental Lab'), overdueDays, today)
+  const financeTab = (alignerSummary.overdueCount === 0 && dentalSummary.overdueCount > 0)
+    || (alignerSummary.overdueCount === 0 && dentalSummary.overdueCount === 0 && alignerSummary.unpaidCount === 0 && dentalSummary.unpaidCount > 0)
+    ? 'dental' as const
+    : 'aligners' as const
+  const finance = { ...buildFinanceSummary(financeRows, overdueDays, today), overdueDays, tab: financeTab }
 
   const base = {
     tab,

@@ -5,7 +5,7 @@ import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
 import { applyIDesignOrderLogic, createIDesignOrderSchema } from '@/lib/idesign/orders'
 import { adminUsers } from '@/lib/db/schema'
-import { syncImportedIDesignCases } from '@/lib/idesign/importedCases'
+import { importedOrderRecordsOnly, syncImportedIDesignCases } from '@/lib/idesign/importedCases'
 
 export async function GET(request: Request) {
   const { session, error } = await requireAdmin()
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const country = searchParams.get('country')?.trim()
   const salesperson = searchParams.get('salesperson')?.trim()
   const doctor = searchParams.get('doctor')?.trim()
-  const conditions = []
+  const conditions = [importedOrderRecordsOnly]
 
   if (category) conditions.push(eq(idesignOrders.category, category))
   if (progress) conditions.push(eq(idesignOrders.latestProgress, progress))
@@ -41,9 +41,9 @@ export async function GET(request: Request) {
   const [rows, totalRows, salespeople, doctors, products, assignableAccounts] = await Promise.all([
     db.select().from(idesignOrders).where(where).orderBy(desc(idesignOrders.sourceCreatedOn), desc(idesignOrders.id)).limit(limit).offset((page - 1) * limit),
     db.select({ count: count() }).from(idesignOrders).where(where),
-    db.selectDistinct({ name: idesignOrders.salespersonName }).from(idesignOrders).orderBy(asc(idesignOrders.salespersonName)),
-    db.selectDistinct({ name: idesignOrders.doctorName }).from(idesignOrders).orderBy(asc(idesignOrders.doctorName)),
-    db.selectDistinct({ name: idesignOrders.purchasedProducts }).from(idesignOrders).orderBy(asc(idesignOrders.purchasedProducts)),
+    db.selectDistinct({ name: idesignOrders.salespersonName }).from(idesignOrders).where(importedOrderRecordsOnly).orderBy(asc(idesignOrders.salespersonName)),
+    db.selectDistinct({ name: idesignOrders.doctorName }).from(idesignOrders).where(importedOrderRecordsOnly).orderBy(asc(idesignOrders.doctorName)),
+    db.selectDistinct({ name: idesignOrders.purchasedProducts }).from(idesignOrders).where(importedOrderRecordsOnly).orderBy(asc(idesignOrders.purchasedProducts)),
     session!.user.role === 'superadmin'
       ? db.select({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role }).from(adminUsers).where(and(inArray(adminUsers.role, ['sales', 'sales_director', 'doctor']), eq(adminUsers.isActive, true))).orderBy(asc(adminUsers.fullName), asc(adminUsers.username))
       : Promise.resolve([]),

@@ -50,7 +50,7 @@ interface BasePayload {
   doctorName: string | null
   doctors: Array<{ id: number; name: string }>
   selectedDoctorId: number | null
-  finance: { unpaidCount: number; overdueCount: number; unpaid: CurrencyAmount[]; overdue: CurrencyAmount[]; overdueDays: number }
+  finance: { unpaidCount: number; overdueCount: number; unpaid: CurrencyAmount[]; overdue: CurrencyAmount[]; overdueDays: number; tab?: 'aligners' | 'dental' }
   doctorSummaries: DoctorSummary[]
   generatedAt: string
 }
@@ -288,12 +288,20 @@ export function RowLink({ href, title, subtitle, trailing }: { href: string; tit
   )
 }
 
+function financeHref(base: string, tab: 'aligners' | 'dental' | undefined, overdueOnly = false) {
+  const params = new URLSearchParams()
+  if (tab === 'dental') params.set('tab', 'dental')
+  if (overdueOnly) params.set('overdue', '1')
+  const query = params.toString()
+  return query ? `${base}?${query}` : base
+}
+
 function FinanceBanner({ finance, href }: { finance: BasePayload['finance']; href: string }) {
   if (finance.unpaidCount === 0) return null
   const overdue = finance.overdueCount > 0
   const amounts = (overdue ? finance.overdue : finance.unpaid).map(formatMoney).join(' · ')
   return (
-    <Link href={overdue ? `${href}?overdue=1` : href} className={`flex items-center gap-3 rounded-card border px-4 py-3 transition-colors ${overdue ? 'border-red-200 bg-red-50 hover:bg-red-100/70' : 'border-border bg-surface hover:bg-bg'}`}>
+    <Link href={financeHref(href, finance.tab, overdue)} className={`flex items-center gap-3 rounded-card border px-4 py-3 transition-colors ${overdue ? 'border-red-200 bg-red-50 hover:bg-red-100/70' : 'border-border bg-surface hover:bg-bg'}`}>
       <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${overdue ? 'bg-red-500 text-white' : 'bg-bg text-text'}`}><MorphIcon icon={overdue ? TriangleAlert : Wallet} className="h-4 w-4" /></span>
       <div className="min-w-0 flex-1">
         <p className={`text-sm font-semibold ${overdue ? 'text-red-700' : 'text-text'}`}>
@@ -389,7 +397,7 @@ function AlignerTab({ data, loading, paths, reload }: { data: AlignerPayload | n
         <KpiCard label="To approve" value={totals?.awaitingApproval ?? 0} hint={totals?.awaitingApproval ? 'Plans ready for review' : 'Nothing waiting'} icon={ClipboardCheck} href={paths.alignerOrders} accent={Boolean(totals?.awaitingApproval)} loading={loading} />
         <KpiCard label="Active cases" value={totals?.active ?? 0} hint={`${totals?.wearing ?? 0} currently wearing`} icon={Layers} href={paths.alignerOrders} loading={loading} />
         <KpiCard label="New this month" value={totals?.newThisMonth ?? 0} hint={`${totals?.completed ?? 0} completed overall`} icon={Sparkles} href={paths.alignerOrders} loading={loading} />
-        <KpiCard label="Unpaid" value={data?.finance.unpaidCount ?? 0} hint={unpaid.length ? unpaid.map(formatMoney).join(' · ') : 'All settled'} icon={Wallet} href={paths.finance} loading={loading} />
+        <KpiCard label="Unpaid" value={data?.finance.unpaidCount ?? 0} hint={unpaid.length ? unpaid.map(formatMoney).join(' · ') : 'All settled'} icon={Wallet} href={financeHref(paths.finance, data?.finance.tab)} loading={loading} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">

@@ -1,6 +1,12 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
+
+/**
+ * Rows of idesign_orders that came from the spreadsheet import (or were added by hand in Finance),
+ * as opposed to Finance rows auto-created for a new case or Dental Lab order.
+ */
+export const importedOrderRecordsOnly = and(isNull(idesignOrders.caseId), isNull(idesignOrders.dentalOrderId))!
 
 export async function syncImportedIDesignCases(orderIds: number[]) {
   if (orderIds.length === 0) return []
@@ -15,7 +21,7 @@ export async function syncImportedIDesignCases(orderIds: number[]) {
     salesAccountId: idesignOrders.salesAccountId,
     createdAt: idesignOrders.createdAt,
     updatedAt: idesignOrders.updatedAt,
-  }).from(idesignOrders).where(inArray(idesignOrders.id, orderIds))
+  }).from(idesignOrders).where(and(inArray(idesignOrders.id, orderIds), importedOrderRecordsOnly))
 
   const alignerOrders = orders.filter((order) => order.category === 'iAlign')
   if (alignerOrders.length === 0) return []

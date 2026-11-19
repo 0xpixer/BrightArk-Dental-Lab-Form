@@ -4,6 +4,25 @@ import { IDESIGN_CATEGORIES, IDESIGN_CURRENCIES, IDESIGN_PAYMENT_STATUSES } from
 export const FINANCE_CATEGORIES = IDESIGN_CATEGORIES
 export const FINANCE_PAYMENT_STATUSES = IDESIGN_PAYMENT_STATUSES
 export const FINANCE_CURRENCIES = IDESIGN_CURRENCIES
+export const DENTAL_LAB_CATEGORY = 'Dental Lab'
+export const FINANCE_TABS = ['aligners', 'dental'] as const
+export type FinanceTab = (typeof FINANCE_TABS)[number]
+
+/** "Clear Aligners" holds every category except Dental Lab. */
+export function financeTabCategories(tab: FinanceTab): string[] {
+  return tab === 'dental' ? [DENTAL_LAB_CATEGORY] : FINANCE_CATEGORIES.filter((category) => category !== DENTAL_LAB_CATEGORY)
+}
+
+export function parseFinanceTab(value: string | null | undefined): FinanceTab {
+  return value === 'dental' ? 'dental' : 'aligners'
+}
+
+/** Where a Finance row's "Open order" link goes, for the admin dashboard or the doctor portal. */
+export function financeOrderHref(row: { caseId: number | null; dentalOrderId: number | null }, area: 'admin' | 'portal') {
+  if (row.dentalOrderId) return area === 'admin' ? `/admin/submissions/${row.dentalOrderId}` : `/portal/orders/${row.dentalOrderId}`
+  if (row.caseId) return `/${area}/idesign/orders/${row.caseId}`
+  return null
+}
 
 /** Parses "1,250.50", "IDR 1.000" style amounts. Returns null when nothing numeric is present. */
 export function parseFinanceAmount(value: string | number | null | undefined) {

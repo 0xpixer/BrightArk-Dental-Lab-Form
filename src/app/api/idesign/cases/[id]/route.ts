@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray } from 'drizzle-orm'
 import { isSalesRole } from '@/lib/admin/roles'
 import { NextResponse } from 'next/server'
+import { syncCaseFinanceAssignment } from '@/lib/finance/autoCreate'
 import { z } from 'zod'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
@@ -196,6 +197,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         assignmentUpdatedAt: new Date(),
       }).where(eq(idesignOrders.id, caseRow.importedOrderId))
     }
+    await syncCaseFinanceAssignment(caseId, { doctorAccountId: parsed.data.doctorAccountId, salesAccountId: parsed.data.salesAccountId }, Number(session!.user.id))
     const doctorName = doctor ? doctor.name || doctor.username : 'Unassigned'
     const salesName = sales ? sales.name || sales.username : 'Unassigned'
     await recordIDesignActivity({

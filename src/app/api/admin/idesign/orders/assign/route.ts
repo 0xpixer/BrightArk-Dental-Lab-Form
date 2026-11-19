@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireSuperadmin } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignOrders } from '@/lib/db/schema'
-import { syncImportedIDesignCases } from '@/lib/idesign/importedCases'
+import { importedOrderRecordsOnly, syncImportedIDesignCases } from '@/lib/idesign/importedCases'
 
 export async function POST(request: Request) {
   const { session, error } = await requireSuperadmin()
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Choose an active Sales or Doctor account' }, { status: 400 })
   }
 
-  const conditions = []
+  const conditions = [importedOrderRecordsOnly]
   if (salesperson) conditions.push(eq(idesignOrders.salespersonName, salesperson))
   if (doctor) conditions.push(eq(idesignOrders.doctorName, doctor))
   const category = textValue(filters.category)

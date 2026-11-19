@@ -5,7 +5,7 @@ import { upload } from '@vercel/blob/client'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Download, ExternalLink, FileDown, FileText, Link2, Pencil, PencilLine, Plus, Save, Search, Trash2, Upload, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { IDESIGN_APPROVE_BUTTON_CLASS, IDESIGN_VIEW_BUTTON_CLASS } from '@/components/idesign/IDesignTreatmentPlans'
-import { computeFinanceTotal, FINANCE_CURRENCIES, parseFinanceAmount, resolveFinanceDueDate } from '@/lib/finance/calc'
+import { computeFinanceTotal, FINANCE_CURRENCIES, financeOrderHref, parseFinanceAmount, parseFinanceTab, resolveFinanceDueDate, type FinanceTab } from '@/lib/finance/calc'
 
 interface FinanceRow {
   id: number
@@ -28,6 +28,8 @@ interface FinanceRow {
   invoiceFileName: string | null
   invoiceFileUrl: string | null
   paymentLink: string | null
+  caseId: number | null
+  dentalOrderId: number | null
   doctorAccountId: number | null
   doctorName: string
 }
@@ -62,7 +64,14 @@ const STATUS_STYLES: Record<string, string> = {
   'Invoice not issue': 'border-border bg-bg text-text-muted',
 }
 
-export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
+type Area = 'admin' | 'portal'
+const TAB_LABELS: Record<FinanceTab, string> = { aligners: 'Clear Aligners', dental: 'Dental Lab' }
+
+export function FinanceTable({ area }: { area: Area }) {
+  const showDoctor = area === 'admin'
+  const [tab, setTab] = useState<FinanceTab>('aligners')
+  // Tabs are kept in the URL (?tab=dental) so links and reloads land on the same tab.
+  useEffect(() => { setTab(parseFinanceTab(new URLSearchParams(window.location.search).get('tab'))) }, [])
   const [rows, setRows] = useState<FinanceRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -91,6 +100,7 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
     setError('')
     const params = new URLSearchParams({ page: String(page), limit: '25' })
     if (search.trim()) params.set('search', search.trim())
+    params.set('tab', tab)
     if (category) params.set('category', category)
     if (status) params.set('status', status)
     if (overdueOnly) params.set('overdue', '1')
@@ -110,12 +120,24 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
     } finally {
       setLoading(false)
     }
-  }, [page, search, category, status, overdueOnly])
+  }, [page, search, category, status, overdueOnly, tab])
 
   useEffect(() => {
     const timer = window.setTimeout(load, search ? 250 : 0)
     return () => window.clearTimeout(timer)
   }, [load, search])
+
+  function changeTab(value: FinanceTab) {
+    if (value === tab) return
+    cancelEdit()
+    setTab(value)
+    setCategory('')
+    setPage(1)
+    const url = new URL(window.location.href)
+    if (value === 'dental') url.searchParams.set('tab', 'dental')
+    else url.searchParams.delete('tab')
+    window.history.replaceState(null, '', url)
+  }
 
   function updateFilter<T>(setter: (value: T) => void, value: T) {
     setter(value)
@@ -151,7 +173,7 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
     setError('')
     setEditingId(NEW_ROW_ID)
     setDraft({
-      patientName: '', orderNo: '', category: 'Dental Lab', purchasedProducts: '', originalCurrency: '', originalPrice: '', discount: '',
+      patientName: '', orderNo: '', category: tab === 'dental' ? 'Dental Lab' : 'iAlign', purchasedProducts: '', originalCurrency: '', originalPrice: '', discount: '',
       paymentStatus: 'Invoice not issue', invoiceNo: '', invoiceDate: '', dueDate: '', paymentDate: '', invoiceFileUrl: '', invoiceFileName: '', paymentLink: '', doctorAccountId: '',
     })
   }
@@ -225,8 +247,12 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
           <h1 className="text-xl font-semibold text-text">Finance</h1>
           <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} records · invoices are overdue ${overdueDays} days after the invoice date unless a due date is set`}</p>
         </div>
-        {canManage && <button type="button" onClick={startCreate} disabled={editingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />Add Dental Lab record</button>}
+        {canManage && <button type="button" onClick={startCreate} disabled={editingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />{tab === 'dental' ? 'Add Dental Lab record' : 'Add aligner record'}</button>}
       </header>
+
+      <div role="tablist" aria-label="Finance categories" className="flex gap-1 border-b border-border">
+        {(['aligners', 'dental'] as const).map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => changeTab(value)} className={`-mb-px h-10 border-b-2 px-4 text-sm font-semibold transition-colors ${tab === value ? 'border-primary text-text' : 'border-transparent text-text-muted hover:text-text'}`}>{TAB_LABELS[value]}</button>)}
+      </div>
 
       <section className="rounded-card border border-border bg-surface p-3">
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -258,7 +284,7 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
             ? <p className="px-4 py-12 text-center text-sm text-text-muted">Loading finance records...</p>
             : rows.length === 0
               ? <p className="px-4 py-12 text-center text-sm text-text-muted">No matching records</p>
-              : rows.map((row) => <FinanceCard key={row.id} row={row} doctorColumn={doctorColumn} canManage={canManage} onEdit={() => startEdit(row)} />)}
+              : rows.map((row) => <FinanceCard key={row.id} row={row} area={area} doctorColumn={doctorColumn} canManage={canManage} onEdit={() => startEdit(row)} />)}
         </div>}
         <div className={`overflow-x-auto ${editingId === null ? 'hidden md:block' : ''}`}>
           <table className={`w-full ${canManage ? 'min-w-[1680px]' : 'min-w-[1240px]'}`}>
@@ -286,7 +312,7 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
                   ? <tr><td colSpan={columnCount} className="px-4 py-12 text-center text-sm text-text-muted">No matching records</td></tr>
                   : displayRows.map((row) => editingId === row.id && draft
                     ? <EditRow key={row.id} draft={draft} setDraft={setDraft} isNew={row.id === NEW_ROW_ID} options={options} overdueDays={overdueDays} saving={saving} uploading={uploading} onSave={saveDraft} onCancel={cancelEdit} onUpload={uploadInvoice} />
-                    : <ViewRow key={row.id} row={row} doctorColumn={doctorColumn} canManage={canManage} editDisabled={editingId !== null} onEdit={() => startEdit(row)} />)}
+                    : <ViewRow key={row.id} row={row} area={area} doctorColumn={doctorColumn} canManage={canManage} editDisabled={editingId !== null} onEdit={() => startEdit(row)} />)}
             </tbody>
           </table>
         </div>
@@ -302,11 +328,11 @@ export function FinanceTable({ showDoctor }: { showDoctor: boolean }) {
   )
 }
 
-function ViewRow({ row, doctorColumn, canManage, editDisabled, onEdit }: { row: FinanceRow; doctorColumn: boolean; canManage: boolean; editDisabled: boolean; onEdit: () => void }) {
+function ViewRow({ row, area, doctorColumn, canManage, editDisabled, onEdit }: { row: FinanceRow; area: Area; doctorColumn: boolean; canManage: boolean; editDisabled: boolean; onEdit: () => void }) {
   return (
     <tr className="border-b border-border align-top last:border-0 hover:bg-bg/60">
       <td className="px-3 py-3"><p className="text-sm font-medium text-text">{row.patientName}</p></td>
-      <td className="px-3 py-3 text-sm text-text">{row.orderNo || <Muted>—</Muted>}</td>
+      <td className="px-3 py-3 text-sm text-text"><OrderLink row={row} area={area} /></td>
       <td className="px-3 py-3 text-sm text-text">{row.category}</td>
       <td className="max-w-56 px-3 py-3"><p className="truncate text-sm text-text" title={row.purchasedProducts ?? ''}>{row.purchasedProducts || <Muted>—</Muted>}</p></td>
       <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-text">{formatMoney(parseFinanceAmount(row.originalPrice), row.currency)}</td>
@@ -332,13 +358,13 @@ function ViewRow({ row, doctorColumn, canManage, editDisabled, onEdit }: { row: 
   )
 }
 
-function FinanceCard({ row, doctorColumn, canManage, onEdit }: { row: FinanceRow; doctorColumn: boolean; canManage: boolean; onEdit: () => void }) {
+function FinanceCard({ row, area, doctorColumn, canManage, onEdit }: { row: FinanceRow; area: Area; doctorColumn: boolean; canManage: boolean; onEdit: () => void }) {
   return (
     <article className="space-y-3 px-4 py-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-text">{row.patientName}</p>
-          <p className="mt-0.5 truncate text-xs text-text-muted">{[row.orderNo, row.category].filter(Boolean).join(' · ')}</p>
+          <p className="mt-0.5 truncate text-xs text-text-muted"><OrderLink row={row} area={area} />{row.category ? ` · ${row.category}` : ''}</p>
         </div>
         <p className="shrink-0 text-right text-base font-semibold text-text">{formatMoney(row.totalAmount, row.currency)}</p>
       </div>
@@ -419,6 +445,13 @@ function FilterSelect({ label, value, options, onChange }: { label: string; valu
   return <label><span className="sr-only">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-card border border-border bg-surface px-3 text-sm text-text outline-none focus:border-text focus:ring-2 focus:ring-text/10"><option value="">All {label.toLowerCase()}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
 }
 
+function OrderLink({ row, area }: { row: FinanceRow; area: Area }) {
+  const href = financeOrderHref(row, area)
+  if (!row.orderNo && !href) return <Muted>—</Muted>
+  if (!href) return <>{row.orderNo}</>
+  return <a href={href} className="font-medium text-text underline decoration-border underline-offset-4 hover:decoration-text" title="Open order">{row.orderNo || 'Open order'}</a>
+}
+
 function Muted({ children }: { children: React.ReactNode }) {
   return <span className="text-xs text-text-muted">{children}</span>
 }
@@ -431,7 +464,7 @@ function newRowPlaceholder(): FinanceRow {
   return {
     id: NEW_ROW_ID, patientName: '', orderNo: null, category: 'Dental Lab', purchasedProducts: null, currency: null, originalPrice: null, discount: null, totalAmount: null,
     paymentStatus: 'Invoice not issue', invoiceNo: null, invoiceDate: null, dueDate: null, effectiveDueDate: null, paymentDate: null, overdue: false, hasInvoice: false,
-    invoiceFileName: null, invoiceFileUrl: null, paymentLink: null, doctorAccountId: null, doctorName: '',
+    invoiceFileName: null, invoiceFileUrl: null, paymentLink: null, caseId: null, dentalOrderId: null, doctorAccountId: null, doctorName: '',
   }
 }
 

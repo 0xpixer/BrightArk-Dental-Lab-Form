@@ -50,6 +50,9 @@ export const financeSelection = {
   id: idesignOrders.id,
   patientName: idesignOrders.patientName,
   orderNo: sql<string | null>`coalesce(${idesignOrders.orderNo}, ${idesignCases.orderNo})`,
+  // New cases link through case_id; imported aligner rows through the case's imported_order_id.
+  linkedCaseId: sql<number | null>`coalesce(${idesignOrders.caseId}, ${idesignCases.id})`.mapWith((value) => value === null ? null : Number(value)),
+  dentalOrderId: idesignOrders.dentalOrderId,
   category: idesignOrders.category,
   purchasedProducts: idesignOrders.purchasedProducts,
   originalCurrency: idesignOrders.originalCurrency,
@@ -104,6 +107,8 @@ export function serializeFinanceRow(row: FinanceSelectRow, overdueDays: number, 
     // Admins edit the stored URL; everyone else downloads through the scoped invoice route.
     invoiceFileUrl: canManage ? row.invoiceFileUrl : null,
     paymentLink: row.paymentLink,
+    caseId: row.linkedCaseId,
+    dentalOrderId: row.dentalOrderId,
     doctorAccountId: row.doctorAccountId,
     doctorName: row.doctorFullName || row.doctorUsername || row.sourceDoctorName,
   }

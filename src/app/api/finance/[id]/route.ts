@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { idesignOrders } from '@/lib/db/schema'
+import { idesignCases, idesignOrders } from '@/lib/db/schema'
 import { canManageFinance, financeRowSchema, financeRowValues, isAllowedInvoiceUrl } from '@/lib/finance/finance'
 import { getActiveDoctor } from '@/lib/finance/server'
 import { syncImportedIDesignCases } from '@/lib/idesign/importedCases'
@@ -20,7 +20,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const input = parsed.data
 
   const db = getDb()
-  const [existing] = await db.select({ id: idesignOrders.id, doctorAccountId: idesignOrders.doctorAccountId, invoiceFileUrl: idesignOrders.invoiceFileUrl })
+  const [existing] = await db.select({ id: idesignOrders.id, doctorAccountId: idesignOrders.doctorAccountId, invoiceFileUrl: idesignOrders.invoiceFileUrl, caseId: idesignOrders.caseId })
     .from(idesignOrders).where(eq(idesignOrders.id, id)).limit(1)
   if (!existing) return NextResponse.json({ error: 'Record not found' }, { status: 404 })
 
@@ -42,6 +42,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     updatedAt: new Date(),
   }).where(eq(idesignOrders.id, id))
 
+  // A case's Finance row and the case itself stay assigned to the same doctor.
+  if (doctorChanged && existing.caseId) {
+    await db.update(idesignCases).set({ doctorAccountId: input.doctorAccountId, updatedAt: new Date() }).where(eq(idesignCases.id, existing.caseId))
+  }
   await syncImportedIDesignCases([id])
   return NextResponse.json({ success: true })
 }

@@ -10,6 +10,7 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
@@ -168,6 +169,9 @@ export const idesignOrders = pgTable('idesign_orders', {
   invoiceFileUrl: text('invoice_file_url'),
   invoiceFileName: text('invoice_file_name'),
   paymentLink: text('payment_link'),
+  // Finance rows created automatically for new orders link back to their source (one row per order).
+  caseId: integer('case_id').references((): AnyPgColumn => idesignCases.id, { onDelete: 'set null' }),
+  dentalOrderId: integer('dental_order_id').references(() => orders.id, { onDelete: 'set null' }),
   assignmentUpdatedBy: integer('assignment_updated_by').references(() => adminUsers.id, { onDelete: 'set null' }),
   assignmentUpdatedAt: timestamp('assignment_updated_at', { withTimezone: true, mode: 'date' }),
   createdBy: integer('created_by').references(() => adminUsers.id, { onDelete: 'set null' }),
@@ -180,6 +184,8 @@ export const idesignOrders = pgTable('idesign_orders', {
   createdOnIdx: index('idesign_orders_created_on_idx').on(table.sourceCreatedOn),
   salesAccountIdx: index('idesign_orders_sales_account_idx').on(table.salesAccountId),
   doctorAccountIdx: index('idesign_orders_doctor_account_idx').on(table.doctorAccountId),
+  caseIdx: uniqueIndex('idesign_orders_case_idx').on(table.caseId),
+  dentalOrderIdx: uniqueIndex('idesign_orders_dental_order_idx').on(table.dentalOrderId),
 }))
 
 export const idesignCases = pgTable('idesign_cases', {

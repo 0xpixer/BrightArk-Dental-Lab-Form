@@ -58,6 +58,8 @@ function existingOrder(overrides: Partial<IDesignOrder> = {}): IDesignOrder {
     invoiceFileUrl: null,
     invoiceFileName: null,
     paymentLink: null,
+    caseId: null,
+    dentalOrderId: null,
     assignmentUpdatedBy: 1,
     assignmentUpdatedAt: new Date('2026-10-01T00:00:00Z'),
     createdBy: 1,

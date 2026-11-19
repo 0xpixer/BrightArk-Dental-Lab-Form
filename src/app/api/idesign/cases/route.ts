@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { isSalesRole } from '@/lib/admin/roles'
 import { NextResponse } from 'next/server'
+import { createFinanceRowForCase } from '@/lib/finance/autoCreate'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { adminUsers, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps } from '@/lib/db/schema'
@@ -161,6 +162,8 @@ export async function POST(request: Request) {
         await db.delete(idesignCases).where(eq(idesignCases.id, caseRow.id))
       },
     })
+    // A Finance row is pre-filled for every new case; a failure here must not lose the submitted order.
+    await createFinanceRowForCase(created).catch((financeError) => { console.error('Unable to create the Finance record for iDesign case', created.id, financeError) })
     queueAlignerLarkNotification('submitted', created, request)
     queueDesignerAlignerNotification('submitted', created)
     return NextResponse.json({ case: created }, { status: 201 })

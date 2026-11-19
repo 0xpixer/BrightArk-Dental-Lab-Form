@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { and, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
-import { canManageFinance, canViewFinance, financeRowSchema, financeRowValues, FINANCE_CATEGORIES, FINANCE_PAYMENT_STATUSES, isAllowedInvoiceUrl } from '@/lib/finance/finance'
+import { canManageFinance, canViewFinance, financeRowSchema, financeRowValues, financeTabCategories, FINANCE_PAYMENT_STATUSES, isAllowedInvoiceUrl, parseFinanceTab } from '@/lib/finance/finance'
 import {
   financeBaseQuery,
   financeOverdueCondition,
@@ -30,11 +30,14 @@ export async function GET(request: Request) {
   const category = searchParams.get('category')?.trim()
   const status = searchParams.get('status')?.trim()
   const overdueOnly = searchParams.get('overdue') === '1'
+  const tab = parseFinanceTab(searchParams.get('tab'))
+  const tabCategories = financeTabCategories(tab)
   const today = new Date().toISOString().slice(0, 10)
 
   const [scope, overdueDays] = await Promise.all([getFinanceScope(userId, role), getFinanceOverdueDays()])
   const conditions: SQL[] = []
   if (scope) conditions.push(scope)
+  conditions.push(tab === 'dental' ? eq(idesignOrders.category, 'Dental Lab') : sql`${idesignOrders.category} <> 'Dental Lab'`)
   if (category) conditions.push(eq(idesignOrders.category, category))
   if (status) conditions.push(eq(idesignOrders.paymentStatus, status))
   if (overdueOnly) conditions.push(financeOverdueCondition(overdueDays, today))
@@ -64,8 +67,9 @@ export async function GET(request: Request) {
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     overdueDays,
     canManage,
+    tab,
     options: {
-      categories: FINANCE_CATEGORIES,
+      categories: tabCategories,
       paymentStatuses: FINANCE_PAYMENT_STATUSES,
       doctors: doctors.map((doctor) => ({ id: doctor.id, name: doctor.fullName || doctor.username, clinicName: doctor.clinicName })),
     },
