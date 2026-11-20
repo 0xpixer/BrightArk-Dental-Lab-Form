@@ -1,0 +1,19 @@
+name: Aligner Production Reminders
+
+on:
+  schedule:
+    # 01:30 UTC = 08:30 Asia/Jakarta
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-production-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Email due aligner production reminders
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://bright-ark-dental-lab-form.vercel.app/api/cron/aligner-production"

@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
 import { idesignCases, idesignOrders } from '@/lib/db/schema'
+import { recordFirstBatchDelivered } from './productionServer'
 
 /**
  * Rows of idesign_orders that came from the spreadsheet import (or were added by hand in Finance),
@@ -25,6 +26,9 @@ export async function syncImportedIDesignCases(orderIds: number[]) {
 
   const alignerOrders = orders.filter((order) => order.category === 'iAlign')
   if (alignerOrders.length === 0) return []
+  const previousProgress = new Map((await db.select({ importedOrderId: idesignCases.importedOrderId, latestProgress: idesignCases.latestProgress })
+    .from(idesignCases).where(inArray(idesignCases.importedOrderId, alignerOrders.map((order) => order.id))))
+    .map((row) => [row.importedOrderId, row.latestProgress]))
 
   await db.insert(idesignCases).values(alignerOrders.map((order) => ({
     importedOrderId: order.id,
@@ -47,7 +51,14 @@ export async function syncImportedIDesignCases(orderIds: number[]) {
     updatedAt: new Date(),
   }).where(eq(idesignCases.importedOrderId, order.id))))
 
-  return db.select().from(idesignCases).where(inArray(idesignCases.importedOrderId, alignerOrders.map((order) => order.id)))
+  const synced = await db.select().from(idesignCases).where(inArray(idesignCases.importedOrderId, alignerOrders.map((order) => order.id)))
+  // An existing order that just changed to Delivered anchors the production tracker (batch 1-10 delivered today).
+  // Newly imported rows are skipped: their Delivered status is historical, so the date is entered by hand.
+  await recordFirstBatchDelivered(synced.filter((row) => {
+    const previous = previousProgress.get(row.importedOrderId)
+    return row.latestProgress === 'Delivered' && previous !== undefined && previous !== 'Delivered'
+  }).map((row) => row.id))
+  return synced
 }
 
 export function importedCaseOrderNo(orderId: number) {

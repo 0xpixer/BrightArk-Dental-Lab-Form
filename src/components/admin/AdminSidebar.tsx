@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { BookUser, Boxes, Box, CircleDollarSign, Contact, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
+import { BookUser, Boxes, Box, CalendarClock, Factory, CircleDollarSign, Contact, CirclePlus, Database, DatabaseZap, DoorOpen, ExternalLink, GalleryHorizontal, Globe2, Images, LayoutDashboard, LayoutGrid, List, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, Plus, ShieldCheck, UserCircle, UserRoundCog, Users, UsersRound, Wallet, type IconNode } from 'lucide'
 import { formatAdminRole } from '@/lib/admin/roles'
 import { canViewCrm } from '@/lib/crm/crm'
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse'
@@ -25,6 +25,7 @@ const MODULES: NavModule[] = [
   { id: 'idesign', label: 'Clear Aligners', icon: ClearAlignerIcon, hoverIcon: ClearAlignerActiveIcon, roles: ['superadmin', 'admin', 'sales', 'sales_director', 'treatment_designer'], items: [
     { href: '/admin/idesign/orders', label: 'My Orders', icon: List, hoverIcon: ListChecks },
     { href: '/admin/idesign/orders/new', label: 'New Orders', icon: Plus, hoverIcon: CirclePlus, roles: ['superadmin', 'admin', 'sales', 'sales_director'] },
+    { href: '/admin/idesign/production', label: 'Production Progress', icon: Factory, hoverIcon: CalendarClock, roles: ['superadmin', 'sales', 'sales_director'] },
   ] },
   { id: 'dental', label: 'Dental Lab Orders', icon: ToothIcon, hoverIcon: ToothPolishedIcon, roles: ['admin', 'superadmin', 'sales', 'sales_director'], items: [
     { href: '/admin/submissions', label: 'Submissions', icon: List, hoverIcon: ListChecks },

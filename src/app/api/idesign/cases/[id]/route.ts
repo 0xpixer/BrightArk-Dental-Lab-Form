@@ -21,6 +21,7 @@ import { updateIDesignCaseInformationSchema } from '@/lib/idesign/cases'
 import { calculateAutomaticTreatmentProgress, dateInTimezone } from '@/lib/idesign/schedule'
 import { adoptOrderSales, getDoctorSalesId } from '@/lib/relationships/server'
 import { getAccessibleIDesignCase, recordIDesignActivity, sessionActor } from '@/lib/idesign/workflow'
+import { recordFirstBatchDelivered } from '@/lib/idesign/productionServer'
 
 const dateValue = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)))
 const updateCaseSchema = z.union([
@@ -266,5 +267,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     detail: `Status changed from ${caseRow.latestProgress} to ${parsed.data.latestProgress}`,
     ...sessionActor(session!),
   })
+  // Delivered anchors the production tracker: batch 1-10 was delivered today.
+  if (parsed.data.latestProgress === 'Delivered' && caseRow.latestProgress !== 'Delivered') await recordFirstBatchDelivered([caseId], now)
   return NextResponse.json({ success: true })
 }

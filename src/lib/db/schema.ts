@@ -487,3 +487,20 @@ export const financeAccess = pgTable('finance_access', {
   resetSentAt: timestamp('reset_sent_at', { withTimezone: true, mode: 'date' }),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 })
+
+/**
+ * Clear aligner production progress, one row per case. Aligners are produced in batches of 10 stages;
+ * the next batch is due 80 days after the current one was delivered. deliveredBatch is 1 for stages 1-10,
+ * 2 for 11-20, and so on; RETAINER_BATCH (src/lib/idesign/production.ts) marks the retainer as delivered.
+ */
+export const alignerProduction = pgTable('aligner_production', {
+  caseId: integer('case_id').primaryKey().references(() => idesignCases.id, { onDelete: 'cascade' }),
+  totalStages: integer('total_stages'),
+  deliveredBatch: integer('delivered_batch'),
+  batchDeliveredOn: date('batch_delivered_on', { mode: 'string' }),
+  /** The batch the due reminder was sent for; a reminder goes out once per order per batch. */
+  notifiedBatch: integer('notified_batch'),
+  notifiedAt: timestamp('notified_at', { withTimezone: true, mode: 'date' }),
+  updatedBy: integer('updated_by').references(() => adminUsers.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})
