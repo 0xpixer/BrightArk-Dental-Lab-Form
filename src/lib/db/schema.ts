@@ -467,3 +467,23 @@ export type SidebarBanner = typeof sidebarBanners.$inferSelect
 export type AppSetting = typeof appSettings.$inferSelect
 export type CrmDoctor = typeof crmDoctors.$inferSelect
 export type CrmActivity = typeof crmActivities.$inferSelect
+
+/**
+ * Per-account Finance page lock for doctors and clinic staff. A missing row means the account has not
+ * gone through the first-visit setup yet. staffVisible only matters on a doctor's row: it lets the
+ * doctor's linked clinic staff open Finance (hidden by default).
+ */
+export const financeAccess = pgTable('finance_access', {
+  userId: integer('user_id').primaryKey().references(() => adminUsers.id, { onDelete: 'cascade' }),
+  passwordHash: text('password_hash'),
+  /** Bumped on every password change so older unlock tokens stop working. */
+  passwordVersion: integer('password_version').default(0).notNull(),
+  staffVisible: boolean('staff_visible').default(false).notNull(),
+  setupAt: timestamp('setup_at', { withTimezone: true, mode: 'date' }),
+  failedAttempts: integer('failed_attempts').default(0).notNull(),
+  lockedUntil: timestamp('locked_until', { withTimezone: true, mode: 'date' }),
+  resetTokenHash: text('reset_token_hash'),
+  resetExpiresAt: timestamp('reset_expires_at', { withTimezone: true, mode: 'date' }),
+  resetSentAt: timestamp('reset_sent_at', { withTimezone: true, mode: 'date' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+})

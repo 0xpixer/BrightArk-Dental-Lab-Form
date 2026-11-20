@@ -15,6 +15,7 @@ import {
   getFinanceScope,
   serializeFinanceRow,
 } from '@/lib/finance/server'
+import { financeLockError } from '@/lib/finance/accessServer'
 
 export async function GET(request: Request) {
   const { session, error } = await requireSession()
@@ -23,6 +24,8 @@ export async function GET(request: Request) {
   if (!canViewFinance(role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const userId = Number(session!.user.id)
+  const lockError = await financeLockError(request, userId, role)
+  if (lockError) return lockError
   const canManage = canManageFinance(role)
   const { searchParams } = new URL(request.url)
   const page = Math.max(1, Number(searchParams.get('page')) || 1)

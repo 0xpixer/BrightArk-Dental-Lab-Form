@@ -17,7 +17,8 @@ export default auth((req) => {
 
   if (!req.auth) {
     const loginUrl = new URL('/admin/login', req.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
+    // Keep the query so emailed links (e.g. a Finance password reset token) survive the sign-in.
+    loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
     return NextResponse.redirect(loginUrl)
   }
 

@@ -52,7 +52,7 @@ interface BasePayload {
   doctorName: string | null
   doctors: Array<{ id: number; name: string }>
   selectedDoctorId: number | null
-  finance: { unpaidCount: number; overdueCount: number; unpaid: CurrencyAmount[]; overdue: CurrencyAmount[]; overdueDays: number; tab?: FinanceTab }
+  finance: { unpaidCount: number; overdueCount: number; unpaid: CurrencyAmount[]; overdue: CurrencyAmount[]; overdueDays: number; tab?: FinanceTab; locked?: boolean }
   doctorSummaries: DoctorSummary[]
   generatedAt: string
 }
@@ -295,7 +295,7 @@ const financeHref = financeTabHref
 function FinanceBanner({ finance, href }: { finance: BasePayload['finance']; href: string }) {
   if (finance.unpaidCount === 0) return null
   const overdue = finance.overdueCount > 0
-  const amounts = (overdue ? finance.overdue : finance.unpaid).map(formatMoney).join(' · ')
+  const amounts = finance.locked ? 'Open Finance to see the amounts' : (overdue ? finance.overdue : finance.unpaid).map(formatMoney).join(' · ')
   return (
     <Link href={financeHref(href, finance.tab, overdue)} className={`flex items-center gap-3 rounded-card border px-4 py-3 transition-colors ${overdue ? 'border-red-200 bg-red-50 hover:bg-red-100/70' : 'border-border bg-surface hover:bg-bg'}`}>
       <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${overdue ? 'bg-red-500 text-white' : 'bg-bg text-text'}`}><MorphIcon icon={overdue ? TriangleAlert : Wallet} className="h-4 w-4" /></span>

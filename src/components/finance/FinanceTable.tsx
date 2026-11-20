@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { upload } from '@vercel/blob/client'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Download, ExternalLink, FileDown, FileText, Link2, Pencil, PencilLine, Plus, Save, Search, Trash2, Upload, X } from 'lucide'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CirclePlus, Cog, Settings, Download, ExternalLink, FileDown, FileText, Link2, Pencil, PencilLine, Plus, Save, Search, Trash2, Upload, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { categoryLabel } from '@/lib/idesign/orders'
 import { IDESIGN_APPROVE_BUTTON_CLASS, IDESIGN_VIEW_BUTTON_CLASS } from '@/components/idesign/IDesignTreatmentPlans'
@@ -69,7 +69,24 @@ type Area = 'admin' | 'portal'
 const TAB_LABELS: Record<FinanceTab, string> = { overview: 'Overview', aligners: 'Clear Aligners', dental: 'Dental Lab', devices: 'Devices & Service' }
 const ADD_LABELS: Record<FinanceTab, string> = { overview: 'Add record', aligners: 'Add aligner record', dental: 'Add Dental Lab record', devices: 'Add device or service record' }
 
-export function FinanceTable({ area }: { area: Area }) {
+/** The portal's Finance unlock token for this visit; sent with every finance request. */
+const FinanceUnlockContext = createContext<string | null>(null)
+
+function InvoiceLink({ row }: { row: FinanceRow }) {
+  const unlockToken = useContext(FinanceUnlockContext)
+  // A plain link cannot carry the header, so the token rides in the query string.
+  const href = `/api/finance/${row.id}/invoice${unlockToken ? `?unlock=${encodeURIComponent(unlockToken)}` : ''}`
+  return <a href={href} target="_blank" rel="noreferrer" className={IDESIGN_VIEW_BUTTON_CLASS} title={row.invoiceFileName ?? 'Download invoice'}><MorphIcon icon={Download} hoverIcon={FileDown} className="h-3 w-3" />Invoice</a>
+}
+
+export function FinanceTable({ area, unlockToken = null, onLocked, onSettings }: {
+  area: Area
+  unlockToken?: string | null
+  /** The server refused the token (password changed elsewhere, or it expired): lock the page again. */
+  onLocked?: () => void
+  /** Portal accounts get a Settings button for their Finance password and staff access. */
+  onSettings?: () => void
+}) {
   const showDoctor = area === 'admin'
   const [tab, setTab] = useState<FinanceTab>('aligners')
   // Tabs are kept in the URL (?tab=dental) so links and reloads land on the same tab.
@@ -108,8 +125,9 @@ export function FinanceTable({ area }: { area: Area }) {
     if (status) params.set('status', status)
     if (overdueOnly) params.set('overdue', '1')
     try {
-      const response = await fetch(`/api/finance?${params}`, { cache: 'no-store' })
+      const response = await fetch(`/api/finance?${params}`, { cache: 'no-store', headers: unlockToken ? { 'x-finance-unlock': unlockToken } : undefined })
       const payload = await response.json()
+      if (response.status === 401 && payload.code === 'finance_locked' && onLocked) { onLocked(); return }
       if (!response.ok) throw new Error(payload.error ?? 'Could not load finance records')
       setRows(payload.rows)
       setTotal(payload.pagination.total)
@@ -124,7 +142,7 @@ export function FinanceTable({ area }: { area: Area }) {
     } finally {
       setLoading(false)
     }
-  }, [page, search, category, status, overdueOnly, tab])
+  }, [page, search, category, status, overdueOnly, tab, unlockToken, onLocked])
 
   useEffect(() => {
     const timer = window.setTimeout(load, search ? 250 : 0)
@@ -245,12 +263,14 @@ export function FinanceTable({ area }: { area: Area }) {
   const displayRows = useMemo(() => editingId === NEW_ROW_ID ? [newRowPlaceholder(), ...rows] : rows, [editingId, rows])
 
   return (
+    <FinanceUnlockContext.Provider value={unlockToken}>
     <section className="space-y-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-text">Finance</h1>
           <p className="mt-1 text-sm text-text-muted">{loading ? 'Loading records...' : `${total} records · invoices are overdue ${overdueDays} days after the invoice date unless a due date is set`}</p>
         </div>
+        {onSettings && <button type="button" onClick={onSettings} className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-card border border-border bg-surface px-4 text-sm font-semibold text-text hover:bg-bg sm:self-auto"><MorphIcon icon={Settings} hoverIcon={Cog} className="h-4 w-4" />Settings</button>}
         {canManage && <button type="button" onClick={startCreate} disabled={editingId !== null} className="inline-flex h-10 items-center justify-center gap-2 rounded-card bg-primary px-4 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"><MorphIcon icon={Plus} hoverIcon={CirclePlus} className="h-4 w-4" />{ADD_LABELS[tab]}</button>}
       </header>
 
@@ -332,6 +352,7 @@ export function FinanceTable({ area }: { area: Area }) {
         </footer>
       </section>
     </section>
+    </FinanceUnlockContext.Provider>
   )
 }
 
@@ -352,7 +373,7 @@ function ViewRow({ row, area, doctorColumn, canManage, editDisabled, onEdit }: {
       </td>
       <td className="px-3 py-3">
         {row.hasInvoice
-          ? <a href={`/api/finance/${row.id}/invoice`} target="_blank" rel="noreferrer" className={IDESIGN_VIEW_BUTTON_CLASS} title={row.invoiceFileName ?? 'Download invoice'}><MorphIcon icon={Download} hoverIcon={FileDown} className="h-3 w-3" />Invoice</a>
+          ? <InvoiceLink row={row} />
           : <Muted>Not uploaded</Muted>}
         {(row.invoiceNo || row.invoiceDate) && <p className="mt-1 whitespace-nowrap text-xs text-text-muted">{[row.invoiceNo, formatDate(row.invoiceDate)].filter(Boolean).join(' · ')}</p>}
       </td>
@@ -389,7 +410,7 @@ function FinanceCard({ row, area, doctorColumn, canManage, onEdit }: { row: Fina
         {doctorColumn && <><dt className="text-text-muted">Doctor</dt><dd className="truncate text-right text-text">{row.doctorName}{!row.doctorAccountId && <span className="text-text-muted"> (unlinked)</span>}</dd></>}
       </dl>
       {(row.hasInvoice || row.paymentLink || canManage) && <div className="flex flex-wrap items-center gap-2">
-        {row.hasInvoice && <a href={`/api/finance/${row.id}/invoice`} target="_blank" rel="noreferrer" className={IDESIGN_VIEW_BUTTON_CLASS} title={row.invoiceFileName ?? 'Download invoice'}><MorphIcon icon={Download} hoverIcon={FileDown} className="h-3 w-3" />Invoice</a>}
+        {row.hasInvoice && <InvoiceLink row={row} />}
         {row.paymentLink && <a href={row.paymentLink} target="_blank" rel="noreferrer noopener" className={`${IDESIGN_APPROVE_BUTTON_CLASS} gap-1.5`}><MorphIcon icon={Link2} hoverIcon={ExternalLink} className="h-3 w-3" />Pay now</a>}
         {canManage && <button type="button" onClick={onEdit} className={`${IDESIGN_VIEW_BUTTON_CLASS} ml-auto`}><MorphIcon icon={Pencil} hoverIcon={PencilLine} className="h-3 w-3" />Edit</button>}
       </div>}

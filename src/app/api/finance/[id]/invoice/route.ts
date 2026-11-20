@@ -5,9 +5,10 @@ import { getDb } from '@/lib/db/client'
 import { idesignOrders } from '@/lib/db/schema'
 import { canViewFinance } from '@/lib/finance/finance'
 import { getFinanceScope } from '@/lib/finance/server'
+import { financeLockError } from '@/lib/finance/accessServer'
 
 /** Scoped invoice download: the row must be inside the caller's finance scope. */
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   const { session, error } = await requireSession()
   if (error) return error
   const role = session!.user.role
@@ -16,6 +17,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const id = Number(params.id)
   if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
 
+  const lockError = await financeLockError(request, Number(session!.user.id), role)
+  if (lockError) return lockError
   const scope = await getFinanceScope(Number(session!.user.id), role)
   const [row] = await getDb().select({ url: idesignOrders.invoiceFileUrl })
     .from(idesignOrders)

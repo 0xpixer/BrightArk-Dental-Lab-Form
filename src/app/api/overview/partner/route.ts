@@ -8,6 +8,7 @@ import { getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { dateInTimezone } from '@/lib/idesign/schedule'
 import { financeTabForCategory, FINANCE_CATEGORY_TABS } from '@/lib/finance/calc'
 import { getFinanceOverdueDays, getFinanceScope } from '@/lib/finance/server'
+import { loadFinanceGate } from '@/lib/finance/accessServer'
 import { getDoctorProfile, getOrderOwnerId } from '@/lib/portal/access'
 import { getSalesDoctors, getSalesOrderAccessCondition } from '@/lib/sales/access'
 import { doctorOrderScope } from '@/lib/portal/orderScope'
@@ -57,7 +58,11 @@ export async function GET(request: Request) {
   const today = new Date().toISOString().slice(0, 10)
 
   // Finance reminder is shown on both tabs.
-  const [financeScope, overdueDays] = await Promise.all([getFinanceScope(userId, role), getFinanceOverdueDays()])
+  const [financeScope, overdueDays, financeGate] = await Promise.all([
+    getFinanceScope(userId, role),
+    getFinanceOverdueDays(),
+    isPortalRole(role) ? loadFinanceGate(userId, role).then((result) => result.gate) : Promise.resolve(null),
+  ])
   const financeConditions: SQL[] = []
   if (financeScope) financeConditions.push(financeScope)
   if (doctorId && isSalesRole(role)) financeConditions.push(eq(idesignOrders.doctorAccountId, doctorId))
@@ -74,7 +79,13 @@ export async function GET(request: Request) {
   // Finance is split into tabs by category; links open the first tab with overdue rows, else the first with unpaid rows.
   const tabSummaries = FINANCE_CATEGORY_TABS.map((financeTab) => ({ tab: financeTab, summary: buildFinanceSummary(financeRows.filter((row) => financeTabForCategory(row.category) === financeTab), overdueDays, today) }))
   const financeTab = (tabSummaries.find((entry) => entry.summary.overdueCount > 0) ?? tabSummaries.find((entry) => entry.summary.unpaidCount > 0))?.tab ?? 'aligners'
-  const finance = { ...buildFinanceSummary(financeRows, overdueDays, today), overdueDays, tab: financeTab }
+  const financeSummary = buildFinanceSummary(financeRows, overdueDays, today)
+  // Hidden Finance (clinic staff) shows no reminder; a password-locked Finance shows counts but no amounts.
+  const finance = financeGate?.hidden
+    ? { ...buildFinanceSummary([], overdueDays, today), overdueDays, tab: financeTab, locked: false }
+    : financeGate?.hasPassword
+      ? { ...financeSummary, unpaid: [], overdue: [], overdueDays, tab: financeTab, locked: true }
+      : { ...financeSummary, overdueDays, tab: financeTab, locked: false }
 
   const base = {
     tab,
