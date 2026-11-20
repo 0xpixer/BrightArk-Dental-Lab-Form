@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   // Next production due date in SQL so the list can sort and filter by it.
   const dueDate = sql<string | null>`case when ${alignerProduction.deliveredBatch} is not null and ${alignerProduction.deliveredBatch} <> ${RETAINER_BATCH}
-    then (${alignerProduction.batchDeliveredOn} + ${PRODUCTION_INTERVAL_DAYS})::date end`
+    then (${alignerProduction.batchDeliveredOn} + ${PRODUCTION_INTERVAL_DAYS}::int)::date end`
   const conditions = [eq(idesignCases.orderType, 'clear_aligner'), ne(idesignCases.latestProgress, 'Canceled')]
   const access = await getIDesignCaseAccessCondition(Number(session!.user.id), role)
   if (access) conditions.push(access)

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       isNotNull(alignerProduction.deliveredBatch),
       ne(alignerProduction.deliveredBatch, RETAINER_BATCH),
       isNotNull(alignerProduction.batchDeliveredOn),
-      sql`(${alignerProduction.batchDeliveredOn} + ${PRODUCTION_INTERVAL_DAYS})::date <= ${today}::date`,
+      sql`(${alignerProduction.batchDeliveredOn} + ${PRODUCTION_INTERVAL_DAYS}::int)::date <= ${today}::date`,
       or(isNull(alignerProduction.notifiedBatch), sql`${alignerProduction.notifiedBatch} <> ${alignerProduction.deliveredBatch}`),
       ne(idesignCases.latestProgress, 'Canceled'),
     ))
