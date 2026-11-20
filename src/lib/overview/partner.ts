@@ -23,6 +23,8 @@ export interface PartnerAlignerCaseInput {
   doctorAccountId: number | null
   doctorName: string | null
   hasCourse: boolean
+  /** Day the treatment plan was first approved (YYYY-MM-DD), when known. */
+  approvedOn?: string | null
 }
 
 export interface PartnerCourseInput {
@@ -85,6 +87,7 @@ export function buildAlignerOverview(cases: PartnerAlignerCaseInput[], courses: 
   for (const row of cases) pipeline[row.latestProgress] = (pipeline[row.latestProgress] ?? 0) + 1
 
   const thisMonth = monthKey(now)
+  const lastMonth = monthKey(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)))
   const awaiting = cases.filter((row) => row.latestProgress === 'Awaiting Approval')
   const entering = cases.filter((row) => row.latestProgress === 'Entering Info')
   const needsSchedule = cases.filter((row) => !row.hasCourse && (POST_APPROVAL_PROGRESS as readonly string[]).includes(row.latestProgress))
@@ -117,6 +120,8 @@ export function buildAlignerOverview(cases: PartnerAlignerCaseInput[], courses: 
       all: cases.length,
       active: cases.filter((row) => !CLOSED_PROGRESS.has(row.latestProgress)).length,
       newThisMonth: cases.filter((row) => row.createdOn.startsWith(thisMonth)).length,
+      approvedThisMonth: cases.filter((row) => row.approvedOn?.startsWith(thisMonth)).length,
+      approvedLastMonth: cases.filter((row) => row.approvedOn?.startsWith(lastMonth)).length,
       completed: pipeline.Completed ?? 0,
       awaitingApproval: awaiting.length,
       wearing: wearing.length,

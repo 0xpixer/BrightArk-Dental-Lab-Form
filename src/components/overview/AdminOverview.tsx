@@ -19,6 +19,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Sparkles,
+  BadgeCheck,
   Stethoscope,
   Target,
   TriangleAlert,
@@ -98,7 +99,7 @@ interface BasePayload {
 
 interface AlignerPayload extends BasePayload {
   aligners: {
-    totals: { all: number; active: number; newThisMonth: number; newLastMonth: number; awaitingApproval: number; inDesign: number }
+    totals: { all: number; active: number; newThisMonth: number; newLastMonth: number; approvedThisMonth: number; approvedLastMonth: number; awaitingApproval: number; inDesign: number }
     pipeline: Record<string, number>
     queues: AdminQueue[]
     categories: string[]
@@ -393,9 +394,10 @@ function AlignerTab({ data, loading, onEditTargets }: { data: AlignerPayload | n
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiCard label="Active cases" value={totals?.active ?? 0} hint={`${totals?.inDesign ?? 0} in design · ${totals?.all ?? 0} total`} icon={Layers} href={ALIGNER_LIST} loading={loading} />
         <KpiCard label="New this month" value={totals?.newThisMonth ?? 0} hint={totals ? <Delta current={totals.newThisMonth} previous={totals.newLastMonth} /> : undefined} icon={Sparkles} href={ALIGNER_LIST} loading={loading} />
+        <KpiCard label="Approved this month" value={totals?.approvedThisMonth ?? 0} hint={totals ? <Delta current={totals.approvedThisMonth} previous={totals.approvedLastMonth} /> : undefined} icon={BadgeCheck} href={ALIGNER_LIST} loading={loading} />
         <KpiCard label="To approve" value={totals?.awaitingApproval ?? 0} hint="Waiting on doctors" icon={ClipboardCheck} href={`${ALIGNER_LIST}?progress=${encodeURIComponent('Awaiting Approval')}`} loading={loading} />
         {showTargets
           ? <KpiCard label="Monthly target" value={targets?.totalTarget ? <>{targets.actual}<span className="text-base text-text-muted">/{targets.totalTarget}</span></> : targets?.actual ?? 0} hint={targets?.totalTarget ? `${targets.percent}% of target reached` : 'No targets set yet'} icon={Target} href="#sales-targets" accent={Boolean(targets?.percent && targets.percent >= 100)} loading={loading} />

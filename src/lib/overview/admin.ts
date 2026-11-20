@@ -141,6 +141,8 @@ export function buildAdminAlignerOverview(cases: AdminCaseInput[], salesAccounts
       active: open.length,
       newThisMonth,
       newLastMonth: cases.filter((row) => row.createdOn.startsWith(lastMonth)).length,
+      approvedThisMonth: cases.filter((row) => row.approvedOn?.startsWith(thisMonth)).length,
+      approvedLastMonth: cases.filter((row) => row.approvedOn?.startsWith(lastMonth)).length,
       awaitingApproval: pipeline['Awaiting Approval'] ?? 0,
       inDesign: pipeline['Lab Designing'] ?? 0,
     },

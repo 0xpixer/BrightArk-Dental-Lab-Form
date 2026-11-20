@@ -21,6 +21,7 @@ import {
   Plus,
   RefreshCw,
   Sparkles,
+  BadgeCheck,
   Stethoscope,
   TriangleAlert,
   Truck,
@@ -58,7 +59,7 @@ interface BasePayload {
 
 interface AlignerPayload extends BasePayload {
   aligners: {
-    totals: { all: number; active: number; newThisMonth: number; completed: number; awaitingApproval: number; wearing: number }
+    totals: { all: number; active: number; newThisMonth: number; approvedThisMonth: number; approvedLastMonth: number; completed: number; awaitingApproval: number; wearing: number }
     pipeline: Record<string, number>
     awaitingApproval: PartnerCaseItem[]
     enteringInfo: PartnerCaseItem[]
@@ -388,10 +389,11 @@ function AlignerTab({ data, loading, paths, reload }: { data: AlignerPayload | n
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiCard label="To approve" value={totals?.awaitingApproval ?? 0} hint={totals?.awaitingApproval ? 'Plans ready for review' : 'Nothing waiting'} icon={ClipboardCheck} href={paths.alignerOrders} accent={Boolean(totals?.awaitingApproval)} loading={loading} />
         <KpiCard label="Active cases" value={totals?.active ?? 0} hint={`${totals?.wearing ?? 0} currently wearing`} icon={Layers} href={paths.alignerOrders} loading={loading} />
         <KpiCard label="New this month" value={totals?.newThisMonth ?? 0} hint={`${totals?.completed ?? 0} completed overall`} icon={Sparkles} href={paths.alignerOrders} loading={loading} />
+        <KpiCard label="Approved this month" value={totals?.approvedThisMonth ?? 0} hint={`${totals?.approvedLastMonth ?? 0} last month`} icon={BadgeCheck} href={paths.alignerOrders} loading={loading} />
         <KpiCard label="Unpaid" value={data?.finance.unpaidCount ?? 0} hint={unpaid.length ? unpaid.map(formatMoney).join(' · ') : 'All settled'} icon={Wallet} href={financeHref(paths.finance, data?.finance.tab)} loading={loading} />
       </div>
 

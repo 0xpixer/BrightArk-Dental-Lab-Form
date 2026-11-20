@@ -31,6 +31,17 @@ test('aligner overview groups action items and counts the pipeline', () => {
   assert.deepEqual(overview.awaitingApproval.map((item) => item.id), [1, 2])
 })
 
+test('approved this month counts cases by their first plan approval day', () => {
+  const overview = buildAlignerOverview([
+    alignerCase(1, 'Approved', { approvedOn: '2026-11-03' }),
+    alignerCase(2, 'In Production', { approvedOn: '2026-11-13' }),
+    alignerCase(3, 'Delivered', { approvedOn: '2026-10-20' }),
+    alignerCase(4, 'Awaiting Approval'),
+  ], [], now)
+  assert.equal(overview.totals.approvedThisMonth, 2)
+  assert.equal(overview.totals.approvedLastMonth, 1)
+})
+
 test('wear progress flags a stage change within seven days', () => {
   const cases = [alignerCase(1, 'Delivered', { hasCourse: true }), alignerCase(2, 'Delivered', { hasCourse: true })]
   const stages = (start: string) => [

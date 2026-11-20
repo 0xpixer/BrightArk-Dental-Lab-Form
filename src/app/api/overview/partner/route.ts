@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { and, asc, desc, eq, inArray, type SQL } from 'drizzle-orm'
 import { requireSession } from '@/lib/admin/session'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, idesignCaseActivities, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentSteps, orderDrafts, orders } from '@/lib/db/schema'
+import { adminUsers, idesignCaseActivities, idesignCases, idesignOrders, idesignTreatmentCourses, idesignTreatmentPlans, idesignTreatmentSteps, orderDrafts, orders } from '@/lib/db/schema'
 import { isPortalRole, isSalesRole } from '@/lib/admin/roles'
 import { getIDesignCaseAccessCondition } from '@/lib/idesign/access'
 import { dateInTimezone } from '@/lib/idesign/schedule'
@@ -154,7 +154,7 @@ export async function GET(request: Request) {
   if (tab === 'aligners') {
     const cases = await loadAlignerCases()
     const caseIds = cases.map((row) => row.id)
-    const [courses, activities, lab] = await Promise.all([
+    const [courses, activities, lab, approvals] = await Promise.all([
       caseIds.length
         ? db.select({ id: idesignTreatmentCourses.id, caseId: idesignTreatmentCourses.caseId, totalSteps: idesignTreatmentCourses.totalSteps, status: idesignTreatmentCourses.status, timezone: idesignTreatmentCourses.timezone })
           .from(idesignTreatmentCourses).where(and(inArray(idesignTreatmentCourses.caseId, caseIds), eq(idesignTreatmentCourses.status, 'active')))
@@ -168,7 +168,19 @@ export async function GET(request: Request) {
           .limit(8)
         : Promise.resolve([]),
       isSalesRole(role) ? loadLabOrders() : Promise.resolve(null),
+      caseIds.length
+        ? db.select({ caseId: idesignTreatmentPlans.caseId, approvedAt: idesignTreatmentPlans.approvedAt })
+          .from(idesignTreatmentPlans).where(and(inArray(idesignTreatmentPlans.caseId, caseIds), eq(idesignTreatmentPlans.status, 'approved')))
+        : Promise.resolve([]),
     ])
+    // Earliest approval per case, for the "approved this month" card.
+    const approvedOnByCase = new Map<number, string>()
+    for (const row of approvals) {
+      if (!row.approvedAt) continue
+      const day = row.approvedAt.toISOString().slice(0, 10)
+      const current = approvedOnByCase.get(row.caseId)
+      if (!current || day < current) approvedOnByCase.set(row.caseId, day)
+    }
     const courseIds = courses.map((course) => course.id)
     const stages = courseIds.length
       ? await db.select({ courseId: idesignTreatmentSteps.courseId, stepNumber: idesignTreatmentSteps.stepNumber, suggestedStartDate: idesignTreatmentSteps.suggestedStartDate, suggestedEndDate: idesignTreatmentSteps.suggestedEndDate })
@@ -183,7 +195,7 @@ export async function GET(request: Request) {
     }))
     return NextResponse.json({
       ...base,
-      aligners: buildAlignerOverview(cases, courseInputs),
+      aligners: buildAlignerOverview(cases.map((row) => ({ ...row, approvedOn: approvedOnByCase.get(row.id) ?? null })), courseInputs),
       activity: activities.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() })),
       doctorSummaries: isSalesRole(role) && !doctorId ? buildDoctorSummaries(doctors, cases, lab?.rows ?? []) : [],
     })
