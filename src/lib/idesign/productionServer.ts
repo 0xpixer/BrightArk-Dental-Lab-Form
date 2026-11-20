@@ -1,8 +1,21 @@
 import { and, eq, isNull, or, sql } from 'drizzle-orm'
 import { getDb } from '@/lib/db/client'
-import { alignerProduction } from '@/lib/db/schema'
+import { alignerProduction, idesignOrders, idesignTreatmentCourses } from '@/lib/db/schema'
 import { dateInTimezone } from './schedule'
-import { PRODUCTION_TIMEZONE } from './production'
+import { PRODUCTION_INTERVAL_DAYS, PRODUCTION_TIMEZONE, RETAINER_BATCH, STAGES_PER_BATCH } from './production'
+
+/**
+ * Total stages as the tracker uses it: the saved total, else the wear schedule's, else the imported
+ * spreadsheet's leading number (mirrors parseTotalStages). Needs idesignTreatmentCourses and idesignOrders joined.
+ */
+export const effectiveTotalStagesSql = sql<number | null>`coalesce(${alignerProduction.totalStages}, ${idesignTreatmentCourses.totalSteps},
+  case when trim(${idesignOrders.totalSteps}) ~ '^[0-9]{1,3}([^0-9]|$)' then nullif(substring(trim(${idesignOrders.totalSteps}) from '^[0-9]+')::int, 0) end)`
+
+/** SQL twin of nextProductionDue: delivered date + 80 days, null for the retainer or once the final batch is delivered. */
+export const nextProductionDueSql = sql<string | null>`case when ${alignerProduction.deliveredBatch} is not null
+  and ${alignerProduction.deliveredBatch} <> ${RETAINER_BATCH}::int
+  and (${effectiveTotalStagesSql} is null or ${alignerProduction.deliveredBatch} < ceil(${effectiveTotalStagesSql}::numeric / ${STAGES_PER_BATCH}::int))
+  then (${alignerProduction.batchDeliveredOn} + ${PRODUCTION_INTERVAL_DAYS}::int)::date end`
 
 export function productionToday(now = new Date()) {
   return dateInTimezone(now, PRODUCTION_TIMEZONE)

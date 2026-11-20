@@ -1,14 +1,15 @@
-import { and, eq, inArray, isNotNull, ne, or, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, ne, or, isNull, sql } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db/client'
-import { adminUsers, alignerProduction, idesignCases, idesignOrders } from '@/lib/db/schema'
+import { adminUsers, alignerProduction, idesignCases, idesignOrders, idesignTreatmentCourses } from '@/lib/db/schema'
 import { accountEmail, appLink, sendTransactionalEmail } from '@/lib/email'
-import { batchLabel, isProductionReminderDue, nextProductionDue, PRODUCTION_INTERVAL_DAYS, RETAINER_BATCH } from '@/lib/idesign/production'
-import { productionToday } from '@/lib/idesign/productionServer'
+import { batchLabel, isProductionReminderDue, nextProductionDue } from '@/lib/idesign/production'
+import { effectiveTotalStagesSql, nextProductionDueSql, productionToday } from '@/lib/idesign/productionServer'
 
 /**
  * Daily: email every active Superadmin and the order's sales rep when a clear aligner order's next
- * batch is due for production (current batch delivered + 80 days). Once per order per batch.
+ * batch is due for production (current batch delivered + 80 days). Once per order per batch; none once
+ * the final batch is delivered (e.g. 1-10 of a 10-stage case).
  */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   const today = productionToday()
   const candidates = await db.select({
     caseId: alignerProduction.caseId,
-    totalStages: alignerProduction.totalStages,
+    totalStages: effectiveTotalStagesSql,
     deliveredBatch: alignerProduction.deliveredBatch,
     batchDeliveredOn: alignerProduction.batchDeliveredOn,
     notifiedBatch: alignerProduction.notifiedBatch,
@@ -32,11 +33,9 @@ export async function GET(request: NextRequest) {
   }).from(alignerProduction)
     .innerJoin(idesignCases, eq(idesignCases.id, alignerProduction.caseId))
     .leftJoin(idesignOrders, eq(idesignOrders.id, idesignCases.importedOrderId))
+    .leftJoin(idesignTreatmentCourses, eq(idesignTreatmentCourses.caseId, idesignCases.id))
     .where(and(
-      isNotNull(alignerProduction.deliveredBatch),
-      ne(alignerProduction.deliveredBatch, RETAINER_BATCH),
-      isNotNull(alignerProduction.batchDeliveredOn),
-      sql`(${alignerProduction.batchDeliveredOn} + ${PRODUCTION_INTERVAL_DAYS}::int)::date <= ${today}::date`,
+      sql`${nextProductionDueSql} <= ${today}::date`,
       or(isNull(alignerProduction.notifiedBatch), sql`${alignerProduction.notifiedBatch} <> ${alignerProduction.deliveredBatch}`),
       ne(idesignCases.latestProgress, 'Canceled'),
     ))
@@ -85,7 +84,7 @@ export async function GET(request: NextRequest) {
       `Doctor: ${doctorName}`,
       `Total stages: ${row.totalStages ?? 'not set'}`,
       `Delivered stages: ${current} on ${row.batchDeliveredOn}`,
-      `Next production due: ${nextProductionDue(row.deliveredBatch, row.batchDeliveredOn)}`,
+      `Next production due: ${nextProductionDue(row.deliveredBatch, row.batchDeliveredOn, row.totalStages)}`,
       ...(link ? ['', `Open the production tracker: ${link}`] : []),
     ].join('\n')
 

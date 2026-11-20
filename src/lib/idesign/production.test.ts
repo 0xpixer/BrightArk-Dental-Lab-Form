@@ -53,6 +53,12 @@ test('next production is due 80 days after the current batch was delivered', () 
   assert.equal(nextProductionDue(1, null), null)
   assert.equal(nextProductionDue(null, '2026-01-01'), null)
   assert.equal(nextProductionDue(RETAINER_BATCH, '2026-01-01'), null)
+  // The final batch is delivered: nothing left to produce.
+  assert.equal(nextProductionDue(1, '2026-01-01', 10), null)
+  assert.equal(nextProductionDue(1, '2026-01-01', 8), null)
+  assert.equal(nextProductionDue(3, '2026-01-01', 25), null)
+  assert.equal(nextProductionDue(1, '2026-01-01', 11), '2026-03-22')
+  assert.equal(nextProductionDue(2, '2026-01-01', 25), '2026-03-22')
 })
 
 test('a reminder is due once per batch, on or after the due date', () => {
@@ -63,6 +69,8 @@ test('a reminder is due once per batch, on or after the due date', () => {
   assert.equal(isProductionReminderDue({ ...row, notifiedBatch: 1 }, '2026-05-01'), false)
   // Advancing to the next batch arms a new reminder.
   assert.equal(isProductionReminderDue({ deliveredBatch: 2, batchDeliveredOn: '2026-03-25', notifiedBatch: 1 }, '2026-06-13'), true)
+  assert.equal(isProductionReminderDue({ ...row, totalStages: 10 }, '2026-05-01'), false)
+  assert.equal(isProductionReminderDue({ ...row, totalStages: 24 }, '2026-05-01'), true)
   assert.equal(isProductionReminderDue({ deliveredBatch: RETAINER_BATCH, batchDeliveredOn: '2026-01-01', notifiedBatch: 3 }, '2027-01-01'), false)
 })
 

@@ -43,18 +43,32 @@ export function isValidBatch(batch: number, totalStages: number | null | undefin
   return batch === RETAINER_BATCH || (Number.isInteger(batch) && batch >= 1 && batch <= Math.max(1, batchCount(totalStages)))
 }
 
-/** Next production due date: the current batch's delivered date + 80 days. None once the retainer is delivered. */
-export function nextProductionDue(deliveredBatch: number | null | undefined, batchDeliveredOn: string | null | undefined) {
+/** True once the batch holding the last stage is delivered (e.g. 1-10 of a 10-stage case): nothing left to produce. */
+export function isFinalBatchDelivered(deliveredBatch: number | null | undefined, totalStages: number | null | undefined) {
+  const count = batchCount(totalStages)
+  return Boolean(deliveredBatch && deliveredBatch !== RETAINER_BATCH && count > 0 && deliveredBatch >= count)
+}
+
+/**
+ * Next production due date: the current batch's delivered date + 80 days. None once the retainer or the
+ * final batch is delivered. An unknown total still gets a date, since more batches may follow.
+ */
+export function nextProductionDue(
+  deliveredBatch: number | null | undefined,
+  batchDeliveredOn: string | null | undefined,
+  totalStages?: number | null,
+) {
   if (!deliveredBatch || deliveredBatch === RETAINER_BATCH || !batchDeliveredOn) return null
+  if (isFinalBatchDelivered(deliveredBatch, totalStages)) return null
   return addDaysToDate(batchDeliveredOn, PRODUCTION_INTERVAL_DAYS)
 }
 
 /** Due for a reminder: the due date has arrived and no reminder went out for this batch yet. */
 export function isProductionReminderDue(
-  row: { deliveredBatch: number | null; batchDeliveredOn: string | null; notifiedBatch: number | null },
+  row: { deliveredBatch: number | null; batchDeliveredOn: string | null; notifiedBatch: number | null; totalStages?: number | null },
   today: string,
 ) {
-  const due = nextProductionDue(row.deliveredBatch, row.batchDeliveredOn)
+  const due = nextProductionDue(row.deliveredBatch, row.batchDeliveredOn, row.totalStages)
   return due !== null && due <= today && row.notifiedBatch !== row.deliveredBatch
 }
 
