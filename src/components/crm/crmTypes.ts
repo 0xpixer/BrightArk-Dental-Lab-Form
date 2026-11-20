@@ -18,6 +18,10 @@ export interface CrmRow {
   address: string | null
   specialty: string | null
   avatarUrl: string | null
+  accountType: string | null
+  hasContract: boolean
+  contractFileName: string | null
+  contractUploadedAt: string | null
   status: string
   source: string
   nextFollowUp: string | null
@@ -37,7 +41,7 @@ export interface CrmViewer { userId: number; role: string; canChooseOwner: boole
 
 export type CrmValue = string | string[] | number | null
 
-export type CrmFieldKind = 'text' | 'email' | 'tel' | 'country' | 'city' | 'status' | 'date' | 'tags' | 'textarea' | 'owner'
+export type CrmFieldKind = 'text' | 'email' | 'tel' | 'country' | 'city' | 'status' | 'date' | 'tags' | 'textarea' | 'owner' | 'accountType' | 'specialty'
 
 export interface CrmFieldDef { key: CrmField; label: string; kind: CrmFieldKind; width: string; placeholder?: string }
 
@@ -51,8 +55,8 @@ export const CRM_FIELD_DEFS: CrmFieldDef[] = [
   { key: 'country', label: 'Country', kind: 'country', width: 'w-36' },
   { key: 'city', label: 'City', kind: 'city', width: 'w-32', placeholder: 'City' },
   { key: 'address', label: 'Address', kind: 'textarea', width: 'w-56', placeholder: 'Street, building…' },
-  { key: 'specialty', label: 'Specialty', kind: 'text', width: 'w-36', placeholder: 'Orthodontist…' },
-  { key: 'tags', label: 'Tags', kind: 'tags', width: 'w-44', placeholder: 'vip, aligner' },
+  { key: 'specialty', label: 'Specialty', kind: 'specialty', width: 'w-44' },
+  { key: 'accountType', label: 'Tag', kind: 'accountType', width: 'w-32' },
   { key: 'notes', label: 'Notes', kind: 'textarea', width: 'w-64', placeholder: 'Notes' },
 ]
 

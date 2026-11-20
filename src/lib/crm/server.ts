@@ -46,6 +46,10 @@ const selection = {
   address: effective(crmDoctors.address, account.address),
   specialty: crmDoctors.specialty,
   avatarUrl: crmDoctors.avatarUrl,
+  accountType: crmDoctors.accountType,
+  contractUrl: crmDoctors.contractUrl,
+  contractFileName: crmDoctors.contractFileName,
+  contractUploadedAt: crmDoctors.contractUploadedAt,
   status: crmDoctors.status,
   source: crmDoctors.source,
   nextFollowUp: crmDoctors.nextFollowUp,
@@ -78,7 +82,7 @@ export async function listCrmDoctors(access: CrmAccess, filters: CrmListFilters)
     const pattern = `%${filters.search}%`
     conditions.push(or(
       ilike(selection.fullName, pattern), ilike(selection.email, pattern), ilike(selection.phone, pattern),
-      ilike(selection.clinicName, pattern), ilike(selection.city, pattern), ilike(crmDoctors.specialty, pattern),
+      ilike(selection.clinicName, pattern), ilike(selection.city, pattern), ilike(crmDoctors.specialty, pattern), ilike(crmDoctors.accountType, pattern),
       ilike(crmDoctors.notes, pattern), sql`${crmDoctors.tags}::text ILIKE ${pattern}`,
     )!)
   }
@@ -173,8 +177,12 @@ export async function getCrmDoctorStats(doctorIds: number[]): Promise<Map<number
 /** Shape sent to the browser; stats only for doctors the record's owner is assigned to (or for Superadmin). */
 export function serializeCrmRow(row: CrmRow, access: CrmAccess, stats: Map<number, CrmDoctorStats>) {
   const showStats = Boolean(row.doctorAccountId) && (row.assigned || access.all)
+  // The contract file is only reachable through the scoped /contract route, never by its raw URL.
+  const { contractUrl, ...rest } = row
   return {
-    ...row,
+    ...rest,
+    hasContract: Boolean(contractUrl),
+    contractUploadedAt: row.contractUploadedAt?.toISOString() ?? null,
     tags: Array.isArray(row.tags) ? row.tags : [],
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

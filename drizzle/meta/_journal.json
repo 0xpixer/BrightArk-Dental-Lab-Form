@@ -274,6 +274,13 @@
       "when": 1795080467834,
       "tag": "0038_sales_referral",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1795139261535,
+      "tag": "0039_crm_account_type_contract",
+      "breakpoints": true
     }
   ]
 }

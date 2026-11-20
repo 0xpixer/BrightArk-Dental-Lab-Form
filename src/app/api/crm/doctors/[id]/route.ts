@@ -37,7 +37,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   const db = getDb()
   try {
-    await db.update(crmDoctors).set({ ...patch, updatedAt: new Date() }).where(eq(crmDoctors.id, id))
+    const contractStamp = patch.contractUrl !== undefined
+      ? { contractUploadedAt: patch.contractUrl ? new Date() : null, contractFileName: patch.contractUrl ? patch.contractFileName ?? null : null }
+      : {}
+    await db.update(crmDoctors).set({ ...patch, ...contractStamp, updatedAt: new Date() }).where(eq(crmDoctors.id, id))
   } catch (updateError) {
     if (isUniqueViolation(updateError)) {
       return NextResponse.json({ error: patch.salesId !== undefined ? 'That sales rep already has this doctor in their CRM' : 'This email is already in this sales rep’s CRM' }, { status: 409 })

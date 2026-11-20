@@ -54,8 +54,26 @@ export function canChooseCrmOwner(access: CrmAccess) {
   return access.all || access.role === 'sales_director'
 }
 
-export const CRM_TEXT_FIELDS = ['fullName', 'email', 'phone', 'clinicName', 'country', 'city', 'address', 'specialty', 'notes'] as const
-export const CRM_FIELDS = [...CRM_TEXT_FIELDS, 'status', 'nextFollowUp', 'tags', 'salesId', 'avatarUrl'] as const
+export const CRM_ACCOUNT_TYPES = ['KA', 'Non-KA', 'OEM', 'Distributor'] as const
+export type CrmAccountType = (typeof CRM_ACCOUNT_TYPES)[number]
+export const CRM_ACCOUNT_TYPE_STYLES: Record<CrmAccountType, string> = {
+  KA: 'border-orange-200 bg-orange-50 text-orange-800',
+  'Non-KA': 'border-neutral-200 bg-neutral-100 text-neutral-600',
+  OEM: 'border-indigo-200 bg-indigo-50 text-indigo-800',
+  Distributor: 'border-teal-200 bg-teal-50 text-teal-800',
+}
+/** Every tag except Non-KA is a contracted relationship with a contract on file. */
+export function crmNeedsContract(accountType: string | null | undefined) {
+  return accountType === 'KA' || accountType === 'OEM' || accountType === 'Distributor'
+}
+
+export const CRM_SPECIALTIES = [
+  'Orthodontics', 'General Practice (GP)', 'Prosthodontics', 'Endodontics', 'Periodontics',
+  'Pediatric Dentistry', 'Oral & Maxillofacial Surgery', 'Implantology', 'Cosmetic Dentistry', 'Other',
+] as const
+
+export const CRM_TEXT_FIELDS = ['fullName', 'email', 'phone', 'clinicName', 'country', 'city', 'address', 'notes'] as const
+export const CRM_FIELDS = [...CRM_TEXT_FIELDS, 'specialty', 'accountType', 'status', 'nextFollowUp', 'tags', 'salesId', 'avatarUrl', 'contractUrl', 'contractFileName'] as const
 export type CrmField = (typeof CRM_FIELDS)[number]
 
 /** Account-owned fields: shown from the doctor's account and locked in the CRM. */
@@ -135,6 +153,38 @@ const avatarUrl = z.union([z.string(), z.null()]).optional().transform((value, c
   return url
 })
 
+/** Contracts must be our own Vercel Blob uploads under crm-contracts/. */
+export function isAllowedCrmContractUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && url.hostname.endsWith('.blob.vercel-storage.com') && url.pathname.startsWith('/crm-contracts/')
+  } catch {
+    return false
+  }
+}
+
+const contractUrl = z.union([z.string(), z.null()]).optional().transform((value, context) => {
+  const url = (value ?? '').trim()
+  if (!url) return null
+  if (url.length > 2000 || !isAllowedCrmContractUrl(url)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'Upload the contract again' })
+    return z.NEVER
+  }
+  return url
+})
+
+/** Optional choice from a fixed list; '' or null clears it. */
+const optionalChoice = <T extends readonly [string, ...string[]]>(values: T, message: string) =>
+  z.union([z.string(), z.null()]).optional().transform((value, context): T[number] | null => {
+    const text = (value ?? '').trim()
+    if (!text) return null
+    if (!(values as readonly string[]).includes(text)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message })
+      return z.NEVER
+    }
+    return text as T[number]
+  })
+
 const tags = z.union([z.array(z.string()), z.string(), z.null()]).optional().transform((value) => {
   const list = Array.isArray(value) ? value : (value ?? '').split(',')
   return [...new Set(list.map((tag) => tag.trim()).filter(Boolean).map((tag) => tag.slice(0, 40)))].slice(0, 20)
@@ -148,13 +198,16 @@ export const crmFieldSchemas = {
   country: optionalText(100),
   city: optionalText(120),
   address: optionalText(500),
-  specialty: optionalText(120),
+  specialty: optionalChoice(CRM_SPECIALTIES, 'Choose a specialty from the list'),
+  accountType: optionalChoice(CRM_ACCOUNT_TYPES, 'Choose KA, Non-KA, OEM or Distributor'),
   notes: optionalText(5000),
   status: z.enum(CRM_STATUSES),
   nextFollowUp: optionalDate,
   tags,
   salesId: z.coerce.number().int().positive(),
   avatarUrl,
+  contractUrl,
+  contractFileName: optionalText(300),
 } satisfies Record<CrmField, z.ZodTypeAny>
 
 export const crmCreateSchema = z.object({

@@ -410,6 +410,11 @@ export const crmDoctors = pgTable('crm_doctors', {
   address: text('address'),
   specialty: text('specialty'),
   avatarUrl: text('avatar_url'),
+  /** KA | Non-KA | OEM | Distributor (shown as "Tag"). */
+  accountType: text('account_type'),
+  contractUrl: text('contract_url'),
+  contractFileName: text('contract_file_name'),
+  contractUploadedAt: timestamp('contract_uploaded_at', { withTimezone: true, mode: 'date' }),
   status: text('status').default('lead').notNull(),
   source: text('source').default('sales').notNull(),
   nextFollowUp: date('next_follow_up', { mode: 'string' }),

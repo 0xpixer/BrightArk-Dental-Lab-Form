@@ -163,3 +163,21 @@ test('CRM linking, merging and scope on isolated in-memory Postgres', async (t) 
     assert.equal(row.status, 'active')
   })
 })
+
+test('migration 0039 back-fills the single Tag from old free-form tags', async (t) => {
+  const db = new PGlite()
+  t.after(() => db.close())
+  const migrations = new URL('../../../drizzle/', import.meta.url)
+  const files = (await readdir(migrations)).filter((name) => name.endsWith('.sql')).sort()
+  const cut = files.findIndex((name) => name.startsWith('0039_'))
+  assert.ok(cut > 0, 'migration 0039 exists')
+  for (const file of files.slice(0, cut)) await db.exec(await readFile(new URL(file, migrations), 'utf8'))
+  const rep = (await db.query<{ id: number }>("INSERT INTO admin_users (username, role, password_hash) VALUES ('rep', 'sales', 'x') RETURNING id")).rows[0].id
+  const cases: [string, string | null][] = [['["vip", "ka"]', 'KA'], ['["Non-KA"]', 'Non-KA'], ['["OEM"]', 'OEM'], ['["distributor", "x"]', 'Distributor'], ['["vip"]', null], ['[]', null]]
+  for (const [index, [tags]] of cases.entries()) {
+    await db.query('INSERT INTO crm_doctors (sales_id, full_name, tags) VALUES ($1, $2, $3::jsonb)', [rep, `Dr ${index}`, tags])
+  }
+  for (const file of files.slice(cut)) await db.exec(await readFile(new URL(file, migrations), 'utf8'))
+  const rows = (await db.query<{ account_type: string | null }>('SELECT account_type FROM crm_doctors ORDER BY id')).rows
+  assert.deepEqual(rows.map((row) => row.account_type), cases.map(([, expected]) => expected))
+})

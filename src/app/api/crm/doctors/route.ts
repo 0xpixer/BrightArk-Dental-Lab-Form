@@ -62,6 +62,8 @@ export async function POST(request: Request) {
   try {
     [created] = await db.insert(crmDoctors).values({
       ...values,
+      contractFileName: values.contractUrl ? values.contractFileName : null,
+      contractUploadedAt: values.contractUrl ? new Date() : null,
       salesId: owner.salesId,
       source: 'sales',
       createdBy: access.userId,

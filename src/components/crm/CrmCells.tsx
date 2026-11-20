@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { Lock, LockKeyhole, RefreshCw, RefreshCcw } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
-import { CRM_STATUS_LABELS, CRM_STATUS_STYLES, followUpState, type CrmStatus } from '@/lib/crm/crm'
+import { CRM_ACCOUNT_TYPE_STYLES, CRM_ACCOUNT_TYPES, CRM_SPECIALTIES, CRM_STATUS_LABELS, CRM_STATUS_STYLES, followUpState, type CrmAccountType, type CrmStatus } from '@/lib/crm/crm'
 import {
   CRM_FIELD_INPUT_CLASS, CRM_INPUT_CLASS, formatCrmDate, formatMoney, localToday,
   type CrmFieldDef, type CrmOwnerOption, type CrmRow, type CrmStats, type CrmValue,
@@ -16,6 +16,33 @@ export const CrmApiBase = createContext('/api/crm/doctors')
 export function StatusBadge({ status }: { status: string }) {
   const style = CRM_STATUS_STYLES[status as CrmStatus] ?? 'border-border bg-bg text-text-muted'
   return <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${style}`}>{CRM_STATUS_LABELS[status as CrmStatus] ?? status}</span>
+}
+
+export function AccountTypeBadge({ type }: { type: string }) {
+  const style = CRM_ACCOUNT_TYPE_STYLES[type as CrmAccountType] ?? 'border-border bg-bg text-text-muted'
+  return <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${style}`}>{type}</span>
+}
+
+/** Fixed-list select that still shows a legacy free-text value already stored on the record. */
+function ChoiceSelect({ value, options, onPick, className, label, autoFocus, onKeyDown, onBlur }: {
+  value: string; options: readonly string[]; onPick: (value: string) => void; className: string; label: string
+  autoFocus?: boolean; onKeyDown?: React.KeyboardEventHandler<HTMLSelectElement>; onBlur?: () => void
+}) {
+  return (
+    <select autoFocus={autoFocus} aria-label={label} value={value} onChange={(event) => onPick(event.target.value)} onKeyDown={onKeyDown} onBlur={onBlur} className={className}>
+      <option value="">—</option>
+      {value && !options.includes(value) && <option value={value}>{value}</option>}
+      {options.map((option) => <option key={option} value={option}>{option}</option>)}
+    </select>
+  )
+}
+
+export function AccountTypeSelect(props: { value: string; onPick: (value: string) => void; className: string }) {
+  return <ChoiceSelect {...props} options={CRM_ACCOUNT_TYPES} label="Tag" />
+}
+
+export function SpecialtySelect(props: { value: string; onPick: (value: string) => void; className: string }) {
+  return <ChoiceSelect {...props} options={CRM_SPECIALTIES} label="Specialty" />
 }
 
 export function FollowUpBadge({ date }: { date: string | null }) {
@@ -102,6 +129,7 @@ function displayValue(def: CrmFieldDef, row: CrmRow, owners: CrmOwnerOption[]): 
     case 'status': return <StatusBadge status={row.status} />
     case 'date': return row.nextFollowUp ? <FollowUpBadge date={row.nextFollowUp} /> : null
     case 'tags': return row.tags.length ? <TagChips tags={row.tags} /> : null
+    case 'accountType': return row.accountType ? <AccountTypeBadge type={row.accountType} /> : null
     case 'owner': return owners.find((owner) => owner.id === row.salesId)?.name ?? row.ownerName
     default: return typeof value === 'string' && value ? value : null
   }
@@ -172,6 +200,8 @@ export function EditableValue({ def, row, owners, lock, writeThrough, variant, o
     let input: ReactNode
     if (def.kind === 'status') {
       input = <select {...common} value={draft} onChange={(event) => commit(event.target.value)} onBlur={() => commit()} className={inputClass}>{Object.entries(CRM_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+    } else if (def.kind === 'accountType' || def.kind === 'specialty') {
+      input = <ChoiceSelect autoFocus value={draft} options={def.kind === 'accountType' ? CRM_ACCOUNT_TYPES : CRM_SPECIALTIES} label={def.label} onPick={(value) => commit(value)} onKeyDown={keys} onBlur={() => commit()} className={inputClass} />
     } else if (def.kind === 'owner') {
       input = <select {...common} value={draft} onChange={(event) => commit(event.target.value)} onBlur={() => commit()} className={inputClass}>{owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}</select>
     } else if (def.kind === 'country') {

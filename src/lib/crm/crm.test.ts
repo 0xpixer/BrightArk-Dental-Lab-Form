@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   buildCrmAccess, canAccessCrmOwner, canChooseCrmOwner, canViewCrm, crmCreateSchema, crmFieldAccess,
-  crmPatchSchema, followUpState, isAllowedCrmAvatarUrl, lockedFieldsInPatch, normalizeCrmEmail, sumByCurrency,
+  crmPatchSchema, followUpState, crmNeedsContract, isAllowedCrmAvatarUrl, isAllowedCrmContractUrl, lockedFieldsInPatch, normalizeCrmEmail, sumByCurrency,
 } from './crm'
 
 test('only Superadmin, Sales Directors and Sales can see the CRM', () => {
@@ -82,4 +82,29 @@ test('doctor photos only accept our own crm-avatars blob uploads', () => {
   assert.equal(crmPatchSchema.safeParse({ avatarUrl: 'https://evil.com/x.png' }).success, false)
   // Photos stay CRM-owned, so they are editable even on account-linked records.
   assert.deepEqual(lockedFieldsInPatch({ avatarUrl: good }, crmFieldAccess({ doctorAccountId: 5, assigned: true })), [])
+})
+
+test('Tag is one of KA / Non-KA / OEM / Distributor; every tag except Non-KA needs a contract', () => {
+  for (const type of ['KA', 'OEM', 'Distributor']) assert.equal(crmNeedsContract(type), true, type)
+  for (const type of ['Non-KA', null, '', 'ka']) assert.equal(crmNeedsContract(type), false, String(type))
+  assert.deepEqual(crmPatchSchema.parse({ accountType: 'OEM' }), { accountType: 'OEM' })
+  assert.deepEqual(crmPatchSchema.parse({ accountType: '' }), { accountType: null })
+  assert.equal(crmPatchSchema.safeParse({ accountType: 'VIP' }).success, false)
+})
+
+test('Specialty comes from the fixed list', () => {
+  assert.deepEqual(crmPatchSchema.parse({ specialty: 'Orthodontics' }), { specialty: 'Orthodontics' })
+  assert.deepEqual(crmPatchSchema.parse({ specialty: null }), { specialty: null })
+  assert.equal(crmPatchSchema.safeParse({ specialty: 'Brain surgery' }).success, false)
+})
+
+test('contracts only accept our own crm-contracts blob uploads', () => {
+  const good = 'https://abc.public.blob.vercel-storage.com/crm-contracts/dr-x-contract-Ab1.pdf'
+  assert.equal(isAllowedCrmContractUrl(good), true)
+  for (const bad of ['https://abc.public.blob.vercel-storage.com/crm-avatars/x.pdf', 'https://evil.com/crm-contracts/x.pdf', 'http://abc.public.blob.vercel-storage.com/crm-contracts/x.pdf']) {
+    assert.equal(isAllowedCrmContractUrl(bad), false, bad)
+  }
+  assert.deepEqual(crmPatchSchema.parse({ contractUrl: good, contractFileName: 'MoU.pdf' }), { contractUrl: good, contractFileName: 'MoU.pdf' })
+  assert.equal(crmPatchSchema.safeParse({ contractUrl: 'https://evil.com/x.pdf' }).success, false)
+  assert.equal(crmPatchSchema.safeParse({ contractUploadedAt: '2026-01-01' }).success, false, 'upload time is server-owned')
 })

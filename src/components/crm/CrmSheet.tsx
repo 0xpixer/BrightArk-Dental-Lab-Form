@@ -4,9 +4,10 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 import { Mail, MailOpen, MessageSquarePlus, Phone, PhoneCall, Plus, CirclePlus, Send, Trash2, X } from 'lucide'
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { CityInput, CountrySelect } from '@/components/ui/LocationInputs'
-import { CRM_ACTIVITY_KINDS, CRM_STATUS_LABELS } from '@/lib/crm/crm'
+import { CRM_ACTIVITY_KINDS, CRM_STATUS_LABELS, crmNeedsContract } from '@/lib/crm/crm'
 import { AvatarPicker, DoctorAvatar } from './DoctorAvatar'
-import { CrmApiBase, EditableValue, EmailHints, OrdersSummary, SourceBadge, useEmailCheck } from './CrmCells'
+import { ContractControl } from './ContractControl'
+import { AccountTypeSelect, CrmApiBase, SpecialtySelect, EditableValue, EmailHints, OrdersSummary, SourceBadge, useEmailCheck } from './CrmCells'
 import {
   CRM_FIELD_DEFS, CRM_FIELD_INPUT_CLASS, CRM_OWNER_FIELD, lockReason,
   type CrmOptions, type CrmRow, type CrmValue, type CrmViewer,
@@ -41,12 +42,13 @@ function Sheet({ title, onClose, children, variant = 'drawer' }: { title: string
   )
 }
 
-export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }: {
+export function CrmEditSheet({ row, viewer, options, onClose, onSave, onContract, onDelete }: {
   row: CrmRow
   viewer: CrmViewer
   options: CrmOptions
   onClose: () => void
   onSave: (field: string, value: CrmValue) => void
+  onContract: (contract: { url: string; fileName: string } | null) => Promise<void>
   onDelete: () => Promise<void>
 }) {
   const apiBase = useContext(CrmApiBase)
@@ -114,6 +116,11 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }
           ))}
         </div>
 
+        <ContractControl record={row} variant="block" onError={setPhotoError} onChange={async (contract) => {
+          if (!contract && !window.confirm('Remove the contract from this record?')) return
+          await onContract(contract)
+        }} />
+
         <section className="space-y-3">
           <h3 className="text-sm font-semibold text-text">Activity</h3>
           <form onSubmit={addActivity} className="space-y-2 rounded-card border border-border p-3">
@@ -144,7 +151,8 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onDelete }
 
 interface CreateDraft {
   fullName: string; email: string; phone: string; clinicName: string; country: string; city: string
-  address: string; specialty: string; status: string; nextFollowUp: string; tags: string; notes: string; salesId: string; avatarUrl: string
+  address: string; specialty: string; status: string; nextFollowUp: string; notes: string; salesId: string; avatarUrl: string
+  accountType: string; contractUrl: string; contractFileName: string
 }
 
 export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCreate }: {
@@ -156,7 +164,7 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
 }) {
   const [draft, setDraft] = useState<CreateDraft>({
     fullName: '', email: '', phone: '', clinicName: '', country: '', city: '', address: '', specialty: '',
-    status: 'lead', nextFollowUp: '', tags: '', notes: '', avatarUrl: '',
+    status: 'lead', nextFollowUp: '', notes: '', avatarUrl: '', accountType: '', contractUrl: '', contractFileName: '',
     salesId: String(defaultSalesId ?? (viewer.role === 'superadmin' ? '' : viewer.userId)),
   })
   const [saving, setSaving] = useState(false)
@@ -170,8 +178,10 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
     event.preventDefault()
     setSaving(true)
     setError('')
-    const { salesId: owner, tags, ...rest } = draft
-    const failure = await onCreate({ ...rest, tags, ...(viewer.canChooseOwner ? { salesId: Number(owner) || undefined } : {}) })
+    const { salesId: owner, contractUrl, contractFileName, ...rest } = draft
+    // A contract only goes with a tag that needs one (switching to Non-KA drops a pending upload).
+    const contract = crmNeedsContract(draft.accountType) && contractUrl ? { contractUrl, contractFileName } : {}
+    const failure = await onCreate({ ...rest, ...contract, ...(viewer.canChooseOwner ? { salesId: Number(owner) || undefined } : {}) })
     setSaving(false)
     if (failure) setError(failure)
   }
@@ -203,11 +213,18 @@ export function CrmCreateSheet({ viewer, options, defaultSalesId, onClose, onCre
           </div>
           <label className="block"><span className={label}>Address</span><input maxLength={500} value={draft.address} onChange={(event) => set('address')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} /></label>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="block"><span className={label}>Specialty</span><input maxLength={120} value={draft.specialty} onChange={(event) => set('specialty')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="Orthodontist" /></label>
+            <label className="block"><span className={label}>Specialty</span><SpecialtySelect value={draft.specialty} onPick={set('specialty')} className={CRM_FIELD_INPUT_CLASS} /></label>
             <label className="block"><span className={label}>Status</span><select value={draft.status} onChange={(event) => set('status')(event.target.value)} className={CRM_FIELD_INPUT_CLASS}>{Object.entries(CRM_STATUS_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
             <label className="block"><span className={label}>Next follow-up</span><input type="date" value={draft.nextFollowUp} onChange={(event) => set('nextFollowUp')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} /></label>
-            <label className="block"><span className={label}>Tags</span><input value={draft.tags} onChange={(event) => set('tags')(event.target.value)} className={CRM_FIELD_INPUT_CLASS} placeholder="vip, aligner" /></label>
+            <label className="block"><span className={label}>Tag</span><AccountTypeSelect value={draft.accountType} onPick={set('accountType')} className={CRM_FIELD_INPUT_CLASS} /></label>
           </div>
+          <ContractControl
+            record={{ id: null, fullName: draft.fullName || 'doctor', accountType: draft.accountType || null, hasContract: false, contractFileName: null, contractUploadedAt: null }}
+            variant="block"
+            pendingFileName={draft.contractUrl ? draft.contractFileName : null}
+            onError={setError}
+            onChange={(contract) => setDraft((current) => ({ ...current, contractUrl: contract?.url ?? '', contractFileName: contract?.fileName ?? '' }))}
+          />
           <label className="block"><span className={label}>Notes</span><textarea rows={3} maxLength={5000} value={draft.notes} onChange={(event) => set('notes')(event.target.value)} className={`${CRM_FIELD_INPUT_CLASS} h-auto py-2`} /></label>
           {error && <p role="alert" className="rounded-card border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         </div>

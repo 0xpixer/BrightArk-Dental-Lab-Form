@@ -5,9 +5,10 @@ import { ChevronRight, ChevronsRight, CirclePlus, Eye, PanelRightOpen, Plus, Sea
 import { MorphIcon } from '@/components/ui/MorphIcon'
 import { IDESIGN_VIEW_BUTTON_CLASS } from '@/components/idesign/IDesignTreatmentPlans'
 import { Toast } from '@/components/admin/Toast'
-import { CRM_STATUS_LABELS, type CrmStatus } from '@/lib/crm/crm'
-import { CrmApiBase, EditableValue, FollowUpBadge, OrdersSummary, SourceBadge, StatusBadge } from './CrmCells'
+import { CRM_STATUS_LABELS, crmNeedsContract, type CrmStatus } from '@/lib/crm/crm'
+import { AccountTypeBadge, CrmApiBase, EditableValue, FollowUpBadge, OrdersSummary, SourceBadge, StatusBadge } from './CrmCells'
 import { CrmCreateSheet, CrmEditSheet } from './CrmSheet'
+import { ContractControl } from './ContractControl'
 import { AvatarPicker, DoctorAvatar } from './DoctorAvatar'
 import {
   CRM_FIELD_DEFS, CRM_LEAD_FIELDS, CRM_OWNER_FIELD, localToday, lockReason,
@@ -93,6 +94,15 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
       setToast(saveError instanceof Error ? saveError.message : 'Could not save the change')
     }
   }, [apiBase, options.owners])
+
+  /** Contract changes wait for the server (the upload itself already showed progress). */
+  const saveContract = useCallback(async (id: number, contract: { url: string; fileName: string } | null) => {
+    const response = await fetch(`${apiBase}/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(contract ? { contractUrl: contract.url, contractFileName: contract.fileName } : { contractUrl: null }) })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) { setToast(payload.error ?? 'Could not save the contract'); return }
+    if (payload.row) setRows((current) => current.map((row) => row.id === id ? payload.row : row))
+    setToast(contract ? 'Contract uploaded' : 'Contract removed')
+  }, [apiBase])
 
   async function createRecord(values: Record<string, unknown>) {
     const response = await fetch(apiBase, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })
@@ -190,6 +200,8 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <span className="text-text-muted">Follow-up: <FollowUpBadge date={row.nextFollowUp} /></span>
                   {viewer?.canChooseOwner && <span className="text-text-muted">Rep: {row.ownerName}</span>}
+                  {row.accountType && <AccountTypeBadge type={row.accountType} />}
+                  {crmNeedsContract(row.accountType) && !row.hasContract && <span className="font-medium text-amber-700">No contract</span>}
                 </div>
                 <div className="mt-1.5 flex items-center justify-between gap-2"><OrdersSummary row={row} compact /><MorphIcon icon={ChevronRight} hoverIcon={ChevronsRight} className="h-4 w-4 shrink-0 text-text-muted" /></div>
               </button>
@@ -202,7 +214,7 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
               <tr>
                 {leadDefs.map((def, index) => <th key={def.key} className={`px-2 py-3 ${def.width} ${index === 0 ? 'sticky left-0 z-10 bg-bg' : ''}`}>{def.label}</th>)}
                 <th className="w-48 px-2 py-3">Orders</th>
-                {restDefs.map((def) => <th key={def.key} className={`px-2 py-3 ${def.width}`}>{def.label}</th>)}
+                {restDefs.flatMap((def) => [<th key={def.key} className={`px-2 py-3 ${def.width}`}>{def.label}</th>, ...(def.key === 'accountType' ? [<th key="contract" className="w-48 px-2 py-3">Contract</th>] : [])])}
                 <th className="w-32 px-2 py-3">Source</th>
                 <th className="w-24 px-2 py-3"><span className="sr-only">Open</span></th>
               </tr>
@@ -214,7 +226,7 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
                   <tr key={row.id} className="group border-b border-border align-top last:border-0 hover:bg-bg/60">
                     {leadDefs.map((def, index) => cell(row, def, index === 0))}
                     <td className="px-2 py-2.5"><OrdersSummary row={row} /></td>
-                    {restDefs.map((def) => cell(row, def, false))}
+                    {restDefs.flatMap((def) => [cell(row, def, false), ...(def.key === 'accountType' ? [<td key="contract" className="w-48 px-2 py-2"><ContractControl record={row} variant="cell" onChange={(contract) => saveContract(row.id, contract)} onError={setToast} /></td>] : [])])}
                     <td className="px-2 py-2.5"><SourceBadge row={row} /></td>
                     <td className="px-2 py-2 text-right"><button type="button" onClick={() => setOpenId(row.id)} className={IDESIGN_VIEW_BUTTON_CLASS}><MorphIcon icon={Eye} hoverIcon={PanelRightOpen} className="h-3 w-3" />Open</button></td>
                   </tr>
@@ -224,7 +236,7 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
         </div>
       </section>
 
-      {openRow && viewer && <CrmEditSheet row={openRow} viewer={viewer} options={options} onClose={() => setOpenId(null)} onSave={(field, value) => saveField(openRow.id, field, value)} onDelete={() => deleteRecord(openRow.id)} />}
+      {openRow && viewer && <CrmEditSheet row={openRow} viewer={viewer} options={options} onClose={() => setOpenId(null)} onSave={(field, value) => saveField(openRow.id, field, value)} onContract={(contract) => saveContract(openRow.id, contract)} onDelete={() => deleteRecord(openRow.id)} />}
       {creating && viewer && <CrmCreateSheet viewer={viewer} options={options} defaultSalesId={salesId ? Number(salesId) : null} onClose={() => setCreating(false)} onCreate={createRecord} />}
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
     </section>
