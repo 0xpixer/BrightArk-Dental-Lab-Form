@@ -11,6 +11,7 @@ interface ProductionRow {
   orderNo: string
   patientName: string
   latestProgress: string
+  isFree: boolean
   doctorName: string | null
   salesName: string | null
   totalStages: number | null
@@ -76,18 +77,20 @@ export function AlignerProductionTable() {
     </header>
     {error && <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <div className="overflow-hidden rounded-card border border-border bg-surface">
-      <div className="overflow-x-auto"><table className="w-full min-w-[1000px]">
+      <div className="overflow-x-auto"><table className="w-full min-w-[880px]">
         <thead className="border-b border-border bg-bg text-left text-xs font-semibold uppercase text-text-muted"><tr>
-          <th className="px-4 py-3">Patient</th><th className="px-4 py-3">Order No.</th><th className="px-4 py-3">Doctor</th><th className="px-4 py-3">Total Stages</th><th className="px-4 py-3">Delivered Stages</th><th className="px-4 py-3">Delivered Date</th><th className="px-4 py-3">Next Production Due</th>
+          <th className="px-4 py-3">Patient / Order No.</th><th className="px-4 py-3">Doctor</th><th className="px-4 py-3">Total Stages</th><th className="px-4 py-3">Delivered Stages</th><th className="px-4 py-3">Delivered Date</th><th className="px-4 py-3">Next Production Due</th>
         </tr></thead>
-        <tbody>{loading && rows.length === 0 ? <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-text-muted">Loading orders...</td></tr> : rows.length === 0 ? <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-text-muted">No clear aligner orders</td></tr> : rows.map((row) => {
+        <tbody>{loading && rows.length === 0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-text-muted">Loading orders...</td></tr> : rows.length === 0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-text-muted">No clear aligner orders</td></tr> : rows.map((row) => {
           const saving = savingId === row.caseId
           const effectiveTotal = row.totalStages ?? row.suggestedTotalStages
           const due = row.nextProductionDue
           const overdue = Boolean(due && today && due <= today)
           return <tr key={row.caseId} className="border-b border-border last:border-0 align-middle">
-            <td className="px-4 py-3 text-sm font-semibold text-text">{row.patientName}</td>
-            <td className="px-4 py-3 text-sm"><Link href={`/admin/idesign/orders/${row.caseId}`} className="text-text underline-offset-4 hover:underline">{row.orderNo}</Link></td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-text">{row.patientName}{row.isFree && <span className="rounded-full border border-sky-200 bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-sky-800">Free</span>}</div>
+              <Link href={`/admin/idesign/orders/${row.caseId}`} className="mt-0.5 inline-block text-xs text-text-muted underline-offset-4 hover:text-text hover:underline">{row.orderNo}</Link>
+            </td>
             <td className="px-4 py-3 text-sm text-text-muted">{row.doctorName || '-'}</td>
             <td className="px-4 py-3"><TotalStagesInput value={row.totalStages} placeholder={row.suggestedTotalStages} disabled={saving} onSave={(value) => void update(row.caseId, { totalStages: value })} /></td>
             <td className="px-4 py-3"><select value={row.deliveredBatch ?? ''} disabled={saving} onChange={(event) => void update(row.caseId, { deliveredBatch: event.target.value ? Number(event.target.value) : null })} aria-label={`Delivered stages for ${row.patientName}`} className="h-8 w-[120px] rounded border border-border bg-surface px-2 text-xs text-text outline-none focus:border-text disabled:opacity-50">
