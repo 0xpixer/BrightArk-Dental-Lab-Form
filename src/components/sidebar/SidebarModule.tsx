@@ -81,11 +81,11 @@ export function SidebarModule({ id, label, icon, items, open, onToggle, active, 
 
   const focusFirstItem = () => requestAnimationFrame(() => menuRef.current?.querySelector<HTMLAnchorElement>('a')?.focus())
 
-  // Highlight: rail shows where you are (module containing the current page); expanded shows what is open.
-  const highlighted = rail ? active : open
+  // Orange only for the module holding the current page, so it never competes with another active link.
+  const highlighted = active
   const buttonClass = highlighted
     ? 'bg-primary text-white'
-    : rail && flyoutOpen ? 'bg-bg text-text' : 'text-text-muted hover:bg-bg hover:text-text'
+    : (rail && flyoutOpen) || (!rail && open) ? 'bg-bg text-text' : 'text-text-muted hover:bg-bg hover:text-text'
 
   return (
     <div>
