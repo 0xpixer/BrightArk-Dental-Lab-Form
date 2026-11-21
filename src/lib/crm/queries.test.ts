@@ -8,6 +8,7 @@ import { completeRegistrationQuery } from '../signup/store'
 import { buildCrmAccess } from './crm'
 import { crmScopeSql, insertAssignedCrmQuery, linkCrmByEmailQuery } from './queries'
 import { onDoctorRegistered, onSalesAssignmentsChanged, syncCrm } from './hooks'
+import { setDoctorSales } from '../relationships/server'
 
 interface CrmDbRow {
   id: number
@@ -110,11 +111,15 @@ test('CRM linking, merging and scope on isolated in-memory Postgres', async (t) 
     assert.equal(rows[0].doctor_account_id, doctor)
   })
 
-  await t.test('two reps can each track the same doctor; one rep cannot hold the same email twice', async () => {
-    await addCrm(outsider, 'Dr Later elsewhere', 'later@example.test')
+  await t.test('another rep\'s lead for a doctor already assigned elsewhere folds into the assigned rep\'s record; one rep cannot hold the same email twice', async () => {
+    const lead = await addCrm(outsider, 'Dr Later elsewhere', 'later@example.test')
+    await db.query("UPDATE crm_doctors SET notes = 'met at expo too' WHERE id = $1", [lead])
     await sync()
-    const linked = await db.query('SELECT sales_id FROM crm_doctors WHERE lower(email) = $1 AND doctor_account_id IS NOT NULL', ['later@example.test'])
-    assert.equal(linked.rows.length, 2)
+    const linked = await db.query<{ sales_id: number; notes: string | null }>('SELECT sales_id, notes FROM crm_doctors WHERE lower(email) = $1 AND doctor_account_id IS NOT NULL', ['later@example.test'])
+    assert.equal(linked.rows.length, 1, 'one doctor, one record')
+    assert.equal(linked.rows[0].sales_id, repA, 'it sits with the doctor\'s assigned rep')
+    assert.equal(linked.rows[0].notes, 'met at expo too', 'the lead\'s notes are kept')
+    await addCrm(outsider, 'Unlinked lead', null)
     await assert.rejects(addCrm(repA, 'Duplicate', 'Later@Example.test'), /duplicate key/)
     assert.equal((await run(linkCrmByEmailQuery({ crmId: 999999 }))).length, 0)
   })
@@ -180,4 +185,84 @@ test('migration 0039 back-fills the single Tag from old free-form tags', async (
   for (const file of files.slice(cut)) await db.exec(await readFile(new URL(file, migrations), 'utf8'))
   const rows = (await db.query<{ account_type: string | null }>('SELECT account_type FROM crm_doctors ORDER BY id')).rows
   assert.deepEqual(rows.map((row) => row.account_type), cases.map(([, expected]) => expected))
+})
+
+test('moving a doctor to another sales rep moves the CRM record instead of duplicating it', async (t) => {
+  const db = new PGlite()
+  t.after(() => db.close())
+  const migrations = new URL('../../../drizzle/', import.meta.url)
+  for (const file of (await readdir(migrations)).filter((name) => name.endsWith('.sql')).sort()) {
+    await db.exec(await readFile(new URL(file, migrations), 'utf8'))
+  }
+  const dialect = new PgDialect()
+  const run = async <T = Record<string, unknown>>(query: SQL) => {
+    const { sql: text, params } = dialect.sqlToQuery(query)
+    return (await db.query<T>(text, params)).rows
+  }
+  const user = async (username: string, role: string, email: string | null = null) =>
+    (await db.query<{ id: number }>('INSERT INTO admin_users (username, role, password_hash, email, full_name) VALUES ($1, $2, $3, $4, $1) RETURNING id', [username, role, 'x', email])).rows[0].id
+  const rowsFor = async (doctorId: number) => (await db.query<{ id: number; sales_id: number; status: string; notes: string | null; avatar_url: string | null; account_type: string | null; contract_url: string | null }>(
+    'SELECT id, sales_id, status, notes, avatar_url, account_type, contract_url FROM crm_doctors WHERE doctor_account_id = $1 ORDER BY id', [doctorId])).rows
+  const germain = await user('germain', 'sales')
+  const lj = await user('lj', 'sales')
+  const third = await user('third', 'sales')
+
+  await t.test('Relationships / CRM reassignment keeps one record with its CRM data and history', async () => {
+    const doctor = await user('dr-pua', 'doctor', 'drpua@oxleydental.sg')
+    await setDoctorSales([doctor], germain, null, { moveOrders: true }, run)
+    const [original] = await rowsFor(doctor)
+    assert.equal(original.sales_id, germain)
+    await db.query("UPDATE crm_doctors SET status = 'trial', notes = 'Met at IDS', avatar_url = 'https://x.public.blob.vercel-storage.com/crm-avatars/p.webp', account_type = 'KA', contract_url = 'https://x.public.blob.vercel-storage.com/crm-contracts/c.pdf' WHERE id = $1", [original.id])
+    await db.query("INSERT INTO crm_activities (crm_doctor_id, kind, body) VALUES ($1, 'call', 'Intro call')", [original.id])
+
+    await setDoctorSales([doctor], lj, null, { moveOrders: true }, run)
+    const rows = await rowsFor(doctor)
+    assert.equal(rows.length, 1, 'no duplicate')
+    assert.equal(rows[0].id, original.id, 'same record, history kept')
+    assert.equal(rows[0].sales_id, lj)
+    assert.equal(rows[0].status, 'trial')
+    assert.equal(rows[0].notes, 'Met at IDS')
+    assert.equal(rows[0].account_type, 'KA')
+    assert.ok(rows[0].avatar_url && rows[0].contract_url)
+    assert.equal((await db.query('SELECT * FROM crm_activities WHERE crm_doctor_id = $1', [original.id])).rows.length, 1)
+    await syncCrm(undefined, run)
+    assert.equal((await rowsFor(doctor)).length, 1, 'stable on later syncs')
+  })
+
+  await t.test('existing duplicates are folded together: newest edit wins, notes combined, activities moved', async () => {
+    const doctor = await user('dr-loke', 'doctor', 'loke@ledentistry.sg')
+    await db.query('INSERT INTO sales_doctor_assignments (sales_id, doctor_id) VALUES ($1, $2)', [lj, doctor])
+    // The state the bug left behind: Germain's old record plus LJ's auto-created one.
+    const old = (await db.query<{ id: number }>("INSERT INTO crm_doctors (sales_id, doctor_account_id, full_name, status, notes, updated_at) VALUES ($1, $2, 'Dr Loke', 'active', 'Prefers WhatsApp', now() - interval '2 days') RETURNING id", [germain, doctor])).rows[0].id
+    const dup = (await db.query<{ id: number }>("INSERT INTO crm_doctors (sales_id, doctor_account_id, full_name, status, source, notes, account_type, created_at, updated_at) VALUES ($1, $2, 'Dr Loke', 'contacted', 'registered', 'Asked for price list', 'OEM', now() - interval '1 day', now()) RETURNING id", [lj, doctor])).rows[0].id
+    await db.query("INSERT INTO crm_activities (crm_doctor_id, kind, body) VALUES ($1, 'note', 'logged on the duplicate')", [dup])
+
+    await syncCrm([lj], run)
+    const rows = await rowsFor(doctor)
+    assert.equal(rows.length, 1)
+    assert.equal(rows[0].id, old)
+    assert.equal(rows[0].sales_id, lj)
+    assert.equal(rows[0].status, 'contacted', 'the more recent edit wins')
+    assert.equal(rows[0].account_type, 'OEM')
+    assert.equal(rows[0].notes, 'Prefers WhatsApp\n\nAsked for price list')
+    assert.equal((await db.query('SELECT * FROM crm_activities WHERE crm_doctor_id = $1', [old])).rows.length, 1)
+  })
+
+  await t.test('a doctor served by two reps keeps a record for each', async () => {
+    const doctor = await user('dr-two', 'doctor', 'two@clinic.sg')
+    await db.query('INSERT INTO sales_doctor_assignments (sales_id, doctor_id) VALUES ($1, $3), ($2, $3)', [germain, third, doctor])
+    await syncCrm(undefined, run)
+    await syncCrm(undefined, run)
+    assert.deepEqual((await rowsFor(doctor)).map((row) => row.sales_id).sort(), [germain, third].sort())
+  })
+
+  await t.test('a moved doctor with no new rep keeps the old record', async () => {
+    const doctor = await user('dr-unassigned', 'doctor', 'none@clinic.sg')
+    await setDoctorSales([doctor], germain, null, { moveOrders: false }, run)
+    await setDoctorSales([doctor], null, null, { moveOrders: false }, run)
+    await syncCrm(undefined, run)
+    const rows = await rowsFor(doctor)
+    assert.equal(rows.length, 1)
+    assert.equal(rows[0].sales_id, germain)
+  })
 })

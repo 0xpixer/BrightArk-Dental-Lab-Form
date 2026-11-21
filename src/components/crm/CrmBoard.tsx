@@ -74,6 +74,11 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
 
   /** Optimistic inline save: apply locally, PATCH, then take the server row or roll the field back. */
   const saveField = useCallback(async (id: number, field: string, value: CrmValue) => {
+    const target = rows.find((row) => row.id === id)
+    if (field === 'salesId' && target?.doctorAccountId && target.assigned) {
+      const to = options.owners.find((owner) => owner.id === value)?.name ?? 'the new sales rep'
+      if (!window.confirm(`Move ${target.fullName} to ${to}? The doctor's sales assignment and existing orders move too.`)) return
+    }
     let before: CrmRow | undefined
     setRows((current) => current.map((row) => {
       if (row.id !== id) return row
@@ -93,7 +98,7 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
         : row))
       setToast(saveError instanceof Error ? saveError.message : 'Could not save the change')
     }
-  }, [apiBase, options.owners])
+  }, [apiBase, options.owners, rows])
 
   /** Contract changes wait for the server (the upload itself already showed progress). */
   const saveContract = useCallback(async (id: number, contract: { url: string; fileName: string } | null) => {
@@ -133,9 +138,9 @@ export function CrmBoard({ apiBase = '/api/crm/doctors' }: { apiBase?: string })
       {def.key === 'fullName'
         ? <div className="flex items-start gap-1.5 pl-1">
           <AvatarPicker compact name={row.fullName} url={row.avatarUrl} onChange={(url) => saveField(row.id, 'avatarUrl', url)} onError={setToast} />
-          <div className="min-w-0 flex-1"><EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={false} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} /></div>
+          <div className="min-w-0 flex-1"><EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key, viewer)} writeThrough={false} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} /></div>
         </div>
-        : <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} />}
+        : <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key, viewer)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="cell" onSave={(value) => saveField(row.id, def.key, value)} />}
     </td>
   )
   const openRow = rows.find((row) => row.id === openId) ?? null

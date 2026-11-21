@@ -81,9 +81,9 @@ export function formatMoney(total: MoneyTotal) {
   return `${total.currency} ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(total.amount)}`
 }
 
-export function lockReason(row: CrmRow, field: CrmField) {
+export function lockReason(row: CrmRow, field: CrmField, viewer?: { role: string } | null) {
   if (!row.fieldAccess.locked.includes(field)) return null
-  if (field === 'salesId') return 'Follows the doctor’s sales assignment (Accounts)'
+  if (field === 'salesId') return viewer?.role === 'superadmin' ? null : 'Only a Superadmin can move a registered doctor to another sales rep'
   if (field === 'email' && !row.assigned) return 'Linked to the doctor’s account by this email'
   return 'Managed by the doctor’s own account'
 }

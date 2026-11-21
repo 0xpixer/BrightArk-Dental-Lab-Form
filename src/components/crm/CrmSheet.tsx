@@ -111,7 +111,7 @@ export function CrmEditSheet({ row, viewer, options, onClose, onSave, onContract
           {defs.map((def) => (
             <div key={def.key} className={`min-w-0 ${def.kind === 'textarea' ? 'sm:col-span-2' : ''}`}>
               <p className="mb-1 text-xs font-medium text-text-muted">{def.label}</p>
-              <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="field" onSave={(value) => onSave(def.key, value)} />
+              <EditableValue def={def} row={row} owners={options.owners} lock={lockReason(row, def.key, viewer)} writeThrough={row.fieldAccess.writeThrough.includes(def.key)} variant="field" onSave={(value) => onSave(def.key, value)} />
             </div>
           ))}
         </div>

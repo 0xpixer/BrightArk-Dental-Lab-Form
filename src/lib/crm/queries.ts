@@ -90,3 +90,59 @@ export function insertAssignedCrmQuery(filter: CrmAssignmentFilter = {}): SQL {
     ON CONFLICT DO NOTHING
     RETURNING id`
 }
+
+/**
+ * Account-linked rows whose owner is no longer assigned to the doctor ("orphans"), each paired with the
+ * row of the doctor's current (earliest-assigned) rep. Happens when a doctor is moved to another rep:
+ * the sync creates the new rep's row and the old one would otherwise linger as a duplicate.
+ * Pairs whose move would clash with another of the new rep's rows (same email) are skipped.
+ */
+export function crmOrphanPairsQuery(): SQL {
+  return sql`SELECT DISTINCT ON (o.id) o.id AS "orphanId", d.id AS "keepId", d.sales_id AS "salesId"
+    FROM crm_doctors o
+    JOIN crm_doctors d ON d.doctor_account_id = o.doctor_account_id AND d.id <> o.id
+    JOIN sales_doctor_assignments a ON a.sales_id = d.sales_id AND a.doctor_id = d.doctor_account_id
+    WHERE o.doctor_account_id IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM sales_doctor_assignments x WHERE x.sales_id = o.sales_id AND x.doctor_id = o.doctor_account_id)
+      AND NOT EXISTS (
+        SELECT 1 FROM crm_doctors e
+        WHERE e.sales_id = d.sales_id AND e.id NOT IN (o.id, d.id) AND o.email IS NOT NULL AND lower(e.email) = lower(o.email)
+      )
+    ORDER BY o.id, a.created_at, d.id`
+}
+
+/**
+ * Folds the orphan into the current rep's row: the orphan's id (and so its history) survives, CRM fields
+ * take the most recently edited non-empty value, notes are combined and tags united, activities move over.
+ * Run in order; every step is safe to repeat if a later one fails.
+ */
+export function mergeCrmPairQueries(orphanId: number, keepId: number, salesId: number): SQL[] {
+  // The current rep's row only counts as "newer" once someone edited it; a row the sync just created
+  // (updated_at = created_at) must never overwrite the old record's real data with defaults.
+  const keepEdited = 'k.updated_at > k.created_at + interval \'1 second\' AND k.updated_at > o.updated_at'
+  const newer = (column: string) => sql.raw(`CASE WHEN ${keepEdited} THEN coalesce(k.${column}, o.${column}) ELSE coalesce(o.${column}, k.${column}) END`)
+  return [
+    sql`UPDATE crm_doctors AS o SET
+        full_name = ${newer('full_name')}, email = ${newer('email')}, phone = ${newer('phone')}, clinic_name = ${newer('clinic_name')},
+        country = ${newer('country')}, city = ${newer('city')}, address = ${newer('address')}, specialty = ${newer('specialty')},
+        avatar_url = ${newer('avatar_url')}, account_type = ${newer('account_type')}, next_follow_up = ${newer('next_follow_up')},
+        status = CASE WHEN ${sql.raw(keepEdited)} THEN k.status ELSE o.status END,
+        notes = CASE WHEN nullif(trim(o.notes), '') IS NULL THEN k.notes WHEN nullif(trim(k.notes), '') IS NULL OR k.notes = o.notes THEN o.notes ELSE o.notes || E'\n\n' || k.notes END,
+        tags = (SELECT coalesce(jsonb_agg(DISTINCT t), '[]'::jsonb) FROM (
+          SELECT jsonb_array_elements_text(CASE WHEN jsonb_typeof(o.tags) = 'array' THEN o.tags ELSE '[]'::jsonb END)
+          UNION SELECT jsonb_array_elements_text(CASE WHEN jsonb_typeof(k.tags) = 'array' THEN k.tags ELSE '[]'::jsonb END)
+        ) AS merged(t)),
+        contract_url = CASE WHEN o.contract_url IS NULL OR (k.contract_url IS NOT NULL AND k.contract_uploaded_at > o.contract_uploaded_at) THEN k.contract_url ELSE o.contract_url END,
+        contract_file_name = CASE WHEN o.contract_url IS NULL OR (k.contract_url IS NOT NULL AND k.contract_uploaded_at > o.contract_uploaded_at) THEN k.contract_file_name ELSE o.contract_file_name END,
+        contract_uploaded_at = CASE WHEN o.contract_url IS NULL OR (k.contract_url IS NOT NULL AND k.contract_uploaded_at > o.contract_uploaded_at) THEN k.contract_uploaded_at ELSE o.contract_uploaded_at END,
+        updated_at = greatest(o.updated_at, k.updated_at)
+      FROM crm_doctors AS k
+      WHERE o.id = ${orphanId} AND k.id = ${keepId} AND k.doctor_account_id = o.doctor_account_id`,
+    sql`UPDATE crm_activities SET crm_doctor_id = ${orphanId}
+      WHERE crm_doctor_id = ${keepId} AND EXISTS (SELECT 1 FROM crm_doctors WHERE id = ${orphanId})`,
+    sql`DELETE FROM crm_doctors WHERE id = ${keepId} AND EXISTS (SELECT 1 FROM crm_doctors WHERE id = ${orphanId})`,
+    sql`UPDATE crm_doctors SET sales_id = ${salesId}
+      WHERE id = ${orphanId}
+        AND NOT EXISTS (SELECT 1 FROM crm_doctors x WHERE x.sales_id = ${salesId} AND x.doctor_account_id = crm_doctors.doctor_account_id)`,
+  ]
+}
